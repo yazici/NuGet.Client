@@ -1,4 +1,4 @@
-﻿// Copyright (c) .NET Foundation. All rights reserved.
+// Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
@@ -8,6 +8,128 @@ namespace NuGet.Versioning.Test
 {
     public class FloatingRangeTests
     {
+
+        [Theory]
+        [MemberData(nameof(FindBestVersionData))]
+        public void FloatRange_SelectVersion(string requested, string[] versions, string selected)
+        {
+            var range = VersionRange.Parse(requested);
+
+            var nugetVersions = new List<NuGetVersion>();
+            foreach(var version in versions)
+            {
+                nugetVersions.Add(NuGetVersion.Parse(version));
+            }
+
+            Assert.Equal(selected, range.FindBestMatch(nugetVersions)?.ToNormalizedString());
+        }
+
+        public static IEnumerable<object[]> FindBestVersionData()
+        {
+            yield return new object[] {
+                "1.0.*",
+                new string[] { "1.0.0", "1.0.9", "1.2.0", "2.0.0" },
+                "1.0.9"
+            };
+
+            yield return new object[] {
+                "1.*",
+                new string[] { "1.0.0", "1.0.9", "1.2.0", "2.0.0" },
+                "1.2.0"
+            };
+
+            yield return new object[] {
+                "*",
+                new string[] { "1.0.0", "1.0.9", "1.2.0", "2.0.0" },
+                "2.0.0"
+            };
+
+            yield return new object[] {
+                "*",
+                new string[] { "1.0.0", "1.0.9", "1.2.0", "1.5.0-alpha.2", "2.0.0", "2.1.0-alpha.1" },
+                "2.0.0"
+            };
+
+            yield return new object[] {
+                "1.*",
+                new string[] { "1.0.0", "1.0.9", "1.2.0", "1.2.0-beta.1", "1.5.0-alpha.2", "2.0.0", "2.1.0-alpha.1" },
+                "1.2.0"
+            };
+
+            yield return new object[] {
+                "1.0.*",
+                new string[] { "1.0.0", "1.0.9", "1.0.10-alpha.1", "1.2.0", "1.2.0-beta.1", "1.5.0-alpha.2", "2.0.0", "2.1.0-alpha.1" },
+                "1.0.9"
+            };
+
+            yield return new object[] {
+                "1.2.3-*",
+                new string[] { "1.0.0", "1.0.9", "1.0.10-alpha.1", "1.2.0", "1.2.0-beta.1", "1.5.0-alpha.2", "2.0.0", "2.1.0-alpha.1" },
+                "1.5.0-alpha.2"
+            };
+
+            yield return new object[] {
+                "1.2.3-*",
+                new string[] { "1.0.0", "1.0.9", "1.0.10-alpha.1", "1.2.0", "1.2.0-beta.1", "2.0.0",  },
+                "2.0.0"
+            };
+
+            yield return new object[] {
+                "1.2.3-*",
+                new string[] { "1.0.0", "1.0.9", "1.0.10-alpha.1", "1.2.0", "1.2.0-beta.1", "1.2.3-beta.1", "2.0.0",  },
+                 "1.2.3-beta.1"
+            };
+
+            yield return new object[] {
+                "1.2.3-*",
+                new string[] { "1.0.0", "1.0.9", "1.0.10-alpha.1", "1.2.0", "1.2.0-beta.1", "1.2.5-beta.1", "2.0.0",  },
+                 "1.2.5-beta.1"
+            };
+
+            yield return new object[] {
+                "1.2.3-*",
+                new string[] { "1.0.0", "1.0.9", "1.0.10-alpha.1", "1.2.0", "1.2.0-beta.1", "1.2.5-beta.1", "1.3.3-beta.1", "2.0.0",  },
+                 "1.2.5-beta.1"
+            };
+
+            yield return new object[] {
+                "1.2.3-*",
+                new string[] { "1.0.0", "1.0.9", "1.0.10-alpha.1", "1.2.0", "1.2.0-beta.1", "1.2.5-beta.1", "1.3.3-beta.1", "1.5.0-beta.1", "2.0.0" },
+                 "1.2.5-beta.1"
+            };
+
+            yield return new object[] {
+                "1.2.3-alpha.*",
+                new string[] { "1.2.3-alpha.10", "1.2.3-beta.1", "1.3.3-beta.1", "1.5.0-beta.1", "1.5.0-alpha.1", "2.0.0" },
+                 "1.2.3-alpha.10"
+            };
+
+            yield return new object[] {
+                "1.2.3-*",
+                new string[] { "1.0.0", "1.0.9", "1.0.10-alpha.1", "1.2.0", "1.2.0-beta.1", "2.0.0",  "2.0.7-beta.1"},
+                 "2.0.0" // this one is weird
+            };
+
+            yield return new object[] {
+                "1.2.3-*",
+                new string[] { "1.0.0", "1.0.9", "1.0.10-alpha.1", "1.2.0", "1.2.0-beta.1", "1.9.0", "2.0.0",  "2.0.7-beta.1"},
+                 "1.9.0" // this one is weird too?
+            };
+
+            yield return new object[] {
+                "1.2.3-*",
+                new string[] { "1.0.0", "1.0.9", "1.0.10-alpha.1", "1.2.0", "1.2.0-beta.1", "1.2.4", "1.9.0", "2.0.0",  "2.0.7-beta.1"},
+                 "1.2.4" // this one is weird too? first above that doesn't match.
+            };
+
+            yield return new object[] {
+                "1.1.*",
+                new string[] { "1.0.1", "1.2.0", "1.2.1", "2.0.0", "2.0.3-beta.1" },
+                "1.2.0"
+            };
+
+        }
+
         [Fact]
         public void FloatRange_OutsideOfRange()
         {
