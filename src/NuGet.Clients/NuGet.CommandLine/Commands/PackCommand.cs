@@ -114,7 +114,7 @@ namespace NuGet.CommandLine
 
             if (!String.IsNullOrEmpty(SolutionDirectory))
             {
-                packArgs.SolutionDirectory = String.IsNullOrEmpty(SolutionDirectory) ? null : Path.GetFullPath(SolutionDirectory);
+                packArgs.SolutionDirectory = Path.GetFullPath(SolutionDirectory);
             }
 
             // Get the input file
