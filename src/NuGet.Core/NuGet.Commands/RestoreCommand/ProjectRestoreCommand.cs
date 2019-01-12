@@ -72,6 +72,7 @@ namespace NuGet.Commands
 
             telemetryActivity.EndIntervalMeasure(WalkFrameworkDependencyDuration);
 
+            // check whether a ridfull restore does this twice, whether the packages are attempted to be installed twice. Where is it cut. 
             success &= await InstallPackagesAsync(graphs,
                 userPackageFolder,
                 token);

@@ -164,9 +164,9 @@ namespace NuGet.Commands
                 throw new ArgumentNullException(nameof(libraryRange));
             }
 
-            if (targetFramework == null)
+            if (targetFramework == null) // unused in this specific context.
             {
-                throw new ArgumentNullException(nameof(targetFramework));
+                throw new ArgumentNullException(nameof(targetFramework)); 
             }
 
             if (cacheContext == null)
@@ -184,7 +184,7 @@ namespace NuGet.Commands
             AsyncLazy<LibraryIdentity> result = null;
 
             var action = new AsyncLazy<LibraryIdentity>(async () =>
-                await FindLibraryCoreAsync(libraryRange, targetFramework, cacheContext, logger, cancellationToken));
+                await FindLibraryCoreAsync(libraryRange, cacheContext, logger, cancellationToken));
 
             if (cacheContext.RefreshMemoryCache)
             {
@@ -198,9 +198,10 @@ namespace NuGet.Commands
             return await result;
         }
 
+        /// Maybe each dependency provider should have a separate method to download these packages, rather than using FindLibraryAsync which woudl try to resolve the dependencies as well. 
+
         private async Task<LibraryIdentity> FindLibraryCoreAsync(
             LibraryRange libraryRange,
-            NuGetFramework targetFramework,
             SourceCacheContext cacheContext,
             ILogger logger,
             CancellationToken cancellationToken)

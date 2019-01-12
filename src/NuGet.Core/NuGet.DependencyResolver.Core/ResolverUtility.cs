@@ -20,7 +20,7 @@ namespace NuGet.DependencyResolver
     {
         public static Task<GraphItem<RemoteResolveResult>> FindLibraryCachedAsync(
             ConcurrentDictionary<LibraryRangeCacheKey, Task<GraphItem<RemoteResolveResult>>> cache,
-            LibraryRange libraryRange,
+            LibraryRange libraryRange, // make sure that it goes through the same path as this does. We need to make sure that it's cache ccorrectly
             NuGetFramework framework,
             string runtimeIdentifier,
             GraphEdge<RemoteResolveResult> outerEdge,
@@ -342,7 +342,7 @@ namespace NuGet.DependencyResolver
         public static async Task<RemoteMatch> FindLibraryByVersionAsync(
             LibraryRange libraryRange,
             NuGetFramework framework,
-            IEnumerable<IRemoteDependencyProvider> providers,
+            IEnumerable<IRemoteDependencyProvider> providers, // This is the correct one. This is what should be used to download stuff
             SourceCacheContext cacheContext,
             ILogger logger,
             CancellationToken token)
