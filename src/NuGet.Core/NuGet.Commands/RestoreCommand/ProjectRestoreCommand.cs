@@ -67,12 +67,13 @@ namespace NuGet.Commands
             }
 
             var frameworkGraphs = await Task.WhenAll(frameworkTasks);
-
+            
             graphs.AddRange(frameworkGraphs);
 
             telemetryActivity.EndIntervalMeasure(WalkFrameworkDependencyDuration);
 
-            // check whether a ridfull restore does this twice, whether the packages are attempted to be installed twice. Where is it cut. 
+            // use the project to generate tasks for everything and await
+
             success &= await InstallPackagesAsync(graphs,
                 userPackageFolder,
                 token);
