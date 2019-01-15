@@ -463,19 +463,13 @@ namespace NuGet.Commands
                 return Enumerable.Empty<LibraryDependency>();
             }
 
-            var dependencies = NuGetFrameworkUtility.GetNearest(packageInfo.DependencyGroups,
+            var dependencyGroup = NuGetFrameworkUtility.GetNearest(packageInfo.DependencyGroups,
                 targetFramework,
                 item => item.TargetFramework);
 
-            return GetDependencies(targetFramework, dependencies);
-        }
-
-        private static IEnumerable<LibraryDependency> GetDependencies(NuGetFramework targetFramework,
-            PackageDependencyGroup dependencies)
-        {
-            if (dependencies != null)
+            if (dependencyGroup != null)
             {
-                return dependencies.Packages.Select(PackagingUtility.GetLibraryDependencyFromNuspec).ToArray();
+                return dependencyGroup.Packages.Select(PackagingUtility.GetLibraryDependencyFromNuspec).ToArray();
             }
 
             return Enumerable.Empty<LibraryDependency>();

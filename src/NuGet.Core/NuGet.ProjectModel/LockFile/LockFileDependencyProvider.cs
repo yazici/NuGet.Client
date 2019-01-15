@@ -51,7 +51,7 @@ namespace NuGet.ProjectModel
             if (_targetLibraries.TryGetValue(key, out LockFileTargetLibrary library) &&
                 libraryRange.VersionRange.IsBetter(current: null, considering: library.Version))
             {
-                var dependencies = GetDependencies(library, targetFramework);
+                var dependencies = GetDependencies(library);
 
                 var description = new Library
                 {
@@ -75,7 +75,7 @@ namespace NuGet.ProjectModel
             return null;
         }
 
-        private IList<LibraryDependency> GetDependencies(LockFileTargetLibrary library, NuGetFramework targetFramework)
+        private IList<LibraryDependency> GetDependencies(LockFileTargetLibrary library)
         {
             var libraryDependencies = new List<LibraryDependency>();
 

@@ -20,24 +20,22 @@ namespace NuGet.DependencyResolver
     {
         public static Task<GraphItem<RemoteResolveResult>> FindLibraryCachedAsync(
             ConcurrentDictionary<LibraryRangeCacheKey, Task<GraphItem<RemoteResolveResult>>> cache,
-            LibraryRange libraryRange, // make sure that it goes through the same path as this does. We need to make sure that it's cache ccorrectly
+            LibraryRange libraryRange,
             NuGetFramework framework,
             string runtimeIdentifier,
-            GraphEdge<RemoteResolveResult> outerEdge,
             RemoteWalkContext context,
             CancellationToken cancellationToken)
         {
             var key = new LibraryRangeCacheKey(libraryRange, framework);
 
             return cache.GetOrAdd(key, (cacheKey) =>
-                FindLibraryEntryAsync(cacheKey.LibraryRange, framework, runtimeIdentifier, outerEdge, context, cancellationToken));
+                FindLibraryEntryAsync(cacheKey.LibraryRange, framework, runtimeIdentifier, context, cancellationToken));
         }
 
         public static async Task<GraphItem<RemoteResolveResult>> FindLibraryEntryAsync(
             LibraryRange libraryRange,
             NuGetFramework framework,
             string runtimeIdentifier,
-            GraphEdge<RemoteResolveResult> outerEdge,
             RemoteWalkContext context,
             CancellationToken cancellationToken)
         {
@@ -54,7 +52,6 @@ namespace NuGet.DependencyResolver
                     libraryRange,
                     framework,
                     runtimeIdentifier,
-                    outerEdge,
                     context.RemoteLibraryProviders,
                     context.LocalLibraryProviders,
                     context.ProjectLibraryProviders,
@@ -93,7 +90,7 @@ namespace NuGet.DependencyResolver
             return graphItem;
         }
 
-        public static async Task<GraphItem<RemoteResolveResult>> CreateGraphItemAsync(
+        private static async Task<GraphItem<RemoteResolveResult>> CreateGraphItemAsync(
             RemoteMatch match,
             NuGetFramework framework,
             SourceCacheContext cacheContext,
@@ -114,7 +111,7 @@ namespace NuGet.DependencyResolver
             }
             else
             {
-                // Look up the dependencies from the source
+                // Look up the dependencies from the source, this will download the package if needed.
                 dependencies = await match.Provider.GetDependenciesAsync(
                     match.Library,
                     framework,
@@ -138,34 +135,10 @@ namespace NuGet.DependencyResolver
             };
         }
 
-        public static GraphItem<RemoteResolveResult> CreateUnresolvedMatch(LibraryRange libraryRange)
-        {
-            var identity = new LibraryIdentity()
-            {
-                Name = libraryRange.Name,
-                Type = LibraryType.Unresolved,
-                Version = libraryRange.VersionRange?.MinVersion
-            };
-            return new GraphItem<RemoteResolveResult>(identity)
-            {
-                Data = new RemoteResolveResult()
-                {
-                    Match = new RemoteMatch()
-                    {
-                        Library = identity,
-                        Path = null,
-                        Provider = null
-                    },
-                    Dependencies = Enumerable.Empty<LibraryDependency>()
-                }
-            };
-        }
-
         public static async Task<RemoteMatch> FindLibraryMatchAsync(
             LibraryRange libraryRange,
             NuGetFramework framework,
             string runtimeIdentifier,
-            GraphEdge<RemoteResolveResult> outerEdge,
             IEnumerable<IRemoteDependencyProvider> remoteProviders,
             IEnumerable<IRemoteDependencyProvider> localProviders,
             IEnumerable<IDependencyProvider> projectProviders,
@@ -174,7 +147,7 @@ namespace NuGet.DependencyResolver
             ILogger logger,
             CancellationToken cancellationToken)
         {
-            var projectMatch = await FindProjectMatchAsync(libraryRange, framework, outerEdge, projectProviders, cancellationToken);
+            var projectMatch = await FindProjectMatchAsync(libraryRange, framework, projectProviders, cancellationToken);
 
             if (projectMatch != null)
             {
@@ -230,6 +203,29 @@ namespace NuGet.DependencyResolver
 
                 // it should never come to this, but as a fail-safe if it ever fails to resolve a package from lock file when
                 // it has to... then fail restore.
+                return null;
+            }
+
+            return await FindPackageLibraryMatchAsync(libraryRange, framework, remoteProviders, localProviders, cacheContext, logger, cancellationToken);
+        }
+
+        public static Task<RemoteMatch> FindPackageLibraryMatchCachedAsync( // This needs to be invoked when called for the PackageDownload
+            ConcurrentDictionary<LibraryRange, Task<RemoteMatch>> cache,
+            LibraryRange libraryRange,
+            IEnumerable<IRemoteDependencyProvider> remoteProviders,
+            IEnumerable<IRemoteDependencyProvider> localProviders,
+            SourceCacheContext cacheContext,
+            ILogger logger,
+            CancellationToken cancellationToken)
+        {
+            return cache.GetOrAdd(libraryRange, (cacheKey) => FindPackageLibraryMatchAsync(libraryRange, NuGetFramework.AnyFramework, remoteProviders, localProviders, cacheContext, logger, cancellationToken));
+        }
+
+        private static async Task<RemoteMatch> FindPackageLibraryMatchAsync(LibraryRange libraryRange, NuGetFramework framework, IEnumerable<IRemoteDependencyProvider> remoteProviders, IEnumerable<IRemoteDependencyProvider> localProviders, SourceCacheContext cacheContext, ILogger logger, CancellationToken cancellationToken)
+        {
+            // The resolution below is only for package types
+            if (!libraryRange.TypeConstraintAllows(LibraryDependencyTarget.Package))
+            {
                 return null;
             }
 
@@ -305,7 +301,6 @@ namespace NuGet.DependencyResolver
         public static Task<RemoteMatch> FindProjectMatchAsync(
             LibraryRange libraryRange,
             NuGetFramework framework,
-            GraphEdge<RemoteResolveResult> outerEdge,
             IEnumerable<IDependencyProvider> projectProviders,
             CancellationToken cancellationToken)
         {
@@ -342,7 +337,7 @@ namespace NuGet.DependencyResolver
         public static async Task<RemoteMatch> FindLibraryByVersionAsync(
             LibraryRange libraryRange,
             NuGetFramework framework,
-            IEnumerable<IRemoteDependencyProvider> providers, // This is the correct one. This is what should be used to download stuff
+            IEnumerable<IRemoteDependencyProvider> providers, 
             SourceCacheContext cacheContext,
             ILogger logger,
             CancellationToken token)
@@ -400,7 +395,7 @@ namespace NuGet.DependencyResolver
             return nonHttpMatch;
         }
 
-        public static async Task<RemoteMatch> FindLibraryFromSourcesAsync(
+        private static async Task<RemoteMatch> FindLibraryFromSourcesAsync(
             LibraryRange libraryRange,
             IEnumerable<IRemoteDependencyProvider> providers,
             Func<IRemoteDependencyProvider, Task<LibraryIdentity>> action)
@@ -454,6 +449,29 @@ namespace NuGet.DependencyResolver
             }
 
             return bestMatch;
+        }
+
+        private static GraphItem<RemoteResolveResult> CreateUnresolvedMatch(LibraryRange libraryRange)
+        {
+            var identity = new LibraryIdentity()
+            {
+                Name = libraryRange.Name,
+                Type = LibraryType.Unresolved,
+                Version = libraryRange.VersionRange?.MinVersion
+            };
+            return new GraphItem<RemoteResolveResult>(identity)
+            {
+                Data = new RemoteResolveResult()
+                {
+                    Match = new RemoteMatch()
+                    {
+                        Library = identity,
+                        Path = null,
+                        Provider = null
+                    },
+                    Dependencies = Enumerable.Empty<LibraryDependency>()
+                }
+            };
         }
     }
 }
