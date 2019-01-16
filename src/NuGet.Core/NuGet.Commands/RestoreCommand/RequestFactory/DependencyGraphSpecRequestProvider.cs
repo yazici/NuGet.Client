@@ -53,7 +53,7 @@ namespace NuGet.Commands
             }
 
             // Validate the dg file input, this throws if errors are found.
-            SpecValidationUtility.ValidateDependencySpec(dgFile);
+            SpecValidationUtility.ValidateDependencySpec(dgFile); // if needed, this is where we can verify that the PackageDownload is [] only.
 
             // Create requests
             var requests = new List<RestoreSummaryRequest>();
