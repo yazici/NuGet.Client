@@ -467,14 +467,21 @@ namespace NuGet.ProjectModel
             }
 
             writer.WriteObjectStart("downloadDependencies");
+            var expanded = false; // if in future more attributes are added, we will need to create an "expanded" way of writing this to the assets file.
 
             foreach (var dependency in downloadDependencies.OrderBy(dep => dep))
             {
-                writer.WriteObjectStart(dependency.Name);
-                SetValue(writer, "version", dependency.VersionRange.ToNormalizedString());
-                writer.WriteObjectEnd();
+                if (expanded)
+                {
+                    writer.WriteObjectStart(dependency.Name);
+                    SetValue(writer, "version", dependency.VersionRange.ToNormalizedString());
+                    writer.WriteObjectEnd();
+                }
+                else
+                {
+                    writer.WriteNameValue(dependency.Name, dependency.VersionRange.ToNormalizedString());
+                }
             }
-
             writer.WriteObjectEnd();
         }
 

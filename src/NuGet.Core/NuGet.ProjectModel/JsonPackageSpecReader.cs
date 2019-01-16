@@ -808,7 +808,7 @@ namespace NuGet.ProjectModel
             {
                 foreach (var dependency in downloadDependenciesProperty)
                 {
-                    if (string.IsNullOrEmpty(dependency.Key) || dependency.Value.Type != JTokenType.Object)
+                    if (string.IsNullOrEmpty(dependency.Key))
                     {
                         throw FileFormatException.Create(
                             "Unable to resolve downloadDependency ''.",
@@ -817,15 +817,24 @@ namespace NuGet.ProjectModel
                     }
 
                     var dependencyValue = dependency.Value;
-                    VersionRange version = null;
+                    var dependencyVersionToken = dependencyValue;
                     string versionValue = null;
 
-                    var dependencyVersionToken = dependencyValue["version"];
-                    if (dependencyVersionToken != null
-                        && dependencyVersionToken.Type == JTokenType.String)
+                    if (dependencyValue.Type == JTokenType.String)
                     {
-                        versionValue = dependencyVersionToken.Value<string>();
+                        versionValue = dependencyValue.Value<string>();
                     }
+                    else if (dependencyValue.Type == JTokenType.Object)
+                    {
+                        dependencyVersionToken = dependencyValue["version"];
+                        if (dependencyVersionToken != null
+                            && dependencyVersionToken.Type == JTokenType.String)
+                        {
+                            versionValue = dependencyVersionToken.Value<string>();
+                        }
+                    }
+
+                    VersionRange version = null;
 
                     if (!string.IsNullOrEmpty(versionValue))
                     {

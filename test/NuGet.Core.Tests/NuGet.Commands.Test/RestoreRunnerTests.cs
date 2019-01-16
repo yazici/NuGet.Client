@@ -762,12 +762,10 @@ namespace NuGet.Commands.Test
                 }
             }
         }
-        // TODO NK: Priority. Make sure that the writing/reading of DownloadDependencies is correct.
-        // Add the new Download Dependency model.
+
         // Then add more tests about the basic scenarios. Make sure that the download dependencies are [].
         // ONce that's done, add the logging.
         // Consider the new error code for issues with the package download potentially.
-
         [Fact]
         public async Task RestoreRunner_BasicPackageDownloadRestoreAsync()
         {
@@ -789,7 +787,6 @@ namespace NuGet.Commands.Test
                 }
               }
             }";
-            // test teh ability to read packages.
 
             using (var workingDir = TestDirectory.Create())
             {
@@ -849,10 +846,10 @@ namespace NuGet.Commands.Test
                     Assert.True(summary.Success);
                     Assert.True(File.Exists(assetsFilePath), assetsFilePath);
                     var lockFile = LockFileUtilities.GetLockFile(assetsFilePath, NullLogger.Instance);
-                    Assert.Equal(lockFile.Libraries.Count, 1); // Only X is written in the libraries section.
-                    Assert.Equal(lockFile.Targets.First().Libraries.First().Name, "x");
-                    Assert.Equal(lockFile.LogMessages.Count, 0);
-                    Assert.Equal(lockFile.PackageSpec.TargetFrameworks.First().DownloadDependencies.First().Name, "y");
+                    Assert.Equal(1, lockFile.Libraries.Count); // Only X is written in the libraries section.
+                    Assert.Equal("x", lockFile.Targets.First().Libraries.First().Name);
+                    Assert.Equal(0, lockFile.LogMessages.Count);
+                    Assert.Equal("y", lockFile.PackageSpec.TargetFrameworks.First().DownloadDependencies.First().Name);
                     Assert.True(Directory.Exists(Path.Combine(globalPackagesFolder.FullName, "y", "1.0.0"))); // Y is installed
                     Assert.True(File.Exists(targetsPath));
                     Assert.True(File.Exists(propsPath));
