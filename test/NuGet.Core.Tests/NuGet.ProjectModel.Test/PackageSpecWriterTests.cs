@@ -60,12 +60,8 @@ namespace NuGet.ProjectModel.Test
                             }
                         },
                         ""downloadDependencies"": {
-                            ""a"": {
-                                ""version"": ""[1.0.0, )""
-                            },
-                            ""b"": {
-                                ""version"": ""[2.0.0, 2.0.0]""
-                            }
+                            ""a"": ""[1.0.0, )"",
+                            ""b"":""[2.0.0, 2.0.0]""
                         }
                     }
                   }
@@ -412,7 +408,16 @@ namespace NuGet.ProjectModel.Test
                             ""a"": {
                                 ""version"": ""[1.0.0, )"",
                             }
+                        },
+                        ""downloadDependencies"": {
+                            ""d"": {
+                                ""version"": ""[2.0.0]""
+                            },
+                            ""c"": {
+                                ""version"": ""[2.0.0]""
+                            }
                         }
+
                     }
                   }
                 }";
@@ -427,6 +432,10 @@ namespace NuGet.ProjectModel.Test
                       ""dependencies"": {
                         ""a"": ""[1.0.0, )"",
                         ""b"": ""[1.0.0, )""
+                      },
+                      ""downloadDependencies"": {
+                          ""c"":  ""[2.0.0, 2.0.0]"",
+                          ""d"":  ""[2.0.0, 2.0.0]""
                       }
                     }
                   }
@@ -434,7 +443,7 @@ namespace NuGet.ProjectModel.Test
             // Act & Assert
             VerifyPackageSpecWrite(json, expectedJson);
         }
-        //TODO NK: Write a non-expanded mode. It will be simpler for now. We can also account for the expanded vs non-expanded mode to help future correctness.
+
         [Fact]
         public void Write_ReadWriteVersionsAreNormalized()
         {
@@ -471,9 +480,7 @@ namespace NuGet.ProjectModel.Test
                         ""a"": ""[1.0.0, )""
                       },
                       ""downloadDependencies"": {
-                          ""b"": {
-                              ""version"": ""[2.0.0, 2.0.0]""
-                          }
+                          ""b"":  ""[2.0.0, 2.0.0]""
                       }
                     }
                   }
