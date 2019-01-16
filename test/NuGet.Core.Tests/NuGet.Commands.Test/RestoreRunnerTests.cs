@@ -780,6 +780,11 @@ namespace NuGet.Commands.Test
                 ""net45"": {
                     ""dependencies"": {
                         ""x"": ""1.0.0""
+                    },
+                    ""downloadDependencies"": {
+                        ""y"": {
+                            ""version"": ""1.0.0""
+                            }
                     }
                 }
               }
@@ -817,10 +822,6 @@ namespace NuGet.Commands.Test
                     Version = "1.0.0"
                 };
                 await SimpleTestPackageUtility.CreateFullPackageAsync(packageSource.FullName, packageY);
-                projectSpec.TargetFrameworks.First().DownloadDependencies.Add(
-                    new LibraryIdentity("y",
-                    NuGetVersion.Parse("1.0.0"),
-                    LibraryType.Package));
 
                 using (var cacheContext = new SourceCacheContext())
                 {
