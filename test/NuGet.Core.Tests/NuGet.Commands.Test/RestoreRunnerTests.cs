@@ -762,6 +762,11 @@ namespace NuGet.Commands.Test
                 }
             }
         }
+        // TODO NK: Priority. Make sure that the writing/reading of DownloadDependencies is correct.
+        // Add the new Download Dependency model.
+        // Then add more tests about the basic scenarios. Make sure that the download dependencies are [].
+        // ONce that's done, add the logging.
+        // Consider the new error code for issues with the package download potentially.
 
         [Fact]
         public async Task RestoreRunner_BasicPackageDownloadRestoreAsync()
