@@ -1,4 +1,4 @@
-﻿// Copyright (c) .NET Foundation. All rights reserved.
+// Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
@@ -52,6 +52,7 @@ namespace NuGet.Commands.Test
 
         /// <summary>
         /// Add restore metadata only if not already set.
+        /// Sets the project style to PackageReference.
         /// </summary>
         public static PackageSpec EnsureRestoreMetadata(this PackageSpec spec)
         {
@@ -89,7 +90,7 @@ namespace NuGet.Commands.Test
         }
 
         /// <summary>
-        /// Add fake .NETCore restore metadata to an xproj project.json.
+        /// Add fake PackageReference restore metadata. 
         /// </summary>
         public static PackageSpec WithTestRestoreMetadata(this PackageSpec spec)
         {
