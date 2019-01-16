@@ -62,7 +62,7 @@ namespace NuGet.DependencyResolver
 
                 if (match == null)
                 {
-                    return CreateUnresolvedMatch(libraryRange);
+                    return CreateUnresolvedResult(libraryRange);
                 }
 
                 try
@@ -83,7 +83,7 @@ namespace NuGet.DependencyResolver
                                                  match.Provider.Source,
                                                 ex.PackageIdentity.ToString());
 
-                    throw new FatalProtocolException(message, ex);
+                    throw new FatalProtocolException(message, ex); // check how this would work in the PackageDownload case. 
                 }
             }
 
@@ -167,7 +167,7 @@ namespace NuGet.DependencyResolver
 
             var targetFramework = framework;
 
-            if (framework is AssetTargetFallbackFramework)
+            if (framework is AssetTargetFallbackFramework) // Should I be using the targetFramework in the below?
             {
                 targetFramework = (framework as AssetTargetFallbackFramework).RootFramework;
             }
@@ -209,6 +209,17 @@ namespace NuGet.DependencyResolver
             return await FindPackageLibraryMatchAsync(libraryRange, framework, remoteProviders, localProviders, cacheContext, logger, cancellationToken);
         }
 
+        /// <summary>
+        /// Resolves the library from the given sources. Note that it does not download the package. TODO NK - Verify this based on the http caches.
+        /// </summary>
+        /// <param name="cache"></param>
+        /// <param name="libraryRange"></param>
+        /// <param name="remoteProviders"></param>
+        /// <param name="localProviders"></param>
+        /// <param name="cacheContext"></param>
+        /// <param name="logger"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public static Task<RemoteMatch> FindPackageLibraryMatchCachedAsync( // This needs to be invoked when called for the PackageDownload
             ConcurrentDictionary<LibraryRange, Task<RemoteMatch>> cache,
             LibraryRange libraryRange,
@@ -218,7 +229,17 @@ namespace NuGet.DependencyResolver
             ILogger logger,
             CancellationToken cancellationToken)
         {
-            return cache.GetOrAdd(libraryRange, (cacheKey) => FindPackageLibraryMatchAsync(libraryRange, NuGetFramework.AnyFramework, remoteProviders, localProviders, cacheContext, logger, cancellationToken));
+            return cache.GetOrAdd(libraryRange, (cacheKey) => ResolvePackageLibraryMatchAsync(libraryRange, remoteProviders, localProviders, cacheContext, logger, cancellationToken));
+        }
+
+        private static async Task<RemoteMatch> ResolvePackageLibraryMatchAsync(LibraryRange libraryRange, IEnumerable<IRemoteDependencyProvider> remoteProviders, IEnumerable<IRemoteDependencyProvider> localProviders, SourceCacheContext cacheContext, ILogger logger, CancellationToken cancellationToken)
+        {
+            var match = await FindPackageLibraryMatchAsync(libraryRange, NuGetFramework.AnyFramework, remoteProviders, localProviders, cacheContext, logger, cancellationToken);
+            if (match == null)
+            {
+                match = CreateUnresolvedMatch(libraryRange);
+            }
+            return match;
         }
 
         private static async Task<RemoteMatch> FindPackageLibraryMatchAsync(LibraryRange libraryRange, NuGetFramework framework, IEnumerable<IRemoteDependencyProvider> remoteProviders, IEnumerable<IRemoteDependencyProvider> localProviders, SourceCacheContext cacheContext, ILogger logger, CancellationToken cancellationToken)
@@ -451,26 +472,32 @@ namespace NuGet.DependencyResolver
             return bestMatch;
         }
 
-        private static GraphItem<RemoteResolveResult> CreateUnresolvedMatch(LibraryRange libraryRange)
+        private static GraphItem<RemoteResolveResult> CreateUnresolvedResult(LibraryRange libraryRange)
         {
-            var identity = new LibraryIdentity()
-            {
-                Name = libraryRange.Name,
-                Type = LibraryType.Unresolved,
-                Version = libraryRange.VersionRange?.MinVersion
-            };
-            return new GraphItem<RemoteResolveResult>(identity)
+            var match = CreateUnresolvedMatch(libraryRange);
+
+            return new GraphItem<RemoteResolveResult>(match.Library)
             {
                 Data = new RemoteResolveResult()
                 {
-                    Match = new RemoteMatch()
-                    {
-                        Library = identity,
-                        Path = null,
-                        Provider = null
-                    },
+                    Match = match,
                     Dependencies = Enumerable.Empty<LibraryDependency>()
                 }
+            };
+        }
+
+        private static RemoteMatch CreateUnresolvedMatch(LibraryRange libraryRange)
+        {
+            return new RemoteMatch()
+            {
+                Library = new LibraryIdentity()
+                {
+                    Name = libraryRange.Name,
+                    Type = LibraryType.Unresolved,
+                    Version = libraryRange.VersionRange?.MinVersion
+                },
+                Path = null,
+                Provider = null
             };
         }
     }

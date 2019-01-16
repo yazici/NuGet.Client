@@ -14,7 +14,7 @@ namespace NuGet.ProjectModel
     {
         public NuGetFramework FrameworkName { get; set; }
 
-        public IList<LibraryDependency> Dependencies { get; set; } = new List<LibraryDependency>();
+        public IList<LibraryDependency> Dependencies { get; set; } = new List<LibraryDependency>(); // check where the deduplication is happening. I'd imagine it's the reading and that there is not extra validation.
 
         /// <summary>
         /// A fallback PCL framework to use when no compatible items
