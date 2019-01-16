@@ -35,7 +35,7 @@ namespace NuGet.ProjectModel
         /// <summary>
         /// List of dependencies that are not part of the graph resolution. Duplicate IDs are allowed.
         /// </summary>
-        public IList<LibraryIdentity> DownloadDependencies { get; set; } = new List<LibraryIdentity>();
+        public IList<DownloadDependency> DownloadDependencies { get; set; } = new List<DownloadDependency>();
 
         public override string ToString()
         {

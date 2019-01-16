@@ -93,8 +93,6 @@ namespace NuGet.ProjectModel
                 }
                 catch (Exception ex)
                 {
-                    var lineInfo = (IJsonLineInfo)version;
-
                     throw FileFormatException.Create(ex, version, packageSpec.FilePath);
                 }
             }
@@ -773,13 +771,8 @@ namespace NuGet.ProjectModel
                 Imports = importFrameworks,
                 Warn = GetWarnSetting(properties),
                 AssetTargetFallback = assetTargetFallback,
-                DownloadDependencies = new List<LibraryIdentity>(),
+                DownloadDependencies = new List<DownloadDependency>(),
             };
-
-            PopulateDownloadDependencies(
-                targetFrameworkInformation.DownloadDependencies,
-                properties,
-                packageSpec.FilePath);
 
             PopulateDependencies(
                 packageSpec.FilePath,
@@ -787,6 +780,11 @@ namespace NuGet.ProjectModel
                 properties,
                 "dependencies",
                 isGacOrFrameworkReference: false);
+
+            PopulateDownloadDependencies(
+                targetFrameworkInformation.DownloadDependencies,
+                properties,
+                packageSpec.FilePath);
 
             var frameworkAssemblies = new List<LibraryDependency>();
             PopulateDependencies(
@@ -803,7 +801,7 @@ namespace NuGet.ProjectModel
             return true;
         }
 
-        private static void PopulateDownloadDependencies(IList<LibraryIdentity> downloadDependencies, JObject properties, string packageSpecPath)
+        private static void PopulateDownloadDependencies(IList<DownloadDependency> downloadDependencies, JObject properties, string packageSpecPath)
         {
             var downloadDependenciesProperty = properties["downloadDependencies"] as JObject;
             if (downloadDependenciesProperty != null)
@@ -819,7 +817,7 @@ namespace NuGet.ProjectModel
                     }
 
                     var dependencyValue = dependency.Value;
-                    NuGetVersion version = null;
+                    VersionRange version = null;
                     string versionValue = null;
 
                     var dependencyVersionToken = dependencyValue["version"];
@@ -833,7 +831,7 @@ namespace NuGet.ProjectModel
                     {
                         try
                         {
-                            version = NuGetVersion.Parse(versionValue);
+                            version = VersionRange.Parse(versionValue);
                         }
                         catch (Exception ex)
                         {
@@ -851,12 +849,7 @@ namespace NuGet.ProjectModel
                                 packageSpecPath);
                     }
 
-                    downloadDependencies.Add(new LibraryIdentity()
-                    {
-                        Name = dependency.Key,
-                        Version = version,
-                        Type = LibraryType.Package // The type is always assumed to be Package
-                    });
+                    downloadDependencies.Add(new DownloadDependency(dependency.Key, version));
                 }
             }
         }

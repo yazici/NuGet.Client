@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using Newtonsoft.Json.Linq;
 using NuGet.Common;
 using NuGet.Configuration;
@@ -12,7 +11,6 @@ using NuGet.LibraryModel;
 using NuGet.RuntimeModel;
 using NuGet.Test.Utility;
 using NuGet.Versioning;
-using Test.Utility;
 using Xunit;
 
 namespace NuGet.ProjectModel.Test
@@ -38,6 +36,35 @@ namespace NuGet.ProjectModel.Test
                             ""a"": {
                                 ""version"": ""[1.0.0, )"",
                                 ""autoReferenced"": true
+                            }
+                        }
+                    }
+                  }
+                }";
+
+            // Act & Assert
+            VerifyJsonPackageSpecRoundTrip(json);
+        }
+
+        [Fact]
+        public void RoundTripDownloadDependencies()
+        {
+            // Arrange
+            var json = @"{
+                  ""frameworks"": {
+                    ""net46"": {
+                        ""dependencies"": {
+                            ""a"": {
+                                ""version"": ""[1.0.0, )"",
+                                ""autoReferenced"": true
+                            }
+                        },
+                        ""downloadDependencies"": {
+                            ""a"": {
+                                ""version"": ""[1.0.0, )""
+                            },
+                            ""b"": {
+                                ""version"": ""[2.0.0, 2.0.0]""
                             }
                         }
                     }
@@ -407,7 +434,7 @@ namespace NuGet.ProjectModel.Test
             // Act & Assert
             VerifyPackageSpecWrite(json, expectedJson);
         }
-
+        //TODO NK: Write a non-expanded mode. It will be simpler for now. We can also account for the expanded vs non-expanded mode to help future correctness.
         [Fact]
         public void Write_ReadWriteVersionsAreNormalized()
         {
@@ -424,6 +451,11 @@ namespace NuGet.ProjectModel.Test
                             ""a"": {
                                 ""version"": ""1.0.0"",
                             },
+                        },
+                        ""downloadDependencies"": {
+                            ""b"": {
+                                ""version"": ""[2.0.0]""
+                            }
                         }
                     }
                   }
@@ -437,6 +469,11 @@ namespace NuGet.ProjectModel.Test
                     ""net46"": {
                       ""dependencies"": {
                         ""a"": ""[1.0.0, )""
+                      },
+                      ""downloadDependencies"": {
+                          ""b"": {
+                              ""version"": ""[2.0.0, 2.0.0]""
+                          }
                       }
                     }
                   }

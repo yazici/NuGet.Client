@@ -220,7 +220,7 @@ namespace NuGet.DependencyResolver
         /// <param name="logger"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public static Task<RemoteMatch> FindPackageLibraryMatchCachedAsync( // This needs to be invoked when called for the PackageDownload
+        public static Task<RemoteMatch> FindPackageLibraryMatchCachedAsync(
             ConcurrentDictionary<LibraryRange, Task<RemoteMatch>> cache,
             LibraryRange libraryRange,
             IEnumerable<IRemoteDependencyProvider> remoteProviders,

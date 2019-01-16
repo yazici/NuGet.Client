@@ -358,7 +358,7 @@ namespace NuGet.ProjectModel
 
         private static void SetDependencies(IObjectWriter writer, IList<LibraryDependency> libraryDependencies)
         {
-            SetDependencies(writer, "dependencies", libraryDependencies.Where(dependency => dependency.LibraryRange.TypeConstraint != LibraryDependencyTarget.Reference));
+            SetDependencies(writer, "dependencies", libraryDependencies.Where(dependency => dependency.LibraryRange.TypeConstraint != LibraryDependencyTarget.Reference)); // should I have used or would it have made it too complex?
             SetDependencies(writer, "frameworkAssemblies", libraryDependencies.Where(dependency => dependency.LibraryRange.TypeConstraint == LibraryDependencyTarget.Reference));
         }
 
@@ -459,7 +459,7 @@ namespace NuGet.ProjectModel
             }
         }
 
-        private static void SetDownloadDependencies(IObjectWriter writer, IList<LibraryIdentity> downloadDependencies)
+        private static void SetDownloadDependencies(IObjectWriter writer, IList<DownloadDependency> downloadDependencies)
         {
             if (!downloadDependencies.Any())
             {
@@ -471,7 +471,8 @@ namespace NuGet.ProjectModel
             foreach (var dependency in downloadDependencies.OrderBy(dep => dep))
             {
                 writer.WriteObjectStart(dependency.Name);
-                SetValue(writer, "version", dependency.Version.ToNormalizedString());
+                SetValue(writer, "version", dependency.VersionRange.ToNormalizedString());
+                writer.WriteObjectEnd();
             }
 
             writer.WriteObjectEnd();
