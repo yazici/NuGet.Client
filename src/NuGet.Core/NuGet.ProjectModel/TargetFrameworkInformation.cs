@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using NuGet.Frameworks;
 using NuGet.LibraryModel;
+using NuGet.Packaging;
 using NuGet.Shared;
 
 namespace NuGet.ProjectModel
@@ -35,7 +36,7 @@ namespace NuGet.ProjectModel
         /// <summary>
         /// List of dependencies that are not part of the graph resolution. Duplicate IDs are allowed.
         /// </summary>
-        public IList<DownloadDependency> DownloadDependencies { get; set; } = new List<DownloadDependency>();
+        public IList<DownloadDependency> DownloadDependencies { get; } = new List<DownloadDependency>();
 
         public override string ToString()
         {
@@ -87,7 +88,7 @@ namespace NuGet.ProjectModel
             clonedObject.Imports = new List<NuGetFramework>(Imports);
             clonedObject.AssetTargetFallback = AssetTargetFallback;
             clonedObject.Warn = Warn;
-            clonedObject.DownloadDependencies = DownloadDependencies.Select(item => item.Clone()).ToList();
+            clonedObject.DownloadDependencies.AddRange(DownloadDependencies.Select(item => item.Clone()));
             return clonedObject;
         }
     }

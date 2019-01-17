@@ -15,6 +15,7 @@ using NuGet.LibraryModel;
 using NuGet.Packaging;
 using NuGet.Packaging.Core;
 using NuGet.Packaging.Signing;
+using NuGet.Protocol.Core.Types;
 using NuGet.Repositories;
 using NuGet.RuntimeModel;
 
@@ -69,29 +70,25 @@ namespace NuGet.Commands
             // does this mean we have 2 here?
             // Do we have more when it's a RID? 
             var frameworkGraphs = await Task.WhenAll(frameworkTasks);
-            
+
             graphs.AddRange(frameworkGraphs);
 
             telemetryActivity.EndIntervalMeasure(WalkFrameworkDependencyDuration);
 
             // use the project to generate tasks for everything and await
+
             telemetryActivity.StartIntervalMeasure();
 
-            // see how the context is generated.
             var downloadDependenciesCache = new ConcurrentDictionary<LibraryRange, Task<RemoteMatch>>();
+            var packageDownloadTasks = new List<Task<DownloadDependencyInformation>>();
 
-            var downloadDependencies = _request.Project.TargetFrameworks.SelectMany( e => e.DownloadDependencies);
-
-            var packageDownloadTasks = new List<Task<RemoteMatch>>();
-            foreach (var library in downloadDependencies)
+            foreach (var targetFrameworkInformation in _request.Project.TargetFrameworks)
             {
-                // change this to something better
-                packageDownloadTasks.Add(ResolverUtility.FindPackageLibraryMatchCachedAsync(
-                    downloadDependenciesCache, library, context.RemoteLibraryProviders, context.LocalLibraryProviders, context.CacheContext, _logger, token));
+                packageDownloadTasks.Add(ResolveDownloadDependencies(context, downloadDependenciesCache, targetFrameworkInformation, token));
             }
-            var packageDownloadMatches = await Task.WhenAll(packageDownloadTasks);
-            // do stuff here. 
 
+            var downloadDependencyInformations = await Task.WhenAll(packageDownloadTasks);
+            
             telemetryActivity.EndIntervalMeasure("EvaluatePackageDownloadsDuration");
 
             // are any errors generated? Can you apply them?
@@ -99,7 +96,7 @@ namespace NuGet.Commands
             // What happens if packages are not found?
             // Where is the error that a package is not found raised.
             success &= await InstallPackagesAsync(graphs,
-                packageDownloadMatches,
+                downloadDependencyInformations,
                 userPackageFolder,
                 token);
 
@@ -150,7 +147,7 @@ namespace NuGet.Commands
 
                 // Install runtime-specific packages
                 success &= await InstallPackagesAsync(runtimeGraphs,
-                    Array.Empty<RemoteMatch>(),
+                    Array.Empty<DownloadDependencyInformation>(),
                     userPackageFolder,
                     token);
             }
@@ -165,10 +162,25 @@ namespace NuGet.Commands
             await UnexpectedDependencyMessages.LogAsync(graphs, _request.Project, _logger);
 
             // this is where the decision is made whether something was succesfully resolved.
-            success &= (await ResolutionSucceeded(graphs, context, token));
-            success &= (await ResolutionSucceeded(packageDownloadMatches, context, token));
+            success &= (await ResolutionSucceeded(graphs, downloadDependencyInformations, context, token));
 
-            return Tuple.Create(success, graphs, allRuntimes);
+            return Tuple.Create(success, graphs, allRuntimes); // TODO NK: We can add the download dependency information here. 
+        }
+
+        private async Task<DownloadDependencyInformation> ResolveDownloadDependencies(RemoteWalkContext context, ConcurrentDictionary<LibraryRange, Task<RemoteMatch>> downloadDependenciesCache, ProjectModel.TargetFrameworkInformation targetFrameworkInformation, CancellationToken token)
+        {
+            var packageDownloadTasks = new List<Task<RemoteMatch>>();
+            var downloadDependencies = targetFrameworkInformation.DownloadDependencies;
+
+            foreach (var library in downloadDependencies)
+            {
+                // change this to something better
+                packageDownloadTasks.Add(ResolverUtility.FindPackageLibraryMatchCachedAsync(
+                    downloadDependenciesCache, library, context.RemoteLibraryProviders, context.LocalLibraryProviders, context.CacheContext, _logger, token));
+            }
+            var packageDownloadMatches = await Task.WhenAll(packageDownloadTasks);
+
+            return DownloadDependencyInformation.Create(targetFrameworkInformation.FrameworkName, packageDownloadMatches, context.RemoteLibraryProviders);
         }
 
         private Task<RestoreTargetGraph> WalkDependenciesAsync(LibraryRange projectRange,
@@ -212,42 +224,7 @@ namespace NuGet.Commands
             return RestoreTargetGraph.Create(runtimeGraph, graphs, context, _logger, framework, runtimeIdentifier);
         }
 
-        private async Task<bool> ResolutionSucceeded(RemoteMatch[] packageDownload, RemoteWalkContext context, CancellationToken token)
-        {
-            var success = true;
-            List<Task<RestoreLogMessage>> messageTasks = null;
-
-            foreach (var remoteMatch in packageDownload)
-            {
-
-                if (remoteMatch.Library.Type == LibraryType.Unresolved)
-                {
-                    success = false;
-
-                    if (messageTasks == null)
-                    {
-                        messageTasks = new List<Task<RestoreLogMessage>>();
-                    }
-
-                    messageTasks.Add(UnresolvedMessages.GetMessageAsync(
-                        "PackageDownload",
-                        remoteMatch.Library,
-                        context.RemoteLibraryProviders, context.CacheContext,
-                        context.Logger,
-                        token));
-                }
-            }
-
-            if (!success)
-            {
-                var messages = await Task.WhenAll(messageTasks);
-                await context.Logger.LogMessagesAsync(DiagnosticUtility.MergeOnTargetGraph(messages));
-            }
-
-            return success;
-        }
-
-        private async Task<bool> ResolutionSucceeded(IEnumerable<RestoreTargetGraph> graphs, RemoteWalkContext context, CancellationToken token)
+        private async Task<bool> ResolutionSucceeded(IEnumerable<RestoreTargetGraph> graphs, IList<DownloadDependencyInformation> downloadDependencyInformations, RemoteWalkContext context, CancellationToken token)
         {
             var success = true;
             foreach (var graph in graphs)
@@ -281,11 +258,40 @@ namespace NuGet.Commands
                 await UnresolvedMessages.LogAsync(graphs, context.RemoteLibraryProviders, context.CacheContext, context.Logger, token);
             }
 
+            List<Task<RestoreLogMessage>> messageTasks = null;
+
+            foreach (var ddi in downloadDependencyInformations)
+            {
+                foreach (var unresolved in ddi.Unresolved)
+                {
+
+                    success = false;
+
+                    if (messageTasks == null)
+                    {
+                        messageTasks = new List<Task<RestoreLogMessage>>();
+                    }
+
+                    messageTasks.Add(UnresolvedMessages.GetMessageAsync(
+                        ddi.Framework.ToString(), 
+                        unresolved,
+                        context.RemoteLibraryProviders, context.CacheContext,
+                        context.Logger,
+                        token));
+                }
+            }
+
+            if (messageTasks != null)
+            {
+                var messages = await Task.WhenAll(messageTasks);
+                await context.Logger.LogMessagesAsync(DiagnosticUtility.MergeOnTargetGraph(messages));
+            }
+
             return success;
         }
 
         private async Task<bool> InstallPackagesAsync(IEnumerable<RestoreTargetGraph> graphs, // Add the same packages there too.
-            RemoteMatch[] packageDownloads,
+            IList<DownloadDependencyInformation> downloadDependencyInformations,
             NuGetv3LocalRepository userPackageFolder,
             CancellationToken token)
         {
@@ -294,15 +300,10 @@ namespace NuGet.Commands
             var packagesToInstall = graphs
                 .SelectMany(g => g.Install.Where(match => uniquePackages.Add(match.Library))).ToList();
 
-            foreach (var remoteMatch in packageDownloads)
-            {
-                // We don't want the unresolved packages in.
-                if (remoteMatch.Library.Type == LibraryType.Package && uniquePackages.Add(remoteMatch.Library))
-                {
-                    packagesToInstall.Add(remoteMatch);
-                }
-            }
-
+            packagesToInstall.AddRange( // consider adding a count for the number of packages installed with PackageDownload or including it in the total. 
+                downloadDependencyInformations.
+                    SelectMany(ddi => ddi.Install.Where(match => uniquePackages.Add(match.Library))));
+            
             var success = true;
 
             if (packagesToInstall.Count > 0)

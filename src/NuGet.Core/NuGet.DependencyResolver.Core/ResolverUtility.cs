@@ -209,6 +209,7 @@ namespace NuGet.DependencyResolver
             return await FindPackageLibraryMatchAsync(libraryRange, framework, remoteProviders, localProviders, cacheContext, logger, cancellationToken);
         }
 
+
         /// <summary>
         /// Resolves the library from the given sources. Note that it does not download the package. TODO NK - Verify this based on the http caches.
         /// </summary>

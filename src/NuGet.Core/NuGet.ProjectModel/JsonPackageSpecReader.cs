@@ -771,7 +771,6 @@ namespace NuGet.ProjectModel
                 Imports = importFrameworks,
                 Warn = GetWarnSetting(properties),
                 AssetTargetFallback = assetTargetFallback,
-                DownloadDependencies = new List<DownloadDependency>(),
             };
 
             PopulateDependencies(
