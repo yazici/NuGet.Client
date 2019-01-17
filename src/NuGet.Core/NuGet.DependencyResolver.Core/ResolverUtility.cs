@@ -221,8 +221,8 @@ namespace NuGet.DependencyResolver
         /// <param name="logger"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public static Task<RemoteMatch> FindPackageLibraryMatchCachedAsync(
-            ConcurrentDictionary<LibraryRange, Task<RemoteMatch>> cache,
+        public static Task<Tuple<LibraryRange, RemoteMatch>> FindPackageLibraryMatchCachedAsync(
+            ConcurrentDictionary<LibraryRange, Task<Tuple<LibraryRange, RemoteMatch>>> cache,
             LibraryRange libraryRange,
             IEnumerable<IRemoteDependencyProvider> remoteProviders,
             IEnumerable<IRemoteDependencyProvider> localProviders,
@@ -233,14 +233,14 @@ namespace NuGet.DependencyResolver
             return cache.GetOrAdd(libraryRange, (cacheKey) => ResolvePackageLibraryMatchAsync(libraryRange, remoteProviders, localProviders, cacheContext, logger, cancellationToken));
         }
 
-        private static async Task<RemoteMatch> ResolvePackageLibraryMatchAsync(LibraryRange libraryRange, IEnumerable<IRemoteDependencyProvider> remoteProviders, IEnumerable<IRemoteDependencyProvider> localProviders, SourceCacheContext cacheContext, ILogger logger, CancellationToken cancellationToken)
+        private static async Task<Tuple<LibraryRange, RemoteMatch>> ResolvePackageLibraryMatchAsync(LibraryRange libraryRange, IEnumerable<IRemoteDependencyProvider> remoteProviders, IEnumerable<IRemoteDependencyProvider> localProviders, SourceCacheContext cacheContext, ILogger logger, CancellationToken cancellationToken)
         {
             var match = await FindPackageLibraryMatchAsync(libraryRange, NuGetFramework.AnyFramework, remoteProviders, localProviders, cacheContext, logger, cancellationToken);
             if (match == null)
             {
                 match = CreateUnresolvedMatch(libraryRange);
             }
-            return match;
+            return new Tuple<LibraryRange, RemoteMatch>(libraryRange, match);
         }
 
         private static async Task<RemoteMatch> FindPackageLibraryMatchAsync(LibraryRange libraryRange, NuGetFramework framework, IEnumerable<IRemoteDependencyProvider> remoteProviders, IEnumerable<IRemoteDependencyProvider> localProviders, SourceCacheContext cacheContext, ILogger logger, CancellationToken cancellationToken)

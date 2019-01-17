@@ -1,22 +1,24 @@
 // Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
+using System;
 using System.Collections.Generic;
+
 using NuGet.DependencyResolver;
 using NuGet.Frameworks;
 using NuGet.LibraryModel;
 
 namespace NuGet.Commands
 {
-    public class DownloadDependencyInformation
+    public class DownloadDependencyResolutionResult
     {
         public NuGetFramework Framework { get; }
-        public IList<RemoteMatch> Dependencies { get; }
+        public IList<Tuple<LibraryRange, RemoteMatch>> Dependencies { get; }
         public ISet<RemoteMatch> Install { get; }
         public ISet<LibraryRange> Unresolved { get; }
 
 
-        private DownloadDependencyInformation(NuGetFramework framework, IList<RemoteMatch> dependencies, ISet<RemoteMatch> install, ISet<LibraryRange> unresolved)
+        private DownloadDependencyResolutionResult(NuGetFramework framework, IList<Tuple<LibraryRange, RemoteMatch>> dependencies, ISet<RemoteMatch> install, ISet<LibraryRange> unresolved)
         {
             Framework = framework;
             Dependencies = dependencies;
@@ -24,29 +26,29 @@ namespace NuGet.Commands
             Unresolved = unresolved;
         }
 
-        public static DownloadDependencyInformation Create(NuGetFramework framework, IList<RemoteMatch> dependencies, IList<IRemoteDependencyProvider> remoteDependencyProviders)
+        public static DownloadDependencyResolutionResult Create(NuGetFramework framework, IList<Tuple<LibraryRange,RemoteMatch>> dependencies, IList<IRemoteDependencyProvider> remoteDependencyProviders)
         {
             var install = new HashSet<RemoteMatch>();
             var unresolved = new HashSet<LibraryRange>();
 
             foreach (var dependency in dependencies)
             {
-                if (LibraryType.Unresolved == dependency.Library.Type)
+                if (LibraryType.Unresolved == dependency.Item2.Library.Type)
                 {
-                    unresolved.Add(dependency.Library);
+                    unresolved.Add(dependency.Item1);
                 }
-                else if (LibraryType.Package == dependency.Library.Type)
+                else if (LibraryType.Package == dependency.Item2.Library.Type)
                 {
 
-                    var isRemote = remoteDependencyProviders.Contains(dependency.Provider);
+                    var isRemote = remoteDependencyProviders.Contains(dependency.Item2.Provider);
                     if (isRemote)
                     {
-                        install.Add(dependency);
+                        install.Add(dependency.Item2);
                     }
                 }
             }
 
-            return new DownloadDependencyInformation(framework, dependencies, install, unresolved);
+            return new DownloadDependencyResolutionResult(framework, dependencies, install, unresolved);
         }
     }
 }

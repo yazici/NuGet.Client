@@ -95,11 +95,11 @@ namespace NuGet.Commands.Test
         public static PackageSpec WithTestRestoreMetadata(this PackageSpec spec)
         {
             var updated = spec.Clone();
-            var projectJsonFile = new FileInfo(spec.FilePath);
-            var projectDir = projectJsonFile.Directory.FullName;
+            var packageSpecFile = new FileInfo(spec.FilePath);
+            var projectDir = packageSpecFile.Directory.FullName;
 
             var projectPath = Path.Combine(projectDir, spec.Name + ".csproj");
-            spec.FilePath = projectPath;
+            updated.FilePath = projectPath;
 
             updated.RestoreMetadata = new ProjectRestoreMetadata();
             updated.RestoreMetadata.CrossTargeting = updated.TargetFrameworks.Count > 0;
