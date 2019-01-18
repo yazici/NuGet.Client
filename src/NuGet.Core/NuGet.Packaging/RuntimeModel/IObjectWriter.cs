@@ -59,8 +59,35 @@ namespace NuGet.RuntimeModel
         /// <param name="name">The name of the data.  Throws if <c>null</c>.</param>
         /// <param name="values">The data.</param>
         void WriteNameArray(string name, IEnumerable<string> values);
+
+        /// <summary>
+        /// Writes the start of an array.
+        /// The new object becomes the scope of all other methods until WriteObjectStart/WriteArrayStart is called to start a new one, or WriteArrayEnd is called.
+        /// Every call to WriteArrayStart needs to be balanced with a corresponding call to WriteArrayEnd and not WriteObjectEnd.
+        /// </summary>
+        /// <param name="name">The array name</param>
         void WriteArrayStart(string name);
-        void WriteObjectStart();
+
+        /// <summary>
+        /// Writes the end of an array.
+        ///
+        /// The parent object for this array becomes the scope for subsequent method calls.
+        /// If this object is the root object, no further writing is allowed.
+        ///
+        /// Every call to WriteArrayStart needs to be balanced with a corresponding call to WriteArrayEnd and not WriteObjectEnd.
+        /// </summary>
         void WriteArrayEnd();
+
+        /// <summary>
+        /// Writes the start of a nested object without a name.
+        ///
+        /// This new object becomes the scope for all other method calls until either WriteObjectStart
+        /// is called again to start a new nested object or WriteObjectEnd is called.
+        ///
+        /// Every call to WriteObjectStart must be balanced by a corresponding call to WriteObjectEnd.
+        /// </summary>
+        void WriteObjectStart();
+
+
     }
 }

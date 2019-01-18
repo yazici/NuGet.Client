@@ -38,6 +38,28 @@ namespace NuGet.Commands
             await logger.LogMessagesAsync(DiagnosticUtility.MergeOnTargetGraph(messages));
         }
 
+        public static async Task LogAsync(IList<DownloadDependencyResolutionResult> downloadDependencyResults, IList<IRemoteDependencyProvider> remoteLibraryProviders, SourceCacheContext sourceCacheContext,
+            ILogger logger, CancellationToken token)
+        {
+            var messageTasks = new List<Task<RestoreLogMessage>>();
+
+            foreach (var ddi in downloadDependencyResults)
+            {
+                foreach (var unresolved in ddi.Unresolved)
+                {
+                    messageTasks.Add(UnresolvedMessages.GetMessageAsync(
+                        ddi.Framework.ToString(),
+                        unresolved,
+                        remoteLibraryProviders, sourceCacheContext,
+                        logger,
+                        token));
+                }
+            }
+
+            var messages = await Task.WhenAll(messageTasks);
+            await logger.LogMessagesAsync(DiagnosticUtility.MergeOnTargetGraph(messages));
+        }
+
         /// <summary>
         /// Create a specific error message for the unresolved dependency.
         /// </summary>
@@ -70,8 +92,7 @@ namespace NuGet.Commands
                     message = string.Format(CultureInfo.CurrentCulture, Strings.Error_ProjectDoesNotExist, unresolved.Name);
                 }
             }
-            else if (unresolved.TypeConstraintAllows(LibraryDependencyTarget.Package)
-                        && remoteLibraryProviders.Count > 0)
+            else if (unresolved.TypeConstraintAllows(LibraryDependencyTarget.Package) && remoteLibraryProviders.Count > 0)
             {
                 // Package
                 var range = unresolved.VersionRange ?? VersionRange.All;

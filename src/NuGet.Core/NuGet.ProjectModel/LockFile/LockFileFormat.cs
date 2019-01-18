@@ -201,7 +201,7 @@ namespace NuGet.ProjectModel
                 if (lockFile.PackageSpec != null)
                 {
                     var writer = new JsonObjectWriter();
-                    PackageSpecWriter.Write(lockFile.PackageSpec, writer); // This is where we write the package spec. I don't think there is a need because this already exists.
+                    PackageSpecWriter.Write(lockFile.PackageSpec, writer);
                     var packageSpec = writer.GetJObject();
                     json[PackageSpecProperty] = packageSpec;
                 }

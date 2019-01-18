@@ -174,7 +174,7 @@ namespace NuGet.DependencyResolver
                     }
                 }
             }
-            // There is no throttling here. Too many tasks could be created. 
+
             while (tasks?.Count > 0)
             {
                 // Wait for any node to finish resolving

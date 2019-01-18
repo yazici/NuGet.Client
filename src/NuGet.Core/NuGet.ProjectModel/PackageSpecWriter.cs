@@ -358,7 +358,7 @@ namespace NuGet.ProjectModel
 
         private static void SetDependencies(IObjectWriter writer, IList<LibraryDependency> libraryDependencies)
         {
-            SetDependencies(writer, "dependencies", libraryDependencies.Where(dependency => dependency.LibraryRange.TypeConstraint != LibraryDependencyTarget.Reference)); // should I have used or would it have made it too complex?
+            SetDependencies(writer, "dependencies", libraryDependencies.Where(dependency => dependency.LibraryRange.TypeConstraint != LibraryDependencyTarget.Reference));
             SetDependencies(writer, "frameworkAssemblies", libraryDependencies.Where(dependency => dependency.LibraryRange.TypeConstraint == LibraryDependencyTarget.Reference));
         }
 

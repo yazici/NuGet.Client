@@ -15,6 +15,7 @@ using NuGet.LibraryModel;
 using NuGet.Packaging;
 using NuGet.Packaging.Core;
 using NuGet.Packaging.Signing;
+using NuGet.Protocol.Core.Types;
 using NuGet.Repositories;
 using NuGet.RuntimeModel;
 
@@ -27,6 +28,7 @@ namespace NuGet.Commands
 
         private const string WalkFrameworkDependencyDuration = "WalkFrameworkDependencyDuration";
         private const string WalkRuntimeDependencyDuration = "WalkRuntimeDependencyDuration";
+        private const string EvaluateDownloadDependenciesDuration = "EvaluateDownloadDependenciesDuration";
 
         public Guid ParentId { get; }
 
@@ -74,17 +76,21 @@ namespace NuGet.Commands
 
             telemetryActivity.StartIntervalMeasure();
 
-            var downloadDependenciesCache = new ConcurrentDictionary<LibraryRange, Task<Tuple<LibraryRange, RemoteMatch>>>();
+            var downloadDependenciesCache =;
             var downloadDependencyResolutionResults = new List<Task<DownloadDependencyResolutionResult>>();
 
             foreach (var targetFrameworkInformation in _request.Project.TargetFrameworks)
             {
-                downloadDependencyResolutionResults.Add(ResolveDownloadDependencies(context, downloadDependenciesCache, targetFrameworkInformation, token));
+                downloadDependencyResolutionResults.Add(ResolveDownloadDependencies(
+                    context,
+                    new ConcurrentDictionary<LibraryRange, Task<Tuple<LibraryRange, RemoteMatch>>>(),
+                    targetFrameworkInformation,
+                    token));
             }
 
             var downloadDependencyInformations = await Task.WhenAll(downloadDependencyResolutionResults);
             
-            telemetryActivity.EndIntervalMeasure("EvaluatePackageDownloadsDuration");
+            telemetryActivity.EndIntervalMeasure(EvaluateDownloadDependenciesDuration);
 
             // are any errors generated? Can you apply them?
 
@@ -153,12 +159,12 @@ namespace NuGet.Commands
 
             // Warn for all dependencies that do not have exact matches or
             // versions that have been bumped up unexpectedly.
-            // BumpedUp dependencies need to be handled in Package Download cases, but doesn't have to be now.
+            // TODO https://github.com/NuGet/Home/issues/7709: When ranges are implemented for download dependencies the bumped up dependencies need to be handled.
             await UnexpectedDependencyMessages.LogAsync(graphs, _request.Project, _logger);
 
             success &= (await ResolutionSucceeded(graphs, downloadDependencyInformations, context, token));
 
-            return Tuple.Create(success, graphs, allRuntimes); // TODO NK: We can add the download dependency information here. 
+            return Tuple.Create(success, graphs, allRuntimes);
         }
 
         private async Task<DownloadDependencyResolutionResult> ResolveDownloadDependencies(RemoteWalkContext context, ConcurrentDictionary<LibraryRange, Task<Tuple<LibraryRange,RemoteMatch>>> downloadDependenciesCache, ProjectModel.TargetFrameworkInformation targetFrameworkInformation, CancellationToken token)
@@ -214,12 +220,12 @@ namespace NuGet.Commands
 
         private async Task<bool> ResolutionSucceeded(IEnumerable<RestoreTargetGraph> graphs, IList<DownloadDependencyResolutionResult> downloadDependencyResults, RemoteWalkContext context, CancellationToken token)
         {
-            var success = true;
+            var graphSuccess = true;
             foreach (var graph in graphs)
             {
                 if (graph.Conflicts.Any())
                 {
-                    success = false;
+                    graphSuccess = false;
 
                     foreach (var conflict in graph.Conflicts)
                     {
@@ -236,50 +242,27 @@ namespace NuGet.Commands
 
                 if (graph.Unresolved.Count > 0)
                 {
-                    success = false;
+                    graphSuccess = false;
                 }
             }
 
-            if (!success)
-
+            if (!graphSuccess)
             {
                 // Log message for any unresolved dependencies
                 await UnresolvedMessages.LogAsync(graphs, context.RemoteLibraryProviders, context.CacheContext, context.Logger, token);
             }
 
-            List<Task<RestoreLogMessage>> messageTasks = null;
+            var ddSuccess = downloadDependencyResults.All(e => e.Unresolved.Count == 0);
 
-            foreach (var ddi in downloadDependencyResults)
+            if (!ddSuccess)
             {
-                foreach (var unresolved in ddi.Unresolved)
-                {
-
-                    success = false;
-
-                    if (messageTasks == null)
-                    {
-                        messageTasks = new List<Task<RestoreLogMessage>>();
-                    }
-
-                    messageTasks.Add(UnresolvedMessages.GetMessageAsync(
-                        ddi.Framework.ToString(), 
-                        unresolved,
-                        context.RemoteLibraryProviders, context.CacheContext,
-                        context.Logger,
-                        token));
-                }
+                await UnresolvedMessages.LogAsync(downloadDependencyResults, context.RemoteLibraryProviders, context.CacheContext, context.Logger, token);
             }
 
-            if (messageTasks != null)
-            {
-                var messages = await Task.WhenAll(messageTasks);
-                await context.Logger.LogMessagesAsync(DiagnosticUtility.MergeOnTargetGraph(messages));
-            }
-
-            return success;
+            return graphSuccess && ddSuccess;
         }
 
-        private async Task<bool> InstallPackagesAsync(IEnumerable<RestoreTargetGraph> graphs, // Add the same packages there too.
+        private async Task<bool> InstallPackagesAsync(IEnumerable<RestoreTargetGraph> graphs,
             IList<DownloadDependencyResolutionResult> downloadDependencyInformations,
             NuGetv3LocalRepository userPackageFolder,
             CancellationToken token)
@@ -289,7 +272,7 @@ namespace NuGet.Commands
             var packagesToInstall = graphs
                 .SelectMany(g => g.Install.Where(match => uniquePackages.Add(match.Library))).ToList();
 
-            packagesToInstall.AddRange( // consider adding a count for the number of packages installed with PackageDownload or including it in the total. 
+            packagesToInstall.AddRange( 
                 downloadDependencyInformations.
                     SelectMany(ddi => ddi.Install.Where(match => uniquePackages.Add(match.Library))));
             

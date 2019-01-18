@@ -15,7 +15,7 @@ namespace NuGet.ProjectModel
     {
         public NuGetFramework FrameworkName { get; set; }
 
-        public IList<LibraryDependency> Dependencies { get; set; } = new List<LibraryDependency>(); // check where the deduplication is happening. I'd imagine it's the reading and that there is not extra validation.
+        public IList<LibraryDependency> Dependencies { get; set; } = new List<LibraryDependency>();
 
         /// <summary>
         /// A fallback PCL framework to use when no compatible items
@@ -34,7 +34,7 @@ namespace NuGet.ProjectModel
         public bool Warn { get; set; }
 
         /// <summary>
-        /// List of dependencies that are not part of the graph resolution. Duplicate IDs are allowed.
+        /// List of dependencies that are not part of the graph resolution.
         /// </summary>
         public IList<DownloadDependency> DownloadDependencies { get; } = new List<DownloadDependency>();
 

@@ -22,7 +22,7 @@ namespace NuGet.LibraryModel
             VersionRange = versionRange;
         }
 
-        public static implicit operator LibraryRange(DownloadDependency library) // Do not do this.
+        public static implicit operator LibraryRange(DownloadDependency library)
         {
             return new LibraryRange
             {
@@ -54,7 +54,6 @@ namespace NuGet.LibraryModel
                 }
                 else
                 {
-                    // TODO NK: Not the best way to do it. There is a perf problem here. Consider alternatives.
                     compare = VersionRange.ToNormalizedString().CompareTo(other.VersionRange.ToNormalizedString());
                 }
             }

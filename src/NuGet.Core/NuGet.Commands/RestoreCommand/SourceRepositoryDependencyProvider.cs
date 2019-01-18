@@ -164,7 +164,7 @@ namespace NuGet.Commands
                 throw new ArgumentNullException(nameof(libraryRange));
             }
 
-            if (targetFramework == null) // unused in this specific context.
+            if (targetFramework == null)
             {
                 throw new ArgumentNullException(nameof(targetFramework)); 
             }
@@ -197,8 +197,6 @@ namespace NuGet.Commands
 
             return await result;
         }
-
-        /// Maybe each dependency provider should have a separate method to download these packages, rather than using FindLibraryAsync which woudl try to resolve the dependencies as well. 
 
         private async Task<LibraryIdentity> FindLibraryCoreAsync(
             LibraryRange libraryRange,

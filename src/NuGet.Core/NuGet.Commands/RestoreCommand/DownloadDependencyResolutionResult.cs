@@ -3,18 +3,21 @@
 
 using System;
 using System.Collections.Generic;
-
 using NuGet.DependencyResolver;
 using NuGet.Frameworks;
 using NuGet.LibraryModel;
 
 namespace NuGet.Commands
 {
+    //TODO NK: Document this
     public class DownloadDependencyResolutionResult
     {
         public NuGetFramework Framework { get; }
+
         public IList<Tuple<LibraryRange, RemoteMatch>> Dependencies { get; }
+
         public ISet<RemoteMatch> Install { get; }
+
         public ISet<LibraryRange> Unresolved { get; }
 
 

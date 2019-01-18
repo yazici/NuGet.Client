@@ -167,7 +167,7 @@ namespace NuGet.DependencyResolver
 
             var targetFramework = framework;
 
-            if (framework is AssetTargetFallbackFramework) // Should I be using the targetFramework in the below?
+            if (framework is AssetTargetFallbackFramework)
             {
                 targetFramework = (framework as AssetTargetFallbackFramework).RootFramework;
             }
@@ -211,16 +211,16 @@ namespace NuGet.DependencyResolver
 
 
         /// <summary>
-        /// Resolves the library from the given sources. Note that it does not download the package. TODO NK - Verify this based on the http caches.
+        /// Resolves the library from the given sources. Note that it does not download the package.
         /// </summary>
-        /// <param name="cache"></param>
-        /// <param name="libraryRange"></param>
-        /// <param name="remoteProviders"></param>
-        /// <param name="localProviders"></param>
-        /// <param name="cacheContext"></param>
-        /// <param name="logger"></param>
-        /// <param name="cancellationToken"></param>
-        /// <returns></returns>
+        /// <param name="cache">Cache of requests per library</param>
+        /// <param name="libraryRange">The library requested</param>
+        /// <param name="remoteProviders">remote Providers (all sources, including file sources)</param>
+        /// <param name="localProviders">local providers(gpf, fallback folders)</param>
+        /// <param name="cacheContext">source caching context</param>
+        /// <param name="logger">logger</param>
+        /// <param name="cancellationToken">cancellation token</param>
+        /// <returns>The requested range and remote match.</returns>
         public static Task<Tuple<LibraryRange, RemoteMatch>> FindPackageLibraryMatchCachedAsync(
             ConcurrentDictionary<LibraryRange, Task<Tuple<LibraryRange, RemoteMatch>>> cache,
             LibraryRange libraryRange,
