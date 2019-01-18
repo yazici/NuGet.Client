@@ -779,11 +779,9 @@ namespace NuGet.Commands.Test
                     ""dependencies"": {
                         ""x"": ""1.0.0""
                     },
-                    ""downloadDependencies"": {
-                        ""y"": {
-                            ""version"": ""1.0.0""
-                            }
-                    }
+                    ""downloadDependencies"": [
+                       {""name"" : ""y"", ""version"" : ""[1.0.0, )""}
+                    ]
                 }
               }
             }";
