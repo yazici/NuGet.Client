@@ -410,15 +410,10 @@ namespace NuGet.ProjectModel.Test
                                 ""version"": ""[1.0.0, )"",
                             }
                         },
-                        ""downloadDependencies"": {
-                            ""d"": {
-                                ""version"": ""[2.0.0]""
-                            },
-                            ""c"": {
-                                ""version"": ""[2.0.0]""
-                            }
-                        }
-
+                        ""downloadDependencies"": [
+                            {""name"" : ""c"", ""version"" : ""[2.0.0]""},
+                            {""name"" : ""d"", ""version"" : ""[2.0.0]""},
+                       ]
                     }
                   }
                 }";
@@ -434,10 +429,10 @@ namespace NuGet.ProjectModel.Test
                         ""a"": ""[1.0.0, )"",
                         ""b"": ""[1.0.0, )""
                       },
-                      ""downloadDependencies"": {
-                          ""c"":  ""[2.0.0, 2.0.0]"",
-                          ""d"":  ""[2.0.0, 2.0.0]""
-                      }
+                      ""downloadDependencies"": [
+                            {""name"" : ""c"", ""version"" : ""[2.0.0, 2.0.0]""},
+                            {""name"" : ""d"", ""version"" : ""[2.0.0, 2.0.0]""},
+                       ]
                     }
                   }
                 }";
@@ -462,11 +457,9 @@ namespace NuGet.ProjectModel.Test
                                 ""version"": ""1.0.0"",
                             },
                         },
-                        ""downloadDependencies"": {
-                            ""b"": {
-                                ""version"": ""[2.0.0]""
-                            }
-                        }
+                        ""downloadDependencies"":  [
+                            {""name"" : ""b"", ""version"" : ""[2.0.0]""},
+                       ]
                     }
                   }
                 }";
@@ -480,9 +473,9 @@ namespace NuGet.ProjectModel.Test
                       ""dependencies"": {
                         ""a"": ""[1.0.0, )""
                       },
-                      ""downloadDependencies"": {
-                          ""b"":  ""[2.0.0, 2.0.0]""
-                      }
+                      ""downloadDependencies"": [
+                            {""name"" : ""b"", ""version"" : ""[2.0.0, 2.0.0]""},
+                       ]
                     }
                   }
                 }";
