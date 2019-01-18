@@ -59,10 +59,11 @@ namespace NuGet.ProjectModel.Test
                                 ""autoReferenced"": true
                             }
                         },
-                        ""downloadDependencies"": {
-                            ""a"": ""[1.0.0, )"",
-                            ""b"":""[2.0.0, 2.0.0]""
-                        }
+                        ""downloadDependencies"": [
+                            {""name"" : ""a"", ""version"" : ""[1.0.0, )""},
+                            {""name"" : ""b"", ""version"" : ""[2.0.0, )""},
+                            {""name"" : ""b"", ""version"" : ""[2.0.0, )""}
+                        ]
                     }
                   }
                 }";

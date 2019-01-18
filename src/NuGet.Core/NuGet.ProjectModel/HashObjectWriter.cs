@@ -196,5 +196,14 @@ namespace NuGet.ProjectModel
 
             ++_nestLevel;
         }
+
+        public void WriteObjectStart()
+        {
+            ThrowIfReadOnly();
+
+            _writer.WriteStartObject();
+
+            ++_nestLevel;
+        }
     }
 }

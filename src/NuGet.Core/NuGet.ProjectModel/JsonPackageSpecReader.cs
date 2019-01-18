@@ -805,32 +805,24 @@ namespace NuGet.ProjectModel
             var downloadDependenciesProperty = properties["downloadDependencies"] as JArray;
             if (downloadDependenciesProperty != null)
             {
-                foreach (var dependency in downloadDependenciesProperty.Values<JObject>())
+                foreach (var dependency in downloadDependenciesProperty.Values<JToken>())
                 {
-                    if (string.IsNullOrEmpty(dependency["name"]))
+                    if (dependency["name"] == null)
                     {
                         throw FileFormatException.Create(
                             "Unable to resolve downloadDependency ''.",
-                            dependency.Value,
+                            dependency,
                             packageSpecPath);
                     }
+                    var name = dependency["name"].Value<string>();
 
-                    var dependencyValue = dependency.Value;
-                    var dependencyVersionToken = dependencyValue;
                     string versionValue = null;
 
-                    if (dependencyValue.Type == JTokenType.String)
+                    var dependencyVersionToken = dependency["version"];
+                    if (dependencyVersionToken != null
+                        && dependencyVersionToken.Type == JTokenType.String)
                     {
-                        versionValue = dependencyValue.Value<string>();
-                    }
-                    else if (dependencyValue.Type == JTokenType.Object)
-                    {
-                        dependencyVersionToken = dependencyValue["version"];
-                        if (dependencyVersionToken != null
-                            && dependencyVersionToken.Type == JTokenType.String)
-                        {
-                            versionValue = dependencyVersionToken.Value<string>();
-                        }
+                        versionValue = dependencyVersionToken.Value<string>();
                     }
 
                     VersionRange version = null;
@@ -857,7 +849,7 @@ namespace NuGet.ProjectModel
                                 packageSpecPath);
                     }
 
-                    downloadDependencies.Add(new DownloadDependency(dependency.Key, version));
+                    downloadDependencies.Add(new DownloadDependency(name, version));
                 }
             }
         }

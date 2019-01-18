@@ -45,20 +45,15 @@ namespace NuGet.RuntimeModel
             _currentContainer = newContainer;
         }
 
-        public void WriteArrayStart(string name)
+        public void WriteObjectStart()
         {
-            if (name == null)
-            {
-                throw new ArgumentNullException(nameof(name));
-            }
-
             ThrowIfReadOnly();
 
             _containers.Push(_currentContainer);
 
-            var newContainer = new JArray();
+            var newContainer = new JObject();
 
-            _currentContainer[name] = newContainer;
+            _currentContainer.Add(newContainer);
             _currentContainer = newContainer;
         }
 

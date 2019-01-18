@@ -1,4 +1,4 @@
-﻿// Copyright (c) .NET Foundation. All rights reserved.
+// Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System.Collections.Generic;
@@ -60,5 +60,7 @@ namespace NuGet.RuntimeModel
         /// <param name="values">The data.</param>
         void WriteNameArray(string name, IEnumerable<string> values);
         void WriteArrayStart(string name);
+        void WriteObjectStart();
+
     }
 }
