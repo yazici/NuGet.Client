@@ -59,5 +59,6 @@ namespace NuGet.RuntimeModel
         /// <param name="name">The name of the data.  Throws if <c>null</c>.</param>
         /// <param name="values">The data.</param>
         void WriteNameArray(string name, IEnumerable<string> values);
+        void WriteArrayStart(string name);
     }
 }

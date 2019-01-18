@@ -802,12 +802,12 @@ namespace NuGet.ProjectModel
 
         private static void PopulateDownloadDependencies(IList<DownloadDependency> downloadDependencies, JObject properties, string packageSpecPath)
         {
-            var downloadDependenciesProperty = properties["downloadDependencies"] as JObject;
+            var downloadDependenciesProperty = properties["downloadDependencies"] as JArray;
             if (downloadDependenciesProperty != null)
             {
-                foreach (var dependency in downloadDependenciesProperty)
+                foreach (var dependency in downloadDependenciesProperty.Values<JObject>())
                 {
-                    if (string.IsNullOrEmpty(dependency.Key))
+                    if (string.IsNullOrEmpty(dependency["name"]))
                     {
                         throw FileFormatException.Create(
                             "Unable to resolve downloadDependency ''.",

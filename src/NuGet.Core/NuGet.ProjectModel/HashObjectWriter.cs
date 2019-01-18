@@ -181,5 +181,20 @@ namespace NuGet.ProjectModel
                 throw new InvalidOperationException();
             }
         }
+
+        public void WriteArrayStart(string name)
+        {
+            if (name == null)
+            {
+                throw new ArgumentNullException(nameof(name));
+            }
+
+            ThrowIfReadOnly();
+
+            _writer.WritePropertyName(name);
+            _writer.WriteStartArray();
+
+            ++_nestLevel;
+        }
     }
 }

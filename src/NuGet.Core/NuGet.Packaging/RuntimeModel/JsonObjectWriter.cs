@@ -1,4 +1,4 @@
-﻿// Copyright (c) .NET Foundation. All rights reserved.
+// Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
@@ -40,6 +40,40 @@ namespace NuGet.RuntimeModel
             _containers.Push(_currentContainer);
 
             var newContainer = new JObject();
+
+            _currentContainer[name] = newContainer;
+            _currentContainer = newContainer;
+        }
+
+        public void WriteArrayStart(string name)
+        {
+            if (name == null)
+            {
+                throw new ArgumentNullException(nameof(name));
+            }
+
+            ThrowIfReadOnly();
+
+            _containers.Push(_currentContainer);
+
+            var newContainer = new JArray();
+
+            _currentContainer[name] = newContainer;
+            _currentContainer = newContainer;
+        }
+
+        public void WriteArrayStart(string name)
+        {
+            if (name == null)
+            {
+                throw new ArgumentNullException(nameof(name));
+            }
+
+            ThrowIfReadOnly();
+
+            _containers.Push(_currentContainer);
+
+            var newContainer = new JArray();
 
             _currentContainer[name] = newContainer;
             _currentContainer = newContainer;
@@ -104,6 +138,19 @@ namespace NuGet.RuntimeModel
 
             _currentContainer[name] = new JArray(values);
         }
+
+        public void WriteObjectArray(string name, IEnumerable<string> values)
+        {
+            if (name == null)
+            {
+                throw new ArgumentNullException(nameof(name));
+            }
+
+            ThrowIfReadOnly();
+
+            _currentContainer[name] = new JArray(values);
+        }
+
 
         /// <summary>
         /// Gets the JSON for the object.

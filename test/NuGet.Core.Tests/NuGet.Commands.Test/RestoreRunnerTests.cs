@@ -946,7 +946,7 @@ namespace NuGet.Commands.Test
                     var logMessage = lockFile.LogMessages.First();
                     Assert.Equal(LogLevel.Error, logMessage.Level);
                     Assert.Equal(NuGetLogCode.NU1102, logMessage.Code); 
-                    //Assert.Equal(projectSpec.FilePath, logMessage.ProjectPath); // TODO NK: This needs double checked.
+                    //Assert.Equal(projectSpec.FilePath, logMessage.ProjectPath); // TODO NK: Does this happen with the regular log messages? If not, why? 
                     Assert.Equal("y", lockFile.PackageSpec.TargetFrameworks.First().DownloadDependencies.First().Name);
                     Assert.False(Directory.Exists(Path.Combine(globalPackagesFolder.FullName, "y", "1.0.0"))); // Y is not installed
                 }
