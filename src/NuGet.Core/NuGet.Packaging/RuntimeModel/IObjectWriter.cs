@@ -61,6 +61,6 @@ namespace NuGet.RuntimeModel
         void WriteNameArray(string name, IEnumerable<string> values);
         void WriteArrayStart(string name);
         void WriteObjectStart();
-
+        void WriteArrayEnd();
     }
 }

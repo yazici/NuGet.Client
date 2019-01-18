@@ -197,6 +197,20 @@ namespace NuGet.ProjectModel
             ++_nestLevel;
         }
 
+        public void WriteArrayEnd()
+        {
+            ThrowIfReadOnly();
+
+            if (_nestLevel == 0)
+            {
+                throw new InvalidOperationException();
+            }
+
+            _writer.WriteEndArray();
+
+            --_nestLevel;
+        }
+
         public void WriteObjectStart()
         {
             ThrowIfReadOnly();

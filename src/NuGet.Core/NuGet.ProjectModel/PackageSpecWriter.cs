@@ -476,7 +476,7 @@ namespace NuGet.ProjectModel
                 writer.WriteObjectEnd();
 
             }
-            writer.WriteObjectEnd();
+            writer.WriteArrayEnd();
         }
 
         private static void SetFrameworks(IObjectWriter writer, IList<TargetFrameworkInformation> frameworks)

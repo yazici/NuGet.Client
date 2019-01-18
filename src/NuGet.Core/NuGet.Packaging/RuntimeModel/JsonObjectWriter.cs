@@ -86,6 +86,18 @@ namespace NuGet.RuntimeModel
             _currentContainer = GetPreviousContainer();
         }
 
+        public void WriteArrayEnd()
+        {
+            ThrowIfReadOnly();
+
+            if (_currentContainer == _root)
+            {
+                throw new InvalidOperationException();
+            }
+
+            _currentContainer = GetPreviousContainer();
+        }
+
         public void WriteNameValue(string name, int value)
         {
             if (name == null)
