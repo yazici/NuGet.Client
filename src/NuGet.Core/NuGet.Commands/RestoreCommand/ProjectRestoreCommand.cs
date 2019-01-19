@@ -76,7 +76,6 @@ namespace NuGet.Commands
 
             telemetryActivity.StartIntervalMeasure();
 
-            var downloadDependenciesCache =;
             var downloadDependencyResolutionResults = new List<Task<DownloadDependencyResolutionResult>>();
 
             foreach (var targetFrameworkInformation in _request.Project.TargetFrameworks)
