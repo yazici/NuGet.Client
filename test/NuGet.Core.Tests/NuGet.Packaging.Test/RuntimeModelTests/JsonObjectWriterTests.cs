@@ -280,9 +280,13 @@ namespace NuGet.RuntimeModel.Test
 
             const string expectedJson = @"{
   ""a"": [
-    ""b"" :  """",
-    ""c"" : """"
-]
+    {
+      ""b"": """"
+    },
+    {
+      ""c"": """"
+    }
+  ]
 }";
             var actualJson = _writer.GetJson();
 
