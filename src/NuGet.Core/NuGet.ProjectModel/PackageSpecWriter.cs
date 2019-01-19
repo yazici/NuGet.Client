@@ -470,7 +470,7 @@ namespace NuGet.ProjectModel
 
             foreach (var dependency in downloadDependencies.OrderBy(dep => dep))
             {
-                writer.WriteObjectStart();
+                writer.WriteObjectInArrayStart();
                 SetValue(writer, "name", dependency.Name);
                 SetValue(writer, "version", dependency.VersionRange.ToNormalizedString());
                 writer.WriteObjectEnd();

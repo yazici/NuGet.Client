@@ -62,7 +62,7 @@ namespace NuGet.RuntimeModel
 
         /// <summary>
         /// Writes the start of an array.
-        /// The new object becomes the scope of all other methods until WriteObjectStart/WriteArrayStart is called to start a new one, or WriteArrayEnd is called.
+        /// The new object becomes the scope of all other methods until WriteObjectInArrayStart is called to start a new object in the array, or WriteArrayEnd is called.
         /// Every call to WriteArrayStart needs to be balanced with a corresponding call to WriteArrayEnd and not WriteObjectEnd.
         /// </summary>
         /// <param name="name">The array name</param>
@@ -79,14 +79,14 @@ namespace NuGet.RuntimeModel
         void WriteArrayEnd();
 
         /// <summary>
-        /// Writes the start of a nested object without a name.
+        /// Writes the start of a nested object in array.
         ///
-        /// This new object becomes the scope for all other method calls until either WriteObjectStart
+        /// This new object becomes the scope for all other method calls until either WriteObjectInArrayStart
         /// is called again to start a new nested object or WriteObjectEnd is called.
         ///
-        /// Every call to WriteObjectStart must be balanced by a corresponding call to WriteObjectEnd.
+        /// Every call to WriteObjectInArrayStart must be balanced by a corresponding call to WriteObjectEnd.
         /// </summary>
-        void WriteObjectStart();
+        void WriteObjectInArrayStart();
 
 
     }

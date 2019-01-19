@@ -45,7 +45,7 @@ namespace NuGet.RuntimeModel
             _currentContainer = newContainer;
         }
 
-        public void WriteObjectStart()
+        public void WriteObjectInArrayStart()
         {
             ThrowIfReadOnly();
 
@@ -145,19 +145,6 @@ namespace NuGet.RuntimeModel
 
             _currentContainer[name] = new JArray(values);
         }
-
-        public void WriteObjectArray(string name, IEnumerable<string> values)
-        {
-            if (name == null)
-            {
-                throw new ArgumentNullException(nameof(name));
-            }
-
-            ThrowIfReadOnly();
-
-            _currentContainer[name] = new JArray(values);
-        }
-
 
         /// <summary>
         /// Gets the JSON for the object.

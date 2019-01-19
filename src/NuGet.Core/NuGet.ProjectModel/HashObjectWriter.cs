@@ -211,7 +211,7 @@ namespace NuGet.ProjectModel
             --_nestLevel;
         }
 
-        public void WriteObjectStart()
+        public void WriteObjectInArrayStart()
         {
             ThrowIfReadOnly();
 
