@@ -91,10 +91,6 @@ namespace NuGet.Commands
             
             telemetryActivity.EndIntervalMeasure(EvaluateDownloadDependenciesDuration);
 
-            // are any errors generated? Can you apply them?
-
-            // What happens if packages are not found?
-            // Where is the error that a package is not found raised.
             success &= await InstallPackagesAsync(graphs,
                 downloadDependencyInformations,
                 userPackageFolder,
