@@ -1558,6 +1558,5 @@ namespace NuGet.Commands.Test
                 }
             }
         }
-
     }
 }
