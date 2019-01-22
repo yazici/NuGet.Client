@@ -9,27 +9,38 @@ using NuGet.LibraryModel;
 
 namespace NuGet.Commands
 {
-    //TODO NK: Document this
     public class DownloadDependencyResolutionResult
     {
+        /// <summary>
+        /// The framework for which the resolution happened.
+        /// </summary>
         public NuGetFramework Framework { get; }
 
+        /// <summary>
+        /// A list of library ranges and the dependencies.
+        /// </summary>
         public IList<Tuple<LibraryRange, RemoteMatch>> Dependencies { get; }
 
+        /// <summary>
+        /// The set of matches that are being installed.
+        /// </summary>
         public ISet<RemoteMatch> Install { get; }
 
+        /// <summary>
+        /// A set of unresolved library ranges.
+        /// </summary>
         public ISet<LibraryRange> Unresolved { get; }
 
 
         private DownloadDependencyResolutionResult(NuGetFramework framework, IList<Tuple<LibraryRange, RemoteMatch>> dependencies, ISet<RemoteMatch> install, ISet<LibraryRange> unresolved)
         {
-            Framework = framework;
-            Dependencies = dependencies;
-            Install = install;
-            Unresolved = unresolved;
+            Framework = framework ?? throw new ArgumentNullException(nameof(framework));
+            Dependencies = dependencies ?? throw new ArgumentNullException(nameof(dependencies));
+            Install = install ?? throw new ArgumentNullException(nameof(install));
+            Unresolved = unresolved ?? throw new ArgumentNullException(nameof(unresolved));
         }
 
-        public static DownloadDependencyResolutionResult Create(NuGetFramework framework, IList<Tuple<LibraryRange,RemoteMatch>> dependencies, IList<IRemoteDependencyProvider> remoteDependencyProviders)
+        public static DownloadDependencyResolutionResult Create(NuGetFramework framework, IList<Tuple<LibraryRange, RemoteMatch>> dependencies, IList<IRemoteDependencyProvider> remoteDependencyProviders)
         {
             var install = new HashSet<RemoteMatch>();
             var unresolved = new HashSet<LibraryRange>();

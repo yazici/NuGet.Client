@@ -1467,5 +1467,97 @@ namespace NuGet.Commands.Test
             }
         }
 
+        [Fact]
+        public async Task RestoreRunner_MultiTfmPDandPR_LogsWarningsAsync()
+        {
+            // The scenario here is having the same package be resolved for PD and PR download. If warnings are needed, they are raised for both PD and PR.
+            // Arrange
+            var project1 = "project1";
+            var packageSpec = @"
+            {
+              ""version"": ""1.0.0"",
+              ""frameworks"": {
+                ""net45"": {
+                    ""dependencies"": {
+                        ""x"": ""1.0.0""
+                    },
+                },
+                ""net46"": {
+                    ""downloadDependencies"": [
+                       {""name"" : ""x"", ""version"" : ""[1.5.0]""},
+                    ]
+                }
+              }
+            }";
+
+            using (var workingDir = TestDirectory.Create())
+            {
+                // set up the folders
+                var globalPackagesFolder = new DirectoryInfo(Path.Combine(workingDir, "globalPackages")); globalPackagesFolder.Create();
+                var packageSource = new DirectoryInfo(Path.Combine(workingDir, "packageSource")); packageSource.Create();
+                var project1Folder = new DirectoryInfo(Path.Combine(workingDir, "projects", project1)); project1Folder.Create();
+                // set up project1
+                var projectSpec = JsonPackageSpecReader.GetPackageSpec(packageSpec, project1, Path.Combine(project1Folder.FullName, "packageSpec.json"));
+                projectSpec = projectSpec.EnsureRestoreMetadata();
+                var sources = new List<PackageSource>() { new PackageSource(packageSource.FullName) };
+                projectSpec.RestoreMetadata.Sources = sources;
+                projectSpec.RestoreMetadata.PackagesPath = globalPackagesFolder.FullName;
+                // set up the dg spec.
+                var dgFile = new DependencyGraphSpec();
+                dgFile.AddProject(projectSpec);
+                dgFile.AddRestore(projectSpec.Name);
+                // set up the packages
+                await SimpleTestPackageUtility.CreateFullPackageAsync(packageSource.FullName, new SimpleTestPackageContext()
+                {
+                    Id = "x",
+                    Version = "1.5.0"
+                });
+
+                using (var cacheContext = new SourceCacheContext())
+                {
+                    var restoreContext = new RestoreArgs()
+                    {
+                        CacheContext = cacheContext,
+                        DisableParallel = true,
+                        Log = new TestLogger(),
+                        CachingSourceProvider = new CachingSourceProvider(new TestPackageSourceProvider(sources)),
+                        PreLoadedRequestProviders = new List<IPreLoadedRestoreRequestProvider>()
+                        {
+                            new DependencyGraphSpecRequestProvider(new RestoreCommandProvidersCache(), dgFile)
+                        }
+                    };
+
+                    // Act
+                    var summaries = await RestoreRunner.RunAsync(restoreContext);
+                    var summary = summaries.Single();
+
+                    // Assert
+                    var assetsFilePath = Path.Combine(project1Folder.FullName, "project.assets.json");
+                    var targetsPath = Path.Combine(project1Folder.FullName, $"{project1}.csproj.nuget.g.targets");
+                    var propsPath = Path.Combine(project1Folder.FullName, $"{project1}.csproj.nuget.g.targets");
+
+                    Assert.True(summary.Success);
+                    Assert.True(File.Exists(assetsFilePath), assetsFilePath);
+                    Assert.True(File.Exists(targetsPath));
+                    Assert.True(File.Exists(propsPath));
+
+                    var lockFile = LockFileUtilities.GetLockFile(assetsFilePath, NullLogger.Instance);
+                    Assert.Equal(1, lockFile.Libraries.Count);
+                    Assert.Equal("x", lockFile.Targets.First().Libraries.First().Name);
+                    Assert.Equal(2, lockFile.PackageSpec.TargetFrameworks.Count);
+                    Assert.Equal(0, lockFile.PackageSpec.TargetFrameworks.First().DownloadDependencies.Count);
+                    Assert.Equal(1, lockFile.PackageSpec.TargetFrameworks.Last().DownloadDependencies.Count);
+                    Assert.Equal("x", lockFile.PackageSpec.TargetFrameworks.Last().DownloadDependencies.First().Name);
+
+                    Assert.Equal(1, lockFile.LogMessages.Count);
+                    var logMessage = lockFile.LogMessages.First();
+                    Assert.Equal(LogLevel.Warning, logMessage.Level);
+                    Assert.Equal(NuGetLogCode.NU1603, logMessage.Code); // bumped up version.
+                    Assert.Equal(1, logMessage.TargetGraphs.Count);
+                    Assert.True(Directory.Exists(Path.Combine(globalPackagesFolder.FullName, "x", "1.5.0"))); // x is installed
+                }
+            }
+        }
+
     }
 }

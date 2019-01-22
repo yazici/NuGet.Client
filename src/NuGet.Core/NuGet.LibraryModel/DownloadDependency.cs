@@ -32,7 +32,7 @@ namespace NuGet.LibraryModel
             };
         }
 
-        public int CompareTo(DownloadDependency other) // write a comparer.
+        public int CompareTo(DownloadDependency other)
         {
 
             var compare = string.Compare(Name, other.Name, StringComparison.OrdinalIgnoreCase);
@@ -54,7 +54,7 @@ namespace NuGet.LibraryModel
                 }
                 else
                 {
-                    compare = VersionRange.ToNormalizedString().CompareTo(other.VersionRange.ToNormalizedString());
+                    compare = VersionRange.GetHashCode().CompareTo(other.VersionRange.GetHashCode());
                 }
             }
             return compare;
