@@ -39,7 +39,7 @@ namespace NuGet.Commands
             ParentId = request.ParentId;
         }
 
-        public async Task<Tuple<bool, List<RestoreTargetGraph>, RuntimeGraph>> TryRestoreAsync(LibraryRange projectRange,
+        public async Task<Tuple<bool, List<RestoreTargetGraph>, RuntimeGraph, DownloadDependencyResolutionResult[]>> TryRestoreAsync(LibraryRange projectRange,
             IEnumerable<FrameworkRuntimePair> frameworkRuntimePairs,
             NuGetv3LocalRepository userPackageFolder,
             IReadOnlyList<NuGetv3LocalRepository> fallbackPackageFolders,
@@ -87,12 +87,12 @@ namespace NuGet.Commands
                     token));
             }
 
-            var downloadDependencyInformations = await Task.WhenAll(downloadDependencyResolutionResults);
+            var downloadDependencyResults = await Task.WhenAll(downloadDependencyResolutionResults);
             
             telemetryActivity.EndIntervalMeasure(EvaluateDownloadDependenciesDuration);
 
             success &= await InstallPackagesAsync(graphs,
-                downloadDependencyInformations,
+                downloadDependencyResults,
                 userPackageFolder,
                 token);
 
@@ -157,9 +157,9 @@ namespace NuGet.Commands
             // TODO https://github.com/NuGet/Home/issues/7709: When ranges are implemented for download dependencies the bumped up dependencies need to be handled.
             await UnexpectedDependencyMessages.LogAsync(graphs, _request.Project, _logger);
 
-            success &= (await ResolutionSucceeded(graphs, downloadDependencyInformations, context, token));
+            success &= (await ResolutionSucceeded(graphs, downloadDependencyResults, context, token));
 
-            return Tuple.Create(success, graphs, allRuntimes);
+            return Tuple.Create(success, graphs, allRuntimes, downloadDependencyResults);
         }
 
         private async Task<DownloadDependencyResolutionResult> ResolveDownloadDependencies(RemoteWalkContext context, ConcurrentDictionary<LibraryRange, Task<Tuple<LibraryRange,RemoteMatch>>> downloadDependenciesCache, ProjectModel.TargetFrameworkInformation targetFrameworkInformation, CancellationToken token)

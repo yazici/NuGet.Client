@@ -28,6 +28,11 @@ namespace NuGet.Commands
         /// </summary>
         public IEnumerable<RestoreTargetGraph> RestoreGraphs { get; }
 
+        /// <summary>
+        /// Gets the resolved download only dependencies produced by the restore operation.
+        /// </summary>
+        public IEnumerable<DownloadDependencyResolutionResult> DownloadDependencyResolutionResults { get; }
+
         public IEnumerable<CompatibilityCheckResult> CompatibilityCheckResults { get; }
 
         /// <summary>
@@ -79,6 +84,7 @@ namespace NuGet.Commands
         public RestoreResult(
             bool success,
             IEnumerable<RestoreTargetGraph> restoreGraphs,
+            IEnumerable<DownloadDependencyResolutionResult> downloadDependencyResolutionResults,
             IEnumerable<CompatibilityCheckResult> compatibilityCheckResults,
             IEnumerable<MSBuildOutputFile> msbuildFiles,
             LockFile lockFile,
@@ -115,6 +121,7 @@ namespace NuGet.Commands
         /// <returns>A set of libraries that were installed by this operation</returns>
         public virtual ISet<LibraryIdentity> GetAllInstalled()
         {
+            // TODO NK: Should the information about the Package Downloads be propagated here.
             return new HashSet<LibraryIdentity>(RestoreGraphs.Where(g => !g.InConflict).SelectMany(g => g.Install).Distinct().Select(m => m.Library));
         }
 

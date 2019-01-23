@@ -213,15 +213,19 @@ namespace NuGet.Commands
                 }
 
                 IEnumerable<RestoreTargetGraph> graphs = null;
+                IEnumerable<DownloadDependencyResolutionResult> downloadDependencyResolutionResults = null;
                 using (var restoreGraphTelemetry = TelemetryActivity.CreateTelemetryActivityWithNewOperationIdAndEvent(parentId: _operationId, eventName: GenerateRestoreGraph))
                 {
                     // Restore
-                    graphs = await ExecuteRestoreAsync(
+                    var restoreResolutionGraphs = await ExecuteRestoreAsync(
                     _request.DependencyProviders.GlobalPackages,
                     _request.DependencyProviders.FallbackPackageFolders,
                     contextForProject,
                     token,
                     restoreGraphTelemetry);
+
+                    graphs = restoreResolutionGraphs.Item1;
+                    downloadDependencyResolutionResults = restoreResolutionGraphs.Item2;
                 }
 
                 LockFile assetsFile = null;
@@ -825,7 +829,7 @@ namespace NuGet.Commands
             return checkResults;
         }
 
-        private async Task<IEnumerable<RestoreTargetGraph>> ExecuteRestoreAsync(
+        private async Task<Tuple<IEnumerable<RestoreTargetGraph>, IEnumerable<DownloadDependencyResolutionResult>>> ExecuteRestoreAsync(
             NuGetv3LocalRepository userPackageFolder,
             IReadOnlyList<NuGetv3LocalRepository> fallbackPackageFolders,
             RemoteWalkContext context,
@@ -838,7 +842,9 @@ namespace NuGet.Commands
                 await _logger.LogAsync(RestoreLogMessage.CreateError(NuGetLogCode.NU1001, message));
 
                 _success = false;
-                return Enumerable.Empty<RestoreTargetGraph>();
+                return new Tuple<IEnumerable<RestoreTargetGraph>, IEnumerable<DownloadDependencyResolutionResult>>(
+                    Enumerable.Empty<RestoreTargetGraph>(),
+                    Enumerable.Empty<DownloadDependencyResolutionResult>());
             }
             _logger.LogInformation(string.Format(CultureInfo.CurrentCulture, Strings.Log_RestoringPackages, _request.Project.FilePath)); 
 
@@ -866,6 +872,7 @@ namespace NuGet.Commands
 
             // Resolve dependency graphs
             var allGraphs = new List<RestoreTargetGraph>();
+            IEnumerable<DownloadDependencyResolutionResult> downloadDependencyResolutionResults = null;
             var runtimeIds = RequestRuntimeUtility.GetRestoreRuntimes(_request);
             var projectFrameworkRuntimePairs = CreateFrameworkRuntimePairs(_request.Project, runtimeIds);
             var hasSupports = _request.Project.RuntimeGraph.Supports.Count > 0;
@@ -881,7 +888,7 @@ namespace NuGet.Commands
 
             var projectRestoreCommand = new ProjectRestoreCommand(projectRestoreRequest);
 
-            Tuple<bool, List<RestoreTargetGraph>, RuntimeGraph> result = null;
+            Tuple<bool, List<RestoreTargetGraph>, RuntimeGraph, DownloadDependencyResolutionResult[]> result = null;
             using (var tryRestoreTelemetry = TelemetryActivity.CreateTelemetryActivityWithNewOperationIdAndEvent(telemetryActivity.OperationId, CreateRestoreTargetGraph))
             {
                 result = await projectRestoreCommand.TryRestoreAsync(
@@ -898,6 +905,7 @@ namespace NuGet.Commands
 
             var success = result.Item1;
             allGraphs.AddRange(result.Item2);
+            downloadDependencyResolutionResults = result.Item4; // The downloaddependencyresult can only run once.
             _success = success;
 
             // Calculate compatibility profiles to check by merging those defined in the project with any from the command line
@@ -930,7 +938,7 @@ namespace NuGet.Commands
             // Walk additional runtime graphs for supports checks
             if (_success && _request.CompatibilityProfiles.Any())
             {
-                Tuple<bool, List<RestoreTargetGraph>, RuntimeGraph> compatibilityResult = null;
+                Tuple<bool, List<RestoreTargetGraph>, RuntimeGraph, DownloadDependencyResolutionResult[]> compatibilityResult = null;
                 using (var runtimeTryRestoreTelemetry = TelemetryActivity.CreateTelemetryActivityWithNewOperationIdAndEvent(telemetryActivity.OperationId, RestoreAdditionalCompatCheck))
                 {
                     compatibilityResult = await projectRestoreCommand.TryRestoreAsync(
@@ -970,7 +978,7 @@ namespace NuGet.Commands
             }
 
 
-            return allGraphs;
+            return new Tuple<IEnumerable<RestoreTargetGraph>, IEnumerable<DownloadDependencyResolutionResult>>(allGraphs, downloadDependencyResolutionResults);
         }
 
         private List<ExternalProjectReference> GetProjectReferences(RemoteWalkContext context)
