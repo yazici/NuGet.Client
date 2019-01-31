@@ -11,7 +11,7 @@ namespace NuGet.Versioning
     /// <summary>
     /// Represents a range of versions and a preferred order.
     /// </summary>
-    public partial class VersionRange : VersionRangeBase, IFormattable
+    public partial class VersionRange : VersionRangeBase, IFormattable, IComparable<VersionRange>
     {
         private readonly FloatRange _floatRange;
         private readonly string _originalString;
@@ -401,6 +401,70 @@ namespace NuGet.Versioning
         public override int GetHashCode()
         {
             return base.GetHashCode();
+        }
+
+
+        /// <summary>
+        /// Compare the version range.
+        /// Firstly the min and max versions are compared.
+        /// Lastly the range.
+        /// Notable that [1.0.*, 2.0.0] <![CDATA[<]]> [1.0.0, 2.0.0]
+        /// And [1.0.*, 1.5.0]  <![CDATA[<]]> [1.0.*, 2.0.0] 
+        /// And [1.0.*, 1.5.0]  <![CDATA[<]]> [1.0.0, 2.0.0]
+        /// </summary>
+        /// <param name="other"></param>
+        /// <returns></returns>
+        public int CompareTo(VersionRange other)
+        {
+            if (ReferenceEquals(this, other))
+            {
+                return 0;
+            }
+
+            if (ReferenceEquals(other, null))
+            {
+                return 1;
+            }
+
+            // Else compare them.
+
+            var result = MinVersion.CompareTo(other.MinVersion);
+            if (result != 0)
+            {
+                return result;
+            }
+
+            result = IsMinInclusive.CompareTo(other.IsMinInclusive);
+            if (result != 0)
+            {
+                return result;
+            }
+
+            result = MaxVersion.CompareTo(other.MaxVersion);
+            if (result != 0)
+            {
+                return result;
+            }
+
+            result = IsMaxInclusive.CompareTo(other.IsMaxInclusive);
+            if (result != 0)
+            {
+                return result;
+            }
+
+            result = IsFloating.CompareTo(other.IsFloating);
+            if (result != 0)
+            {
+                return result;
+            }
+
+            result = Float.CompareTo(other.Float);
+            if (result != 0)
+            {
+                return result;
+            }
+
+            return 0;
         }
     }
 }

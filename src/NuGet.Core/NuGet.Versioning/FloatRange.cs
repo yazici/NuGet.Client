@@ -10,7 +10,7 @@ namespace NuGet.Versioning
     /// <summary>
     /// The floating subset of a version range.
     /// </summary>
-    public class FloatRange : IEquatable<FloatRange>
+    public class FloatRange : IEquatable<FloatRange>, IComparable<FloatRange>
     {
         private readonly NuGetVersion _minVersion;
         private readonly NuGetVersionFloatBehavior _floatBehavior;
@@ -300,6 +300,58 @@ namespace NuGet.Versioning
             combiner.AddObject(MinVersion);
 
             return combiner.CombinedHash;
+        }
+
+        /// <summary>
+        /// Compare the given float ranges.
+        /// Firstly the min versions are compared. The ranges without a min version take precedence.
+        /// Then the float behavior is compared.
+        /// If the float behavior is prerelease, then the prerelease label is compared.
+        /// </summary>
+        /// <param name="other"></param>
+        /// <returns></returns>
+        public int CompareTo(FloatRange other)
+        {
+            if (ReferenceEquals(this, other))
+            {
+                return 0;
+            }
+
+            if (ReferenceEquals(other, null))
+            {
+                return 1;
+            }
+
+            if (_minVersion == null && other._minVersion != null)
+            {
+                return -1;
+            }
+            else if (_minVersion != null && other._minVersion == null)
+            {
+                return 1;
+            }
+
+            var result = _minVersion.CompareTo(other._minVersion);
+            if (result != 0)
+            {
+                return result;
+            }
+
+            result = _floatBehavior.CompareTo(other.FloatBehavior);
+            if (result != 0)
+            {
+                return result;
+            }
+
+            if(_floatBehavior == NuGetVersionFloatBehavior.Prerelease)
+            {
+                result = StringComparer.OrdinalIgnoreCase.Compare(_releasePrefix, other._releasePrefix);
+                if (result != 0)
+                {
+                    return result;
+                }
+            }
+            return 0;
         }
     }
 }
