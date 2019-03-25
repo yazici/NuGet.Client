@@ -12,12 +12,17 @@ namespace NuGet.Common
     /// </summary>
     public static class DirectoryUtility
     {
+
+        public static ILogger Logger { get; set; }
+
         /// <summary>
         /// Creates all directories and subdirectories in the specified path unless they already exist.
         /// New directories can be read and written by all users.
         /// </summary>
         public static void CreateSharedDirectory(string path)
         {
+            Logger?.LogMinimal($"CreateSharedDirectory: {path}");
+
             if (RuntimeEnvironmentHelper.IsWindows)
             {
                 Directory.CreateDirectory(path);
@@ -36,8 +41,10 @@ namespace NuGet.Common
                 {
                     sepPos = path.IndexOf(Path.DirectorySeparatorChar, sepPos + 1);
                     var currentPath = sepPos == -1 ? path : path.Substring(0, sepPos);
+                    Logger?.LogMinimal($"CreateSharedDirectory: {path} In the loop currently at: {currentPath}");
                     if (!Directory.Exists(currentPath))
                     {
+                        Logger?.LogMinimal($"CreateSharedDirectory: {path} Running CreateSingleSharedDirectory {currentPath}");
                         CreateSingleSharedDirectory(currentPath);
                     }
                 } while (sepPos != -1);
@@ -51,17 +58,21 @@ namespace NuGet.Common
             // create it under the parent directory to make sure it is on the same volume.
             var parentDir = Path.GetDirectoryName(path);
             var tempDir = Path.Combine(parentDir, Guid.NewGuid().ToString());
+            Logger?.LogMinimal($"CreateSingleSharedDirectory {path} parentDir: {parentDir} tempDir: {tempDir} CreateDirectory temp!");
             Directory.CreateDirectory(tempDir);
             if (chmod(tempDir, UGO_RWX) == -1)
             {
                 // it's very unlikely we can't set the permissions of a directory we just created
                 TryDeleteDirectory(tempDir);
                 var errno = Marshal.GetLastWin32Error();
-                throw new InvalidOperationException($"Unable to set permission while creating {path}, errno={errno}.");
+                throw new InvalidOperationException($"{DateTime.Now.Ticks}: Unable to set permission while creating {path}, errno={errno}.");
             }
             try
             {
+                Logger?.LogMinimal($"CreateSingleSharedDirectory {path} moving directory {tempDir}  to {path}");
                 Directory.Move(tempDir, path);
+                Logger?.LogMinimal($"CreateSingleSharedDirectory {path} Done moving      {tempDir}  to {path}");
+
             }
             catch
             {

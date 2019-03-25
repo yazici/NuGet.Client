@@ -114,6 +114,7 @@ namespace NuGet.Build.Tasks
 
             try
             {
+                DirectoryUtility.Logger = log;
                 return ExecuteAsync(log).Result;
             }
             catch (AggregateException ex) when (_cts.Token.IsCancellationRequested && ex.InnerException is TaskCanceledException)
@@ -124,7 +125,7 @@ namespace NuGet.Build.Tasks
             }
             catch (Exception e)
             {
-                ExceptionUtilities.LogException(e, log);
+                ExceptionUtilities.LogException(e, log, true);
                 return false;
             }
         }
