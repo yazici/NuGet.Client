@@ -76,6 +76,7 @@ namespace NuGet.Common
             }
             catch
             {
+                Logger?.LogMinimal($"CreateSingleSharedDirectory {path} Failed moving    {tempDir}  to {path}");
                 TryDeleteDirectory(tempDir);
                 if (Directory.Exists(path))
                 {
