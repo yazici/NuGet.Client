@@ -228,6 +228,18 @@ phases:
     displayName: 'Component Detection'
     condition: "and(succeeded(),eq(variables['BuildRTM'], 'true'))"
 
+# doing this as part of security tenet requirement
+  - task: securedevelopmentteam.vss-secure-development-tools.build-task-policheck.PoliCheck@1
+    displayName: 'Run PoliCheck'
+    inputs:
+      targetType: F
+      targetArgument: '$(Build.SourcesDirectory)/src'
+      optionsFC: 1
+      optionsXS: 1
+      optionsSEV: '1|2'
+      optionsHMENABLE: 0
+    continueOnError: true
+
   - task: CopyFiles@2
     displayName: "Copy Nupkgs"
     inputs:
