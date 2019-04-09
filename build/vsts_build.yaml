@@ -488,7 +488,7 @@ phases:
     timeoutInMinutes: 60
     demands:
     - sh
-    - agent.name -equals nuget-frypot-01
+    - agent.name -equals nuget-frypot-03
 
   steps:
   - task: PowerShell@2
