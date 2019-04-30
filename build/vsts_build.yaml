@@ -263,7 +263,7 @@ phases:
     displayName: 'Component Detection'
     condition: "and(succeeded(),eq(variables['BuildRTM'], 'true'))"
     inputs:
-      arguments: "--IgnoreDirectories \cli,\test\EndToEnd\Packages\"
+      arguments: "--IgnoreDirectories \\cli,\\test\\EndToEnd\\Packages\\"
 
   - task: CopyFiles@2
     displayName: "Copy Nupkgs"
