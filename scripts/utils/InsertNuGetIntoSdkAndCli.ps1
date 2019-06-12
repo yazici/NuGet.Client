@@ -109,7 +109,8 @@ Write-Host "*****Headers*****:"
 Write-Host $headerOutput -ForegroundColor red
 
 Write-Host "*****Body*****:$Body"
-$r1 = Invoke-RestMethod -Headers $Headers -Method Post -Uri "https://api.github.com/repos/$repoOwner/$RepositoryName/git/refs" -Body $Body
+$myUri = "https://api.github.com/repos/$repoOwner/$RepositoryName/git/refs"
+$r1 = Invoke-RestMethod -Headers $Headers -Method Post -Uri $myUri -Body $Body
 Write-Host $r1
 }
 
