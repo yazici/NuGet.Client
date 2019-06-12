@@ -48,17 +48,9 @@ Function UpdateNuGetVersionInXmlFile {
         [string]$NuGetTag
     )
 
-    Write-Host "********<<<<<<<<<<<<>>>>>>>>>>>>" 
-    Write-Host $XmlContents
-    Write-Host "********<<<<<<<<<<<<NuGetTag>>>>>>>>>>>>" 
-    Write-Host $NuGetTag
-    
 $xmlString = $XmlContents.Split([environment]::NewLine) | Where-Object { $_ -cmatch "<$NuGetTag>" }
-Write-Host "********<<<<<<<<<<<<xmlString>>>>>>>>>>>>" 
 Write-Host $xmlString
-Write-Host "********<<<<<<<<<<<<newXmlString>>>>>>>>>>>>" 
 $newXmlString = "<$NuGetTag>$NuGetVersion</$NuGetTag>"
-
 Write-Host $newXmlString
 $updatedXml = $XmlContents.Replace($xmlString.Trim(), $newXmlString) 
 Write-Host $updatedXml
@@ -81,7 +73,7 @@ $url = "https://raw.githubusercontent.com/$repoOwner/$RepositoryName/$BranchName
 Write-Host $url
 $xmlContent = Invoke-WebRequest -Uri $url -UseBasicParsing
 
-return $xmlContent.Content
+return $xmlContent
 
 }
 
@@ -107,6 +99,10 @@ sha = $headSha;
 ref = $refName;
 } | ConvertTo-Json;
 
+Write-Host "******<<<<<<"
+Write-Host "*****repoOwner*****:$repoOwner"
+Write-Host "*****RepositoryName*****:$RepositoryName"
+Write-Host "*****Body*****:$Body"
 $r1 = Invoke-RestMethod -Headers $Headers -Method Post -Uri "https://api.github.com/repos/$repoOwner/$RepositoryName/git/refs" -Body $Body
 Write-Host $r1
 }
