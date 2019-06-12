@@ -48,6 +48,8 @@ Function UpdateNuGetVersionInXmlFile {
         [string]$NuGetTag
     )
 
+    Write-Host "********<<<<<<<<<<<<>>>>>>>>>>>>" 
+    Write-Host $XmlContents
 $xmlString = $XmlContents.Split([environment]::NewLine) | Where-Object { $_ -cmatch "<$NuGetTag>" }
 Write-Host $xmlString
 $newXmlString = "<$NuGetTag>$NuGetVersion</$NuGetTag>"
