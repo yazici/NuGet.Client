@@ -103,8 +103,11 @@ Write-Host "******<<<<<<"
 Write-Host "*****repoOwner*****:$repoOwner"
 Write-Host "*****RepositoryName*****:$RepositoryName"
 Write-Host "*****TEST*****"
-$headerOutput = ($Headers.Keys | foreach { "$_ $($Headers[$_])" }) -join "|"
-Write-Host "*****Headers*****: $headerOutput"
+$headerOutput = $Headers | Out-String
+
+Write-Host "*****Headers*****:"
+Write-Host $headerOutput -ForegroundColor red
+
 Write-Host "*****Body*****:$Body"
 $r1 = Invoke-RestMethod -Headers $Headers -Method Post -Uri "https://api.github.com/repos/$repoOwner/$RepositoryName/git/refs" -Body $Body
 Write-Host $r1
