@@ -73,7 +73,7 @@ $url = "https://raw.githubusercontent.com/$repoOwner/$RepositoryName/$BranchName
 Write-Host $url
 $xmlContent = Invoke-WebRequest -Uri $url -UseBasicParsing
 
-return $xmlContent
+return $xmlContent.Content
 
 }
 
