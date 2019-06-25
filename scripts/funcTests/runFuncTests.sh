@@ -38,7 +38,7 @@ curl -o cli/dotnet-install.sh https://dot.net/v1/dotnet-install.sh
 chmod +x cli/dotnet-install.sh
 
 # v1 needed for some test and bootstrapping testing version
-cli/dotnet-install.sh -i cli -c 1.0 -NoPath
+cli/dotnet-install.sh -i cli -c 1.0
 
 DOTNET="$(pwd)/cli/dotnet"
 
@@ -50,7 +50,7 @@ DOTNET_BRANCHES="$($DOTNET msbuild build/config.props /v:m /nologo /t:GetCliBran
 for DOTNET_BRANCH in $(echo $DOTNET_BRANCHES | tr ";" "\n")
 do
 	echo $DOTNET_BRANCH
-	cli/dotnet-install.sh -i cli -c $DOTNET_BRANCH -NoPath
+	cli/dotnet-install.sh -i cli -c $DOTNET_BRANCH
 
 
 	# Display current version
@@ -81,8 +81,8 @@ then
 fi
 
 # restore packages
-echo "dotnet msbuild build/build.proj /t:Restore /p:VisualStudioVersion=16.0 /p:Configuration=Release /p:BuildNumber=1 /p:ReleaseLabel=beta"
-dotnet msbuild build/build.proj /t:Restore /p:VisualStudioVersion=16.0 /p:Configuration=Release /p:BuildNumber=1 /p:ReleaseLabel=beta
+echo "$DOTNET msbuild build/build.proj /t:Restore /p:VisualStudioVersion=16.0 /p:Configuration=Release /p:BuildNumber=1 /p:ReleaseLabel=beta"
+$DOTNET msbuild build/build.proj /t:Restore /p:VisualStudioVersion=16.0 /p:Configuration=Release /p:BuildNumber=1 /p:ReleaseLabel=beta
 if [ $? -ne 0 ]; then
 	echo "Restore failed!!"
 	exit 1
