@@ -80,7 +80,7 @@ namespace NuGet.CommandLine.Test
                 environmentVariables: envVars);
 
             // Assert
-            Assert.True(expectedExitCode == r.Item1, r.Item3 + "\n\n" + r.Item2);
+            Assert.False(expectedExitCode == r.Item1, r.Item3 + "\n\n" + r.Item2);
 
             return r;
         }
