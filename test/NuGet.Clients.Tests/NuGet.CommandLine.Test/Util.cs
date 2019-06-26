@@ -80,7 +80,7 @@ namespace NuGet.CommandLine.Test
                 environmentVariables: envVars);
 
             // Assert
-            Assert.False(expectedExitCode == r.Item1, r.Item3 + "\n\n" + r.Item2);
+            Assert.True(expectedExitCode == r.Item1, r.Item3 + "\n\n" + r.Item2);
 
             return r;
         }
@@ -1203,6 +1203,36 @@ EndProject");
             VerifyResultFailure(result, invalidMessage);
             // Verify traits of help message in stdout
             Assert.Contains("usage:", result.Item2);
+        }
+
+
+        //Create a global.json file in temperary testing folder, to make sure msbuild could choose preview version of SDK.
+        //This is a temperary work around since the VS on CI doesn't have the latest hostfxr, it could not resolve the preview SDK.
+        //Will be removed when CI has the latest version of VS, or SDK3.0 released RTM version.
+        public static void CreateTempGlobalJson(string solutionRoot)
+        {
+            //put the global.json at one level up to solutionRoot path
+            var pathToPlaceGlobalJsonFile = solutionRoot.Substring(0, solutionRoot.Length - 1 - solutionRoot.Split('\\').Last().Length);
+            /* if (File.Exists(pathToPlaceGlobalJsonFile + "\\global.json"))
+             {
+                 return;
+             }
+             */
+
+
+            var globalJsonFile =
+@"{
+    ""sdk"": {
+              ""version"": ""3.0.100 - preview""
+             }
+}";
+
+            using (var outputFile = new StreamWriter(Path.Combine(pathToPlaceGlobalJsonFile, "global.json")))
+            {
+                outputFile.WriteLine(globalJsonFile);
+                outputFile.Close();
+            }
+
         }
     }
 }
