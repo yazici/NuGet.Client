@@ -3,10 +3,14 @@
   <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
   
   <PropertyGroup>
-    <TargetFrameworks>$(NETCoreTargetFramework)</TargetFrameworks>
+    <TargetFrameworks>$(NETCoreTargetFramework);netcoreapp3.0</TargetFrameworks>
     <TestProject>true</TestProject>
   </PropertyGroup>
 
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.0' ">
+    <DefineConstants>$(DefineConstants);IS_NETCORE30</DefineConstants>
+  </PropertyGroup>
+  
   <ItemGroup>
     <Compile Remove="compiler\resources\*" />
     <EmbeddedResource Include="compiler\resources\*" />
@@ -21,6 +25,12 @@
     <Service Include="{82a7f48d-3b50-4b1e-b82e-3ada8210c358}" />
   </ItemGroup>
 
-  <Import Project="$(BuildCommonDirectory)common.targets"/>
+  <Target Name="WorkaroundNetStandard" AfterTargets="ResolvePackageAssets">
+    <ItemGroup>
+      <TransitiveFrameworkReference Remove="NETStandard.Library" />
+    </ItemGroup>
+  </Target>
+  
+  <Import Project="$(BuildCommonDirectory)common.targets" />
   <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
 </Project>

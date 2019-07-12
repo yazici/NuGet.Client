@@ -75,6 +75,14 @@ phases:
       - msbuild
 
   steps:
+  - task: UseDotNet@2
+    displayName: 'Use .NET Core sdk'
+    inputs:
+      packageType: sdk
+      version: 3.0.x
+      includePreviewVersions: true
+      installationPath: $(Agent.TempDirectory)/dotnet
+
   - task: PowerShell@1
     displayName: "Update Build Number"
     inputs:
@@ -437,7 +445,7 @@ phases:
   condition: "and(succeeded(),eq(variables['RunFunctionalTestsOnWindows'], 'true')) "
   queue:
     name: VSEng-MicroBuildSxS
-    timeoutInMinutes: 150
+    timeoutInMinutes: 300
     demands: 
         - DotNetFramework
         - msbuild
@@ -448,6 +456,14 @@ phases:
         RunTestType: "IsCore"
         
   steps:
+  - task: UseDotNet@2
+    displayName: 'Use .NET Core sdk'
+    inputs:
+      packageType: sdk
+      version: 3.0.x
+      includePreviewVersions: true
+      installationPath: $(Agent.TempDirectory)/dotnet
+
   - task: PowerShell@1
     displayName: "Print Environment Variables"
     inputs:
@@ -530,6 +546,14 @@ phases:
     demands: sh
 
   steps:
+  - task: UseDotNet@2
+    displayName: 'Use .NET Core sdk'
+    inputs:
+      packageType: sdk
+      version: 3.0.x
+      includePreviewVersions: true
+      installationPath: $(Agent.TempDirectory)/dotnet
+      
   - task: PowerShell@2
     displayName: "Update Build Number"
     inputs:
@@ -581,6 +605,14 @@ phases:
     demands: sh
 
   steps:
+  - task: UseDotNet@2
+    displayName: 'Use .NET Core sdk'
+    inputs:
+      packageType: sdk
+      version: 3.0.x
+      includePreviewVersions: true
+      installationPath: $(Agent.TempDirectory)/dotnet
+      
   - task: PowerShell@2
     displayName: "Update Build Number"
     inputs:
@@ -638,6 +670,14 @@ phases:
     demands: DotNetFramework
 
   steps:
+  - task: UseDotNet@2
+    displayName: 'Use .NET Core sdk'
+    inputs:
+      packageType: sdk
+      version: 3.0.x
+      includePreviewVersions: true
+      installationPath: $(Agent.TempDirectory)/dotnet
+
   - task: PowerShell@1
     displayName: "Print Environment Variables"
     inputs:
@@ -737,6 +777,14 @@ phases:
   - checkout: self
     clean: true
     submodules: true
+    
+  - task: UseDotNet@2
+    displayName: 'Use .NET Core sdk'
+    inputs:
+      packageType: sdk
+      version: 3.0.x
+      includePreviewVersions: true
+      installationPath: $(Agent.TempDirectory)/dotnet
     
   - task: PowerShell@1
     displayName: "Print Environment Variables"

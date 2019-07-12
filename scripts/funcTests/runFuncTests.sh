@@ -46,15 +46,20 @@ echo "$DOTNET msbuild build/config.props /v:m /nologo /t:GetCliBranchForTesting"
 
 # run it twice so dotnet cli can expand and decompress without affecting the result of the target
 $DOTNET msbuild build/config.props /v:m /nologo /t:GetCliBranchForTesting
-DOTNET_BRANCH="$($DOTNET msbuild build/config.props /v:m /nologo /t:GetCliBranchForTesting)"
+DOTNET_BRANCHES="$($DOTNET msbuild build/config.props /v:m /nologo /t:GetCliBranchForTesting)"
+for DOTNET_BRANCH in $(echo $DOTNET_BRANCHES | tr ";" "\n")
+do
+	echo $DOTNET_BRANCH
+	cli/dotnet-install.sh -i cli -c $DOTNET_BRANCH -nopath
 
-echo $DOTNET_BRANCH
-cli/dotnet-install.sh -i cli -c $DOTNET_BRANCH
 
-# Display current version
-$DOTNET --version
-
+	# Display current version
+	$DOTNET --version
+	dotnet --info
+done
 echo "================="
+
+
 
 # init the repo
 
@@ -72,16 +77,16 @@ then
 fi
 
 # restore packages
-echo "$DOTNET msbuild build/build.proj /t:Restore /p:VisualStudioVersion=15.0 /p:Configuration=Release /p:BuildNumber=1 /p:ReleaseLabel=beta"
-$DOTNET msbuild build/build.proj /t:Restore /p:VisualStudioVersion=15.0 /p:Configuration=Release /p:BuildNumber=1 /p:ReleaseLabel=beta
+echo "dotnet msbuild build/build.proj /t:Restore /p:VisualStudioVersion=16.0 /p:Configuration=Release /p:BuildNumber=1 /p:ReleaseLabel=beta"
+dotnet msbuild build/build.proj /t:Restore /p:VisualStudioVersion=16.0 /p:Configuration=Release /p:BuildNumber=1 /p:ReleaseLabel=beta
 if [ $? -ne 0 ]; then
 	echo "Restore failed!!"
 	exit 1
 fi
 
 # Unit tests
-echo "$DOTNET msbuild build/build.proj /t:CoreUnitTests /p:VisualStudioVersion=15.0 /p:Configuration=Release /p:BuildNumber=1 /p:ReleaseLabel=beta"
-$DOTNET msbuild build/build.proj /t:CoreUnitTests /p:VisualStudioVersion=15.0 /p:Configuration=Release /p:BuildNumber=1 /p:ReleaseLabel=beta
+echo "dotnet msbuild build/build.proj /t:CoreUnitTests /p:VisualStudioVersion=16.0 /p:Configuration=Release /p:BuildNumber=1 /p:ReleaseLabel=beta"
+dotnet msbuild build/build.proj /t:CoreUnitTests /p:VisualStudioVersion=16.0 /p:Configuration=Release /p:BuildNumber=1 /p:ReleaseLabel=beta
 
 if [ $? -ne 0 ]; then
 	echo "CoreUnitTests failed!!"
@@ -100,8 +105,8 @@ else
 fi
 
 # Func tests
-echo "$DOTNET msbuild build/build.proj /t:CoreFuncTests /p:VisualStudioVersion=15.0 /p:Configuration=Release /p:BuildNumber=1 /p:ReleaseLabel=beta"
-$DOTNET msbuild build/build.proj /t:CoreFuncTests /p:VisualStudioVersion=15.0 /p:Configuration=Release /p:BuildNumber=1 /p:ReleaseLabel=beta
+echo "dotnet msbuild build/build.proj /t:CoreFuncTests /p:VisualStudioVersion=16.0 /p:Configuration=Release /p:BuildNumber=1 /p:ReleaseLabel=beta"
+dotnet msbuild build/build.proj /t:CoreFuncTests /p:VisualStudioVersion=16.0 /p:Configuration=Release /p:BuildNumber=1 /p:ReleaseLabel=beta
 
 if [ $? -ne 0 ]; then
 	RESULTCODE='1'

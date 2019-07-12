@@ -3,7 +3,7 @@
   <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
 
   <PropertyGroup>
-    <TargetFrameworks>$(TargetFrameworksLibrary)</TargetFrameworks>
+    <TargetFrameworks>$(TargetFrameworksLibrary);netstandard2.1</TargetFrameworks>
     <TargetFramework />
     <NoWarn>$(NoWarn);CS1591;CS1573;CS0012</NoWarn>
     <PackageTags>nuget protocol</PackageTags>
@@ -45,7 +45,7 @@
     <Reference Include="System.IO.Compression" />
   </ItemGroup>
 
-  <ItemGroup Condition=" '$(TargetFramework)' == '$(NetStandardVersion)' ">
+  <ItemGroup Condition=" $(TargetFramework.StartsWith('netstandard')) ">
     <PackageReference Include="System.Dynamic.Runtime" Version="$(SystemPackagesVersion)" />
   </ItemGroup>
 

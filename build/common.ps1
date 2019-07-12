@@ -186,43 +186,76 @@ Function Install-DotnetCLI {
     $vsMajorVersion = Get-VSMajorVersion
     Write-Host "vsmajor version is $vsMajorVersion"
     $MSBuildExe = Get-MSBuildExe $vsMajorVersion
-    $CliBranchForTesting = & $msbuildExe $NuGetClientRoot\build\config.props /v:m /nologo /t:GetCliBranchForTesting
+    $CliBranchListForTesting = & $msbuildExe $NuGetClientRoot\build\config.props /v:m /nologo /t:GetCliBranchForTesting
+    $CliBranchesForTesting = $CliBranchListForTesting.Split(';');
 
-    $cli = @{
-        Root = $CLIRoot
-        Version = 'latest'
-        Channel = $CliBranchForTesting.Trim()
-    }
-    
-    $DotNetExe = Join-Path $cli.Root 'dotnet.exe';
+    $DotNetInstall = Join-Path $CLIRoot 'dotnet-install.ps1'
 
-    if ([Environment]::Is64BitOperatingSystem) {
-        $arch = "x64";
-    }
-    else {
-        $arch = "x86";
-    }
-
-    $env:DOTNET_HOME=$cli.Root
-    $env:DOTNET_INSTALL_DIR=$NuGetClientRoot
-
+    #If "-force" is specified, or dotnet.exe under cli folder doesn't exist, create cli folder and download dotnet-install.ps1 into cli folder.
     if ($Force -or -not (Test-Path $DotNetExe)) {
-        Trace-Log 'Downloading .NET CLI'
+        Trace-Log "Downloading .NET CLI $CliBranchForTesting"
 
-        New-Item -ItemType Directory -Force -Path $cli.Root | Out-Null
-
-        $DotNetInstall = Join-Path $cli.Root 'dotnet-install.ps1'
+        New-Item -ItemType Directory -Force -Path $CLIRoot | Out-Null
 
         Invoke-WebRequest 'https://raw.githubusercontent.com/dotnet/cli/master/scripts/obtain/dotnet-install.ps1' -OutFile $DotNetInstall
-        & $DotNetInstall -Channel $cli.Channel -i $cli.Root -Version $cli.Version -Architecture $arch
     }
 
-    if (-not (Test-Path $DotNetExe)) {
-        Error-Log "Unable to find dotnet.exe. The CLI install may have failed." -Fatal
+    ForEach ($CliBranchForTesting in $CliBranchesForTesting){
+        $CliBranchForTesting = $CliBranchForTesting.trim()
+        $cli = @{
+            Root = $CLIRoot
+            Version = 'latest'
+            Channel = $CliBranchForTesting.Trim()
+        }
+    
+        $DotNetExe = Join-Path $cli.Root 'dotnet.exe';
+
+        if ([Environment]::Is64BitOperatingSystem) {
+            $arch = "x64";
+        }
+        else {
+            $arch = "x86";
+        }
+
+        $env:DOTNET_HOME=$cli.Root
+        $env:DOTNET_INSTALL_DIR=$NuGetClientRoot
+
+        #Get the specific version number for a certain channel from url like : https://dotnetcli.blob.core.windows.net/dotnet/Sdk/release/3.0.1xx/latest.version"
+        $httpGetUrl = "https://dotnetcli.blob.core.windows.net/dotnet/Sdk/" + $CliBranchForTesting + "/latest.version"
+        $versionFile = Invoke-RestMethod -Method Get -Uri $httpGetUrl
+
+        $stringReader = New-Object -TypeName System.IO.StringReader -ArgumentList $versionFile
+        [int]$count = 0
+        while ( $line = $stringReader.ReadLine() ) {
+            if ($count -eq 1) 
+            {
+                $specificVersion = $line.trim()
+            }
+            $count += 1
+        }
+        Trace-Log "The version of SDK should be installed is : $specificVersion"
+
+        $probeDotnetPath = Join-Path (Join-Path $cli.Root sdk)  $specificVersion
+
+        Trace-Log "Probing folder : $probeDotnetPath"
+
+        #If "-force" is specified, or folder with specific version doesn't exist, the download command will run" 
+        if ($Force -or -not (Test-Path $probeDotnetPath)) {
+            & $DotNetInstall -Channel $cli.Channel -i $cli.Root -Version $cli.Version -Architecture $arch -NoPath
+        }
+
+        if (-not (Test-Path $DotNetExe)) {
+            Error-Log "Unable to find dotnet.exe. The CLI install may have failed." -Fatal
+        }
+        if (-not(Test-Path $probeDotnetPath)) {
+            Error-Log "Unable to find specific version of sdk. The CLI install may have failed." -Fatal
+        }
+
+        # Display build info
+        & $DotNetExe --info
     }
 
-    # Display build info
-    & $DotNetExe --info
+    
 }
 
 Function Get-LatestVisualStudioRoot {
