@@ -395,14 +395,11 @@ namespace NuGet.CommandLine.FuncTest.Commands
                 Assert.Equal("Certificate chain validation failed.", exception.Message);
 
                 Assert.Equal(1, logger.Errors);
-                Assert.Equal(RuntimeEnvironmentHelper.IsWindows ? 2 : 1, logger.Warnings);
+                Assert.Equal(2, logger.Warnings);
 
                 SigningTestUtility.AssertUntrustedRoot(logger.LogMessages, LogLevel.Error);
                 SigningTestUtility.AssertOfflineRevocation(logger.LogMessages, LogLevel.Warning);
-
-                if (RuntimeEnvironmentHelper.IsWindows)
-                {
-                    SigningTestUtility.AssertRevocationStatusUnknown(logger.LogMessages, LogLevel.Warning);
+                SigningTestUtility.AssertRevocationStatusUnknown(logger.LogMessages, LogLevel.Warning);
                 }
             }
         }
