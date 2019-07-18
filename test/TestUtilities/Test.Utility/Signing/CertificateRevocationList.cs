@@ -24,7 +24,7 @@ namespace Test.Utility.Signing
 
         public BigInteger Version { get; private set; }
 
-#if IS_DESKTOP
+//#if IS_DESKTOP
         public static CertificateRevocationList CreateCrl(
             X509CertificateWithKeyInfo issuerCert,
             string crlLocalUri)
@@ -86,7 +86,7 @@ namespace Test.Utility.Signing
         {
             Version = Version?.Add(BigInteger.One) ?? BigInteger.One;
         }
-#else
+/*#else
         public static CertificateRevocationList CreateCrl(X509CertificateWithKeyInfo certCA, string crlLocalUri)
         {
             throw new NotImplementedException();
@@ -101,7 +101,7 @@ namespace Test.Utility.Signing
         { 
             throw new NotImplementedException();
         }
-#endif
+//#endif */
 
         public void Dispose()
         {

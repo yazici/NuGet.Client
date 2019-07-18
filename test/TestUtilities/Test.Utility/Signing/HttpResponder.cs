@@ -11,7 +11,7 @@ namespace Test.Utility.Signing
     {
         public abstract Uri Url { get; }
 
-#if IS_DESKTOP
+//#if IS_DESKTOP
         public abstract void Respond(HttpListenerContext context);
 
         protected static bool IsGet(HttpListenerRequest request)
@@ -41,6 +41,6 @@ namespace Test.Utility.Signing
                 writer.Write(bytes);
             }
         }
-#endif
+//#endif
     }
 }

@@ -39,15 +39,18 @@ namespace Test.Utility.Signing
         public StoreLocation StoreLocation { get; }
 
         private bool _isDisposed;
+        private bool _addToStore;
 
         public TrustedTestCert(T source,
             Func<T, X509Certificate2> getCert,
             StoreName storeName = StoreName.TrustedPeople,
             StoreLocation storeLocation = StoreLocation.CurrentUser,
-            TimeSpan? maximumValidityPeriod = null)
+            TimeSpan? maximumValidityPeriod = null,
+            bool addToStore = true)
         {
             Source = source;
             TrustedCert = getCert(source);
+            _addToStore = addToStore;
 
             if (!maximumValidityPeriod.HasValue)
             {
@@ -70,7 +73,10 @@ namespace Test.Utility.Signing
         {
             _store = new X509Store(StoreName, StoreLocation);
             _store.Open(OpenFlags.ReadWrite);
-            _store.Add(TrustedCert);
+            //if (_addToStore)
+            //{
+                _store.Add(TrustedCert);
+            //}
         }
 
         private void ExportCrl()
@@ -108,6 +114,10 @@ namespace Test.Utility.Signing
 
                 _isDisposed = true;
             }
+        }
+        public void RemoveCertificateFromStore()
+        {
+            _store.Remove(TrustedCert);
         }
     }
 }

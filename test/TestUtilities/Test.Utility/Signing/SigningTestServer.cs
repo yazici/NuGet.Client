@@ -14,24 +14,24 @@ namespace Test.Utility.Signing
     public sealed class SigningTestServer : ISigningTestServer, IDisposable
     {
         private readonly ConcurrentDictionary<string, IHttpResponder> _responders = new ConcurrentDictionary<string, IHttpResponder>();
-#if IS_DESKTOP
+//#if IS_DESKTOP
         private readonly HttpListener _listener;
         private bool _isDisposed;
-#endif
+//#endif
 
         public Uri Url { get; }
 
-#if IS_DESKTOP
+//#if IS_DESKTOP
         private SigningTestServer(HttpListener listener, Uri url)
         {
             _listener = listener;
             Url = url;
         }
-#endif
+//#endif
 
         public void Dispose()
         {
-#if IS_DESKTOP
+//#if IS_DESKTOP
             if (!_isDisposed)
             {
                 _listener.Stop();
@@ -41,7 +41,7 @@ namespace Test.Utility.Signing
 
                 _isDisposed = true;
             }
-#endif
+//#endif
         }
 
         public IDisposable RegisterResponder(IHttpResponder responder)
@@ -56,7 +56,7 @@ namespace Test.Utility.Signing
 
         public static Task<SigningTestServer> CreateAsync()
         {
-#if IS_DESKTOP
+
             var portReserver = new PortReserver();
 
             return portReserver.ExecuteAsync(
@@ -81,13 +81,34 @@ namespace Test.Utility.Signing
                     return Task.FromResult(server);
                 },
                 CancellationToken.None);
-#else
 
-            throw new NotImplementedException();
-#endif
+
+         //   throw new NotImplementedException();
+
         }
+        /*
+        public static SigningTestServer Create()
+        {
+            
+            var startup = new SigningTestServerStartup();
+            var builder = new WebHostBuilder()
+                .ConfigureServices(services =>
+                {
+                    services.AddSingleton<IStartup>(startup);
+                })
+                .UseSetting(WebHostDefaults.ApplicationKey, nameof(SigningTestServerStartup))
+                .UseKestrel()
+                .UseUrls("http://127.0.0.1:0"); // automatically pick the port
+            var host = builder.Build();
 
-#if IS_DESKTOP
+            host.Start();
+            
+
+            return new SigningTestServer(host, startup);
+        }
+        */
+
+//#if IS_DESKTOP
         private static string GetBaseAbsolutePath(Uri url)
         {
             var path = url.PathAndQuery;
@@ -112,6 +133,7 @@ namespace Test.Utility.Signing
                     {
                         try
                         {
+                            Console.WriteLine($"Responding to request for {path}");
                             responder.Respond(context);
                         }
                         catch (Exception ex)
@@ -144,7 +166,7 @@ namespace Test.Utility.Signing
                 }
             }
         }
-#endif
+//#endif
 
         private sealed class Responder : IDisposable
         {
