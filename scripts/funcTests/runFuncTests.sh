@@ -38,7 +38,7 @@ curl -o cli/dotnet-install.sh https://dot.net/v1/dotnet-install.sh
 chmod +x cli/dotnet-install.sh
 
 # v1 needed for some test and bootstrapping testing version
-cli/dotnet-install.sh -i cli -c 1.0
+cli/dotnet-install.sh -i cli -c 2.2.3
 
 DOTNET="$(pwd)/cli/dotnet"
 
