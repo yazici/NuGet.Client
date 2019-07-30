@@ -11,6 +11,11 @@
     <IsCore>true</IsCore>
   </PropertyGroup>
 
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.0' ">
+    <DefineConstants>$(DefineConstants);IS_NETCORE30</DefineConstants>
+    <IsCore30>true</IsCore30>
+  </PropertyGroup>
+
   <!-- Include shared files for netcore projects -->
   <ItemGroup Condition=" ('$(IsNetCoreProject)' == 'true' AND '$(SkipShared)' != 'true' AND '$(TestProject)' != 'true') OR '$(IncludeNuGetSharedFiles)' == 'true'">
     <Compile Include="$(SharedDirectory)\*.cs" Exclude="bin\**;obj\**;**\*.xproj;packages\**" />
