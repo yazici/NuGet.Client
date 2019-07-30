@@ -27,10 +27,10 @@ namespace Dotnet.Integration.Test
 
         public MsbuildIntegrationTestFixture()
         {
-            _cliDirectory = CopyLatestCliForPack();
-            TestDotnetCli = Path.Combine(_cliDirectory, "dotnet.exe");
+            var cliDirectory = CopyLatestCliForPack();
+            TestDotnetCli = Path.Combine(cliDirectory, "dotnet.exe");
 
-            var sdkPaths = Directory.GetDirectories(Path.Combine(_cliDirectory, "sdk"));
+            var sdkPaths = Directory.GetDirectories(Path.Combine(cliDirectory, "sdk"));
 #if IS_NETCORE30
             MsBuildSdksPath = Path.Combine(
              sdkPaths.Where(path => path.Split(Path.DirectorySeparatorChar).Last().StartsWith("3")).First()
@@ -423,7 +423,7 @@ namespace Dotnet.Integration.Test
         {
             RunDotnet(Path.GetDirectoryName(TestDotnetCli), "build-server shutdown");
             KillDotnetExe(TestDotnetCli);
-            _cliDirectory.Dispose();
+            DeleteDirectory(Path.GetDirectoryName(TestDotnetCli));
         }
 
         private static void KillDotnetExe(string pathToDotnetExe)
