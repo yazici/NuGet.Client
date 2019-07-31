@@ -102,6 +102,7 @@
   <!--
     ============================================================
     Run apex tests
+    packages\xunit.runner.console.2.3.1\tools\net452\xunit.console.x86.exe test\NuGet.Tests.Apex\NuGet.Tests.Apex\bin\16.0\Debug\NuGet.Tests.Apex.dll -xml artifacts\TestResults\ApexTestsVS15-xunit.xml -verbose -method NuGet.Tests.Apex.NuGetConsoleTestCase.InstallAndUpdatePackageWithSourceParameterWarnsAsync
     ============================================================
   -->
   <Target Name="ApexTestsStandalone">
