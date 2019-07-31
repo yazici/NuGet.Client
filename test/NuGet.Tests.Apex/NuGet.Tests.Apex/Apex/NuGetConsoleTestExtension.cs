@@ -60,6 +60,11 @@ namespace NuGet.Tests.Apex
             return _pmConsole.ConsoleContainsMessage(message);
         }
 
+        public string GetPMCText()
+        {
+            return _pmConsole.GetConsoleText();
+        }
+
         public void Execute(string command)
         {
             _pmConsole.RunCommand(command, _timeout);

@@ -1,4 +1,3 @@
-
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.28404.58
@@ -169,7 +168,6 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NuGet.VisualStudio.Interop", "src\NuGet.Clients\NuGet.VisualStudio.Interop\NuGet.VisualStudio.Interop.csproj", "{7DB43FE1-75E1-49F9-B2C8-06A552BA2144}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NuGetConsole.Host.PowerShell", "src\NuGet.Clients\NuGetConsole.Host.PowerShell\NuGetConsole.Host.PowerShell.csproj", "{5A79EEF3-51C0-4A14-8D37-50EF38AD835D}"
-	# Make NuGetConsole.Host.PowerShell depend on NuGet.PackageManagement.PowerShellCmdlets.  This is so NuGetConsole.Host.PowerShell's build can update NuGet.psd1 based on the strong name of NuGet.PackageManagement.PowerShellCmdlets.dll
 	ProjectSection(ProjectDependencies) = postProject
 		{26DC17AC-A390-4515-A2C0-07A0950036C5} = {26DC17AC-A390-4515-A2C0-07A0950036C5}
 	EndProjectSection
@@ -235,6 +233,14 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NuGet.Packaging.Core", "src\NuGet.Core\NuGet.Packaging.Core\NuGet.Packaging.Core.csproj", "{02B7C422-C592-4BA6-89A7-ACBD7923B34D}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NuGet.Tools.Test", "test\NuGet.Clients.Tests\NuGet.Tools.Test\NuGet.Tools.Test.csproj", "{437C6B7E-B625-4AE5-A4CE-F2B3747FE1CE}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Apex", "Apex", "{B4888E6F-E464-4A89-8239-F3576B163F5E}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NuGet.PackageManagement.UI.TestContract", "test\NuGet.Tests.Apex\NuGet.PackageManagement.UI.TestContract\NuGet.PackageManagement.UI.TestContract.csproj", "{CE127104-9E3E-4F32-A9B4-47FE7911A9C4}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NuGet.Console.TestContract", "test\NuGet.Tests.Apex\NuGet.Console.TestContract\NuGet.Console.TestContract.csproj", "{05BAA9BD-AEE8-4B95-A97F-28C9D6D8C3CA}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NuGet.Tests.Apex", "test\NuGet.Tests.Apex\NuGet.Tests.Apex\NuGet.Tests.Apex.csproj", "{B02B329D-BF94-4173-8D83-8BCE77FADD23}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -566,6 +572,18 @@ Global
 		{437C6B7E-B625-4AE5-A4CE-F2B3747FE1CE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{437C6B7E-B625-4AE5-A4CE-F2B3747FE1CE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{437C6B7E-B625-4AE5-A4CE-F2B3747FE1CE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CE127104-9E3E-4F32-A9B4-47FE7911A9C4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CE127104-9E3E-4F32-A9B4-47FE7911A9C4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CE127104-9E3E-4F32-A9B4-47FE7911A9C4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CE127104-9E3E-4F32-A9B4-47FE7911A9C4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{05BAA9BD-AEE8-4B95-A97F-28C9D6D8C3CA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{05BAA9BD-AEE8-4B95-A97F-28C9D6D8C3CA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{05BAA9BD-AEE8-4B95-A97F-28C9D6D8C3CA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{05BAA9BD-AEE8-4B95-A97F-28C9D6D8C3CA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B02B329D-BF94-4173-8D83-8BCE77FADD23}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B02B329D-BF94-4173-8D83-8BCE77FADD23}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B02B329D-BF94-4173-8D83-8BCE77FADD23}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B02B329D-BF94-4173-8D83-8BCE77FADD23}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -662,6 +680,10 @@ Global
 		{98A04824-9BCE-48BD-8544-916F3F0007D0} = {23CEFC88-9365-4464-A517-700224ECA033}
 		{02B7C422-C592-4BA6-89A7-ACBD7923B34D} = {506AF844-92E0-4404-BBFC-0AB073890A72}
 		{437C6B7E-B625-4AE5-A4CE-F2B3747FE1CE} = {01BC4531-1E25-48D7-A8FD-A47D6FEC47FB}
+		{B4888E6F-E464-4A89-8239-F3576B163F5E} = {D1549653-9631-4E16-9967-55427174A0DC}
+		{CE127104-9E3E-4F32-A9B4-47FE7911A9C4} = {B4888E6F-E464-4A89-8239-F3576B163F5E}
+		{05BAA9BD-AEE8-4B95-A97F-28C9D6D8C3CA} = {B4888E6F-E464-4A89-8239-F3576B163F5E}
+		{B02B329D-BF94-4173-8D83-8BCE77FADD23} = {B4888E6F-E464-4A89-8239-F3576B163F5E}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {3747A66A-00D1-41B8-A9C5-ED0D7BEA9D25}

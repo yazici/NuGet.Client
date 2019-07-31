@@ -240,7 +240,7 @@ namespace NuGet.Tests.Apex
             }
         }
 
-        [NuGetWpfTheory(Skip = "https://github.com/NuGet/Home/issues/8386")]
+        [NuGetWpfTheory]
         [InlineData(ProjectTemplate.ClassLibrary, false)]
         [InlineData(ProjectTemplate.NetCoreConsoleApp, true)]
         [InlineData(ProjectTemplate.NetStandardClassLib, true)]
@@ -250,7 +250,7 @@ namespace NuGet.Tests.Apex
             var packageName = "TestPackage";
             var packageVersion1 = "1.0.0";
             var packageVersion2 = "2.0.0";
-            var source = "https://api.nuget.org/v3/index.json";
+            var source = "https://nonexistentfeed.bla";
 
             using (var testContext = new ApexTestContext(VisualStudio, projectTemplate, XunitLogger))
             {
@@ -270,7 +270,7 @@ namespace NuGet.Tests.Apex
 
                 // Assert
                 var expectedMessage = $"The 'Source' parameter is not respected for the transitive package management based project(s) {Path.GetFileNameWithoutExtension(testContext.Project.UniqueName)}. The enabled sources in your NuGet configuration will be used";
-                Assert.True(warns == nugetConsole.IsMessageFoundInPMC(expectedMessage), expectedMessage);
+                Assert.True(warns == nugetConsole.IsMessageFoundInPMC(expectedMessage), nugetConsole.GetPMCText());
                 VisualStudio.AssertNuGetOutputDoesNotHaveErrors();
                 Assert.True(VisualStudio.HasNoErrorsInOutputWindows());
 
@@ -282,7 +282,7 @@ namespace NuGet.Tests.Apex
                 testContext.SolutionService.Build();
 
                 // Assert
-                Assert.True(warns == nugetConsole.IsMessageFoundInPMC(expectedMessage), expectedMessage);
+                Assert.True(warns == nugetConsole.IsMessageFoundInPMC(expectedMessage), nugetConsole.GetPMCText());
                 VisualStudio.AssertNuGetOutputDoesNotHaveErrors();
                 Assert.True(VisualStudio.HasNoErrorsInOutputWindows());
 

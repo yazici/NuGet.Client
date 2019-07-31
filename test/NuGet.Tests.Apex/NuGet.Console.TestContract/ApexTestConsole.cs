@@ -3,6 +3,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.Text.Editor;
@@ -53,6 +54,23 @@ namespace NuGet.Console.TestContract
             while (!loaded && stopwatch.Elapsed < timeout);
 
             return loaded;
+        }
+
+        public string GetConsoleText()
+        {
+            if (!EnsureInitilizeConsole())
+            {
+                return string.Empty;
+            }
+
+            var snapshot = (_wpfConsole.Content as IWpfTextViewHost).TextView.TextBuffer.CurrentSnapshot;
+            var builder = new StringBuilder();
+            for (var i = 0; i < snapshot.LineCount; i++)
+            {
+                builder.Append(snapshot.GetLineFromLineNumber(i).GetText());
+            }
+
+            return builder.ToString();
         }
 
         public bool ConsoleContainsMessage(string message)
