@@ -250,7 +250,7 @@ namespace NuGet.Tests.Apex
             var packageName = "TestPackage";
             var packageVersion1 = "1.0.0";
             var packageVersion2 = "2.0.0";
-            var source = "https://nonexistentfeed.bla";
+            var source = "https://api.nuget.org/v3/index.json";
 
             using (var testContext = new ApexTestContext(VisualStudio, projectTemplate, XunitLogger))
             {
