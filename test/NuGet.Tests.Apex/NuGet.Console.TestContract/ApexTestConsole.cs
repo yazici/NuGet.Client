@@ -48,7 +48,6 @@ namespace NuGet.Console.TestContract
 
                 if (!loaded)
                 {
-                    Thread.Sleep(100);
                 }
             }
             while (!loaded && stopwatch.Elapsed < timeout);
