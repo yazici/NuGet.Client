@@ -11,6 +11,8 @@ using NuGet.Configuration;
 using NuGet.Test.Utility;
 using Xunit;
 using NuGet.Common;
+using System.Diagnostics;
+using Xunit.Abstractions;
 
 namespace NuGet.CommandLine.Test
 {
@@ -21,6 +23,13 @@ namespace NuGet.CommandLine.Test
 
         private readonly string _originalCredentialProvidersEnvar =
             Environment.GetEnvironmentVariable(ExtensionLocator.CredentialProvidersEnvar);
+
+        private readonly ITestOutputHelper _outputHelper;
+
+        public NuGetPushCommandTest(ITestOutputHelper outputHelper)
+        {
+            _outputHelper = outputHelper;
+        }
 
         // Tests pushing to a source that is a v2 file system directory.
         [Fact]
@@ -1224,9 +1233,10 @@ namespace NuGet.CommandLine.Test
         }
 
         // Test push command to a server, plugin provider returns abort
-        [Fact(Skip = "https://github.com/NuGet/Home/issues/8395")]
+        [Fact]
         public void PushCommand_PushToServer_WhenPluginTimesOut_ThrowsAndDoesNotFallBackToConsoleProvider()
         {
+            var timer = Stopwatch.StartNew();
             var nugetexe = Util.GetNuGetExePath();
 
             var pluginDirectory = Util.GetTestablePluginDirectory();
@@ -1237,6 +1247,7 @@ namespace NuGet.CommandLine.Test
 
             using (var packageDirectory = TestDirectory.Create())
             {
+                _outputHelper.WriteLine($"##### Created TestDirectory at {timer.Elapsed.TotalSeconds} seconds.");
                 // Arrange
                 var packageFileName = Util.CreateTestPackage("testPackage1", "1.1.0", packageDirectory);
                 string outputFileName = Path.Combine(packageDirectory, "t1.nupkg");
@@ -1259,6 +1270,7 @@ namespace NuGet.CommandLine.Test
                         return HttpStatusCode.OK;
                     });
                     server.Start();
+                    _outputHelper.WriteLine($"##### MockServer started at {timer.Elapsed.TotalSeconds} seconds.");
 
                     // Act
                     var args = $"push {packageFileName} -Source {server.Uri}nuget";
@@ -1267,7 +1279,7 @@ namespace NuGet.CommandLine.Test
                         packageDirectory,
                         args,
                         waitForExit: true,
-                        timeOutInMilliseconds: 10000,
+                        timeOutInMilliseconds: 15000,
                         inputAction: (w) =>
                         {
                             w.WriteLine("testuser");
@@ -1280,11 +1292,13 @@ namespace NuGet.CommandLine.Test
                             { TestCredentialProvider.ResponseDelaySeconds, "10" },
                             { "NUGET_CREDENTIAL_PROVIDER_TIMEOUT_SECONDS", "5" }
                         });
+                    _outputHelper.WriteLine($"##### Push Command completed at {timer.Elapsed.TotalSeconds} seconds.");
                     server.Stop();
-
+                    _outputHelper.WriteLine($"##### MockServer stopped at {timer.Elapsed.TotalSeconds} seconds.");
                     var output = r1.Item2 + " " + r1.Item3;
 
                     // Assert
+                    _outputHelper.WriteLine($"##### Asserting at {timer.Elapsed.TotalSeconds} seconds.");
                     Assert.True(1 == r1.Item1, output);
                     Assert.Contains("401 (Unauthorized)", output);
                     Assert.Contains($"Credential plugin {pluginPath} timed out", output);
@@ -1294,6 +1308,7 @@ namespace NuGet.CommandLine.Test
                     // and no fallback to console provider
                     Assert.Equal(0, credentialForGetRequest.Count);
                     Assert.Equal(0, credentialForPutRequest.Count);
+                    _outputHelper.WriteLine($"##### Test completed at {timer.Elapsed.TotalSeconds} seconds.");
                 }
             }
         }
