@@ -28,7 +28,6 @@ namespace NuGet.Commands
         private readonly object _lock = new object();
         private readonly SourceRepository _sourceRepository;
         private readonly ILogger _logger;
-        private readonly SourceCacheContext _cacheContext;
         private readonly LocalPackageFileCache _packageFileCache;
         private FindPackageByIdResource _findPackagesByIdResource;
         private bool _ignoreFailedSources;
@@ -63,7 +62,7 @@ namespace NuGet.Commands
         /// is <c>null</c>.</exception>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="logger" /> is <c>null</c>.</exception>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="cacheContext" /> is <c>null</c>.</exception>
-        public SourceRepositoryDependencyProvider(
+        internal SourceRepositoryDependencyProvider(
             SourceRepository sourceRepository,
             ILogger logger,
             SourceCacheContext cacheContext,
@@ -78,41 +77,25 @@ namespace NuGet.Commands
         /// </summary>
         /// <param name="sourceRepository">A source repository.</param>
         /// <param name="logger">A logger.</param>
-        /// <param name="cacheContext">A source cache context.</param>
+        /// <param name="_">A source cache context.</param>
         /// <param name="ignoreFailedSources"><c>true</c> to ignore failed sources; otherwise <c>false</c>.</param>
         /// <param name="ignoreWarning"><c>true</c> to ignore warnings; otherwise <c>false</c>.</param>
         /// <param name="fileCache">Optional nuspec/file cache.</param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="sourceRepository" />
         /// is <c>null</c>.</exception>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="logger" /> is <c>null</c>.</exception>
-        /// <exception cref="ArgumentNullException">Thrown if <paramref name="cacheContext" /> is <c>null</c>.</exception>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="_" /> is <c>null</c>.</exception>
         public SourceRepositoryDependencyProvider(
         SourceRepository sourceRepository,
         ILogger logger,
-        SourceCacheContext cacheContext,
+        SourceCacheContext _,
         bool ignoreFailedSources,
         bool ignoreWarning,
         LocalPackageFileCache fileCache,
         bool isFallbackFolderSource)
         {
-            if (sourceRepository == null)
-            {
-                throw new ArgumentNullException(nameof(sourceRepository));
-            }
-
-            if (logger == null)
-            {
-                throw new ArgumentNullException(nameof(logger));
-            }
-
-            if (cacheContext == null)
-            {
-                throw new ArgumentNullException(nameof(cacheContext));
-            }
-
-            _sourceRepository = sourceRepository;
-            _logger = logger;
-            _cacheContext = cacheContext;
+            _sourceRepository = sourceRepository ?? throw new ArgumentNullException(nameof(sourceRepository));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _ignoreFailedSources = ignoreFailedSources;
             _ignoreWarning = ignoreWarning;
             _packageFileCache = fileCache;
@@ -362,9 +345,28 @@ namespace NuGet.Commands
                     packageInfo.PackageIdentity.Version,
                     match.Type);
 
-                var dependencies = GetDependencies(packageInfo, targetFramework);
+                var dependencyGroup = NuGetFrameworkUtility.GetNearest(packageInfo.DependencyGroups,
+                    targetFramework,
+                    item => item.TargetFramework);
 
-                return LibraryDependencyInfo.Create(originalIdentity, targetFramework, dependencies);
+                bool ATFUsedWhenSelectingDependencies = false;
+                // TODO NK - We might need to consider the fact that any framework might be the result here, and check for ATF even if it is.
+                // FrameworkReducer.GetNearest does not consider ATF since it is used for more than just compat
+                if (dependencyGroup == null && targetFramework is AssetTargetFallbackFramework)
+                {
+                    var atfFramework = targetFramework as AssetTargetFallbackFramework;
+                    dependencyGroup = NuGetFrameworkUtility.GetNearest(packageInfo.DependencyGroups,
+                        atfFramework.AsFallbackFramework(),
+                        item => item.TargetFramework);
+                    ATFUsedWhenSelectingDependencies = dependencyGroup != null;
+                }
+
+                var dependencies = dependencyGroup != null ?
+                     dependencyGroup.Packages.Select(PackagingUtility.GetLibraryDependencyFromNuspec).ToArray() :
+                     Enumerable.Empty<LibraryDependency>();
+
+                // TODO NK - Provide the library dependency info information here and propagate it!
+                return LibraryDependencyInfo.Create(originalIdentity, targetFramework, dependencies, ATFUsedWhenSelectingDependencies);
             }
         }
 
@@ -450,27 +452,6 @@ namespace NuGet.Commands
             }
 
             return null;
-        }
-
-        private IEnumerable<LibraryDependency> GetDependencies(
-            FindPackageByIdDependencyInfo packageInfo,
-            NuGetFramework targetFramework)
-        {
-            if (packageInfo == null)
-            {
-                return Enumerable.Empty<LibraryDependency>();
-            }
-
-            var dependencyGroup = NuGetFrameworkUtility.GetNearest(packageInfo.DependencyGroups,
-                targetFramework,
-                item => item.TargetFramework);
-
-            if (dependencyGroup != null)
-            {
-                return dependencyGroup.Packages.Select(PackagingUtility.GetLibraryDependencyFromNuspec).ToArray();
-            }
-
-            return Enumerable.Empty<LibraryDependency>();
         }
 
         private async Task EnsureResource()

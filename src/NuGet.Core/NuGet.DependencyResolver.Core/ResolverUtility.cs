@@ -107,7 +107,8 @@ namespace NuGet.DependencyResolver
                 dependencies = LibraryDependencyInfo.Create(
                     localMatch.LocalLibrary.Identity,
                     framework,
-                    localMatch.LocalLibrary.Dependencies);
+                    localMatch.LocalLibrary.Dependencies,
+                    usedATFForDependencies: false); // If the project dependencies are resolved via ATF, then MSBuild will raise the warning.
             }
             else
             {
@@ -130,7 +131,8 @@ namespace NuGet.DependencyResolver
                 Data = new RemoteResolveResult
                 {
                     Match = match,
-                    Dependencies = dependencies.Dependencies
+                    Dependencies = dependencies.Dependencies,
+                    UsedATFForDependencies = dependencies.UsedATFForDependencies,
                 },
             };
         }

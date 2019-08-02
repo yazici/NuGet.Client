@@ -174,7 +174,7 @@ namespace NuGet.Protocol
                     cacheContext,
                     logger,
                     cancellationToken);
-
+                // Maybe do it here?
                 return GetDependencyInfo(reader);
             }
 
@@ -349,8 +349,7 @@ namespace NuGet.Protocol
             cancellationToken.ThrowIfCancellationRequested();
 
             var packageInfos = await EnsurePackagesAsync(id, cacheContext, logger, cancellationToken);
-
-            return packageInfos.TryGetValue(version, out var packageInfo);
+            return packageInfos.TryGetValue(version, out _);
         }
 
         private async Task<SortedDictionary<NuGetVersion, PackageInfo>> EnsurePackagesAsync(

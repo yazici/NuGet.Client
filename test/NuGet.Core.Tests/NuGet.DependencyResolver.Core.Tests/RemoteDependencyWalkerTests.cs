@@ -844,7 +844,7 @@ namespace NuGet.DependencyResolver.Tests
                 VersionRange = new VersionRange(new NuGetVersion("1.0"))
             };
 
-            return walker.WalkAsync(range, NuGetFramework.Parse("net45"), runtimeIdentifier: null, runtimeGraph: null, recursive: true);
+            return walker.WalkAsync(range, NuGetFramework.Parse("net45"), runtimeIdentifier: null, runtimeGraph: null, recursive: true, CancellationToken.None);
 
         }
 
@@ -898,10 +898,10 @@ namespace NuGet.DependencyResolver.Tests
                 List<LibraryDependency> dependencies;
                 if (_graph.TryGetValue(match, out dependencies))
                 {
-                    return Task.FromResult(LibraryDependencyInfo.Create(match, targetFramework, dependencies));
+                    return Task.FromResult(LibraryDependencyInfo.Create(match, targetFramework, dependencies, false));
                 }
 
-                return Task.FromResult(LibraryDependencyInfo.Create(match, targetFramework, Enumerable.Empty<LibraryDependency>()));
+                return Task.FromResult(LibraryDependencyInfo.Create(match, targetFramework, Enumerable.Empty<LibraryDependency>(), false));
             }
 
             public bool SupportsType(LibraryDependencyTarget libraryType)

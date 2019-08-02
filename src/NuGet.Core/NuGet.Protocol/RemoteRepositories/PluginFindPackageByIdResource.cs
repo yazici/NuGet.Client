@@ -257,6 +257,8 @@ namespace NuGet.Protocol.Core.Types
                     using (var packageReader = new PluginPackageReader(_plugin, packageInfo.Identity, _packageSource.Source))
                     {
                         var nuspecReader = await packageReader.GetNuspecReaderAsync(cancellationToken);
+                        // Note that sync files doesn't do much :)
+                        var files = await packageReader.GetFilesAsync(cancellationToken);
 
                         return GetDependencyInfo(nuspecReader);
                     }

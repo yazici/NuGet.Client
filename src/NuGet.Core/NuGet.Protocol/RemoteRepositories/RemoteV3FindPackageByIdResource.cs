@@ -164,6 +164,7 @@ namespace NuGet.Protocol
                 cacheContext,
                 logger,
                 cancellationToken);
+            // TODO NK - Get the package files inside.
 
             return GetDependencyInfo(reader);
         }

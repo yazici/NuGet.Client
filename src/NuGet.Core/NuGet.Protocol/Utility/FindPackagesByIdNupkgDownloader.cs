@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
@@ -55,7 +56,7 @@ namespace NuGet.Protocol
             CancellationToken token)
         {
             NuspecReader reader = null;
-
+            IEnumerable<string> packageFiles = null;
             lock (_nuspecReadersLock)
             {
                 if (_nuspecReaders.TryGetValue(url, out reader))
@@ -69,7 +70,7 @@ namespace NuGet.Protocol
                 url,
                 stream =>
                 {
-                    reader = PackageUtilities.OpenNuspecFromNupkg(identity.Id, stream, logger);
+                    (packageFiles, reader) = PackageUtilities.OpenNuspecFromNupkg(identity.Id, stream, logger);
 
                     return Task.FromResult(true);
                 },

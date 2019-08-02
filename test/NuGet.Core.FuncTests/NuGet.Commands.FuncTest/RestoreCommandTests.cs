@@ -2587,6 +2587,245 @@ namespace NuGet.Commands.FuncTest
             }
         }
 
+        [Fact]
+        public async Task RestoreCommand_WhenPackageIsSelectedWithATF_DependenciesAreIncluded()
+        {
+            // Arrange
+            using (var pathContext = new SimpleTestPathContext())
+            {
+                var logger = new TestLogger();
+                var projectPath = Path.Combine(pathContext.SolutionRoot, "TestProject");
+
+                // Set up the package and source
+                var packageA = new SimpleTestPackageContext()
+                {
+                    Id = "a",
+                    Version = "1.0.0"
+                };
+                packageA.Files.Clear();
+                packageA.AddFile("lib/net472/a.dll");
+
+                var packageB = new SimpleTestPackageContext()
+                {
+                    Id = "b",
+                    Version = "1.0.0"
+                };
+                packageB.Files.Clear();
+                packageB.AddFile("lib/net472/b.dll");
+
+                // add A -> B
+
+                packageA.FrameworkContext.Add(new SimpleTestPackageFrameworkContext(NuGetFramework.Parse("net472"), new SimpleTestPackageContext[] { packageB }, new List<string>()));
+
+                await SimpleTestPackageUtility.CreateFolderFeedV3Async(
+                    pathContext.PackageSource,
+                    PackageSaveMode.Defaultv3,
+                    packageA,
+                    packageB);
+                var sources = new List<PackageSource> { new PackageSource(pathContext.PackageSource) };
+
+                // set up the project
+
+                var json = JObject.Parse(@"
+                {
+                     ""frameworks"": {
+                        ""netcoreapp3.0"": {
+                            ""dependencies"": {
+                                ""a"": ""1.0.0""
+                            },
+                            ""assetTargetFallback"" : true,
+                            ""imports"" : [ ""net472"" ],
+                            ""warn"" : true
+                        }
+                    }
+                }");
+
+                var spec = JsonPackageSpecReader.GetPackageSpec(json.ToString(), "TestProject", Path.Combine(projectPath, "spec.json")).WithTestRestoreMetadata();
+
+                var request = new TestRestoreRequest(spec, sources, pathContext.UserPackagesFolder, logger)
+                {
+                    LockFilePath = Path.Combine(projectPath, "project.assets.json"),
+                    ProjectStyle = ProjectStyle.PackageReference
+                };
+
+                var command = new RestoreCommand(request);
+
+                // Act
+
+                var result = await command.ExecuteAsync();
+                await result.CommitAsync(logger, CancellationToken.None);
+
+                // Assert
+                Assert.Equal(0, result.CompatibilityCheckResults.Sum(checkResult => checkResult.Issues.Count));
+                Assert.Equal(string.Empty, logger.ShowErrors());
+                Assert.Equal(2, logger.Warnings);
+                logger.WarningMessages.Single(e => e.Contains(@"Package 'a 1.0.0'")).Contains("NU1701");
+                logger.WarningMessages.Single(e => e.Contains(@"Package 'b 1.0.0'")).Contains("NU1701");
+                Assert.Equal(2, result.GetAllInstalled().Count);
+            }
+        }
+
+        [Fact]
+        public async Task RestoreCommand_WhenPackageIsSelectedWithATF_DependenciesAreIncluded_AndAssetsAreSelectedWRTToProjectFramework()
+        {
+            // Arrange
+            using (var pathContext = new SimpleTestPathContext())
+            {
+                var logger = new TestLogger();
+                var projectPath = Path.Combine(pathContext.SolutionRoot, "TestProject");
+
+                // Set up the package and source
+                var packageA = new SimpleTestPackageContext()
+                {
+                    Id = "a",
+                    Version = "1.0.0"
+                };
+                packageA.Files.Clear();
+                packageA.AddFile("lib/net472/a.dll");
+
+                var packageB = new SimpleTestPackageContext()
+                {
+                    Id = "b",
+                    Version = "1.0.0"
+                };
+                packageB.Files.Clear();
+                packageB.AddFile("lib/net472/b.dll");
+                packageB.AddFile("lib/netstandard2.0/b.dll");
+
+
+                // add A -> B
+
+                packageA.FrameworkContext.Add(new SimpleTestPackageFrameworkContext(NuGetFramework.Parse("net472"), new SimpleTestPackageContext[] { packageB }, new List<string>()));
+
+                await SimpleTestPackageUtility.CreateFolderFeedV3Async(
+                    pathContext.PackageSource,
+                    PackageSaveMode.Defaultv3,
+                    packageA,
+                    packageB);
+                var sources = new List<PackageSource> { new PackageSource(pathContext.PackageSource) };
+
+                // set up the project
+
+                var json = JObject.Parse(@"
+                {
+                     ""frameworks"": {
+                        ""netcoreapp3.0"": {
+                            ""dependencies"": {
+                                ""a"": ""1.0.0""
+                            },
+                            ""assetTargetFallback"" : true,
+                            ""imports"" : [ ""net472"" ],
+                            ""warn"" : true
+                        }
+                    }
+                }");
+
+                var spec = JsonPackageSpecReader.GetPackageSpec(json.ToString(), "TestProject", Path.Combine(projectPath, "spec.json")).WithTestRestoreMetadata();
+
+                var request = new TestRestoreRequest(spec, sources, pathContext.UserPackagesFolder, logger)
+                {
+                    LockFilePath = Path.Combine(projectPath, "project.assets.json"),
+                    ProjectStyle = ProjectStyle.PackageReference
+                };
+
+                var command = new RestoreCommand(request);
+
+                // Act
+
+                var result = await command.ExecuteAsync();
+                await result.CommitAsync(logger, CancellationToken.None);
+
+                // Assert
+                Assert.Equal(0, result.CompatibilityCheckResults.Sum(checkResult => checkResult.Issues.Count));
+                Assert.Equal(string.Empty, logger.ShowErrors());
+                Assert.Equal(1, logger.Warnings);
+                logger.WarningMessages.Single(e => e.Contains(@"Package 'a 1.0.0'")).Contains("NU1701");
+                Assert.Equal(2, result.GetAllInstalled().Count);
+            }
+        }
+
+
+        // TODO NK - Is this ok actually? Should we call out the inconsistency with a different error code?
+        [Fact]
+        public async Task RestoreCommand_WhenDependenciesAreSelectedWithATF_AndPackageAssetsAreNot_RaisesATFWarning()
+        {
+            // Arrange
+            using (var pathContext = new SimpleTestPathContext())
+            {
+                var logger = new TestLogger();
+                var projectPath = Path.Combine(pathContext.SolutionRoot, "TestProject");
+
+                // Set up the package and source
+                var packageA = new SimpleTestPackageContext()
+                {
+                    Id = "a",
+                    Version = "1.0.0"
+                };
+                packageA.Files.Clear();
+                packageA.AddFile("lib/net472/a.dll");
+                packageA.AddFile("lib/netstandard2.0/b.dll");
+
+                var packageB = new SimpleTestPackageContext()
+                {
+                    Id = "b",
+                    Version = "1.0.0"
+                };
+                packageB.Files.Clear();
+                packageB.AddFile("lib/net472/b.dll");
+                packageB.AddFile("lib/netstandard2.0/b.dll");
+
+
+                // add A -> B
+
+                packageA.FrameworkContext.Add(new SimpleTestPackageFrameworkContext(NuGetFramework.Parse("net472"), new SimpleTestPackageContext[] { packageB }, new List<string>()));
+
+                await SimpleTestPackageUtility.CreateFolderFeedV3Async(
+                    pathContext.PackageSource,
+                    PackageSaveMode.Defaultv3,
+                    packageA,
+                    packageB);
+                var sources = new List<PackageSource> { new PackageSource(pathContext.PackageSource) };
+
+                // set up the project
+
+                var json = JObject.Parse(@"
+                {
+                     ""frameworks"": {
+                        ""netcoreapp3.0"": {
+                            ""dependencies"": {
+                                ""a"": ""1.0.0""
+                            },
+                            ""assetTargetFallback"" : true,
+                            ""imports"" : [ ""net472"" ],
+                            ""warn"" : true
+                        }
+                    }
+                }");
+
+                var spec = JsonPackageSpecReader.GetPackageSpec(json.ToString(), "TestProject", Path.Combine(projectPath, "spec.json")).WithTestRestoreMetadata();
+
+                var request = new TestRestoreRequest(spec, sources, pathContext.UserPackagesFolder, logger)
+                {
+                    LockFilePath = Path.Combine(projectPath, "project.assets.json"),
+                    ProjectStyle = ProjectStyle.PackageReference
+                };
+
+                var command = new RestoreCommand(request);
+
+                // Act
+
+                var result = await command.ExecuteAsync();
+                await result.CommitAsync(logger, CancellationToken.None);
+
+                // Assert
+                Assert.Equal(0, result.CompatibilityCheckResults.Sum(checkResult => checkResult.Issues.Count));
+                Assert.Equal(string.Empty, logger.ShowErrors());
+                Assert.Equal(1, logger.Warnings);
+                logger.WarningMessages.Single(e => e.Contains(@"Package 'a 1.0.0'")).Contains("NU1701");
+                Assert.Equal(2, result.GetAllInstalled().Count);
+            }
+        }
+
         private static byte[] GetTestUtilityResource(string name)
         {
             return ResourceTestUtility.GetResourceBytes(

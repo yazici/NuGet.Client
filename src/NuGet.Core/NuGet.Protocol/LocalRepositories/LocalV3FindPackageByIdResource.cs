@@ -364,10 +364,13 @@ namespace NuGet.Protocol
             var expandedPath = _resolver.GetInstallPath(id, version);
 
             NuspecReader nuspecReader;
+            Lazy<IReadOnlyList<string>> packageFiles;
             try
             {
                 // Read the nuspec
                 nuspecReader = PackageFileCache.GetOrAddNuspec(nuspecPath, expandedPath).Value;
+                packageFiles = PackageFileCache.GetOrAddFiles(expandedPath);
+
             }
             catch (XmlException ex)
             {

@@ -1683,7 +1683,7 @@ namespace NuGet.Commands.Test
                 packageX.Files.Clear();
                 packageX.UseDefaultRuntimeAssemblies = false;
                 packageX.AddFile("lib/netcoreapp3.0/packageX.dll");
-                packageX.FrameworkReferences.Add(NuGetFramework.Parse("netcoreapp3.0"), new string[] { "Microsoft.WindowsDesktop.App|WinForms" });
+                packageX.FrameworkContext.Add(new SimpleTestPackageFrameworkContext(NuGetFramework.Parse("netcoreapp3.0"), new List<SimpleTestPackageContext>(), new string[] { "Microsoft.WindowsDesktop.App|WinForms" }));
 
                 var packageY = new SimpleTestPackageContext()
                 {
@@ -1693,7 +1693,7 @@ namespace NuGet.Commands.Test
                 packageY.Files.Clear();
                 packageY.UseDefaultRuntimeAssemblies = false;
                 packageY.AddFile("lib/netcoreapp3.0/packageY.dll");
-                packageY.FrameworkReferences.Add(NuGetFramework.Parse("netcoreapp3.0"), new string[] { "Microsoft.WindowsDesktop.App|WPF" });
+                packageY.FrameworkContext.Add(new SimpleTestPackageFrameworkContext(NuGetFramework.Parse("netcoreapp3.0"), new List<SimpleTestPackageContext>(), new string[] { "Microsoft.WindowsDesktop.App|WPF" }));
 
                 packageX.Dependencies.Add(packageY);
 
@@ -1826,7 +1826,8 @@ namespace NuGet.Commands.Test
                 packageX.Files.Clear();
                 packageX.UseDefaultRuntimeAssemblies = false;
                 packageX.AddFile("lib/netcoreapp3.0/packageX.dll");
-                packageX.FrameworkReferences.Add(NuGetFramework.Parse("netcoreapp3.0"), new string[] { "Microsoft.WindowsDesktop.App|WinForms" });
+                packageX.FrameworkContext.Add(new SimpleTestPackageFrameworkContext(NuGetFramework.Parse("netcoreapp3.0"), new List<SimpleTestPackageContext>(), new string[] { "Microsoft.WindowsDesktop.App|WinForms" }));
+
 
                 await SimpleTestPackageUtility.CreateFullPackageAsync(packageSource.FullName, packageX);
                 var logger = new TestLogger();

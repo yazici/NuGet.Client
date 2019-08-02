@@ -232,8 +232,7 @@ namespace NuGet.Commands
                     _request.ExistingLockFile,
                     _request.Project,
                     graphs,
-                    localRepositories,
-                    contextForProject);
+                    localRepositories);
                 }
 
                 IList<CompatibilityCheckResult> checkResults = null;
@@ -639,8 +638,7 @@ namespace NuGet.Commands
             LockFile existingLockFile,
             PackageSpec project,
             IEnumerable<RestoreTargetGraph> graphs,
-            IReadOnlyList<NuGetv3LocalRepository> localRepositories,
-            RemoteWalkContext contextForProject)
+            IReadOnlyList<NuGetv3LocalRepository> localRepositories)
         {
             // Build the lock file
             var lockFile = new LockFileBuilder(_request.LockFileVersion, _logger, _includeFlagGraphs)
@@ -648,8 +646,7 @@ namespace NuGet.Commands
                         existingLockFile,
                         project,
                         graphs,
-                        localRepositories,
-                        contextForProject);
+                        localRepositories);
 
             return lockFile;
         }

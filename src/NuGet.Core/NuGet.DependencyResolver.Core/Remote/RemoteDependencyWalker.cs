@@ -24,9 +24,9 @@ namespace NuGet.DependencyResolver
             _context = context;
         }
 
-        public Task<GraphNode<RemoteResolveResult>> WalkAsync(LibraryRange library, NuGetFramework framework, string runtimeIdentifier, RuntimeGraph runtimeGraph, bool recursive)
+        public Task<GraphNode<RemoteResolveResult>> WalkAsync(LibraryRange library, NuGetFramework framework, string runtimeIdentifier, RuntimeGraph runtimeGraph, bool recursive, CancellationToken token)
         {
-            return CreateGraphNode(library, framework, runtimeIdentifier, runtimeGraph, _ => recursive ? DependencyResult.Acceptable : DependencyResult.Eclipsed, outerEdge: null);
+            return CreateGraphNode(library, framework, runtimeIdentifier, runtimeGraph, _ => recursive ? DependencyResult.Acceptable : DependencyResult.Eclipsed, outerEdge: null, token: token);
         }
 
         private async Task<GraphNode<RemoteResolveResult>> CreateGraphNode(
@@ -35,7 +35,8 @@ namespace NuGet.DependencyResolver
             string runtimeName,
             RuntimeGraph runtimeGraph,
             Func<LibraryRange, DependencyResult> predicate,
-            GraphEdge<RemoteResolveResult> outerEdge)
+            GraphEdge<RemoteResolveResult> outerEdge,
+            CancellationToken token)
         {
             List<LibraryDependency> dependencies = null;
             HashSet<string> runtimeDependencies = null;
@@ -92,7 +93,7 @@ namespace NuGet.DependencyResolver
                     framework,
                     runtimeName,
                     _context,
-                    CancellationToken.None)
+                    token)
             };
 
             Debug.Assert(node.Item != null, "FindLibraryCached should return an unresolved item instead of null");
@@ -155,7 +156,8 @@ namespace NuGet.DependencyResolver
                             runtimeName,
                             runtimeGraph,
                             ChainPredicate(predicate, node, dependency),
-                            innerEdge));
+                            innerEdge,
+                            token));
                     }
                     else
                     {

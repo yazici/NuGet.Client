@@ -7278,7 +7278,7 @@ namespace NuGet.CommandLine.Test
                     Id = "x",
                     Version = "1.0.0"
                 };
-                packageX.FrameworkReferences.Add(NuGetFramework.Parse("net45"), new string[] { "FrameworkRef" });
+                packageX.FrameworkContext.Add(new SimpleTestPackageFrameworkContext(NuGetFramework.Parse("net45"), new List<SimpleTestPackageContext>(), new string[] { "FrameworkRef" }));
                 packageX.Files.Clear();
                 packageX.AddFile("lib/net45/x.dll");
 
@@ -7328,7 +7328,7 @@ namespace NuGet.CommandLine.Test
                     Id = "x",
                     Version = "1.0.0"
                 };
-                packageX.FrameworkReferences.Add(NuGetFramework.Parse("net45"), new string[] { "FrameworkRef" });
+                packageX.FrameworkContext.Add(new SimpleTestPackageFrameworkContext(NuGetFramework.Parse("net45"), new List<SimpleTestPackageContext>(), new string[] { "FrameworkRef" }));
                 packageX.Files.Clear();
                 packageX.AddFile("lib/net45/x.dll");
 
@@ -7340,7 +7340,7 @@ namespace NuGet.CommandLine.Test
                 packageY.Files.Clear();
                 packageY.UseDefaultRuntimeAssemblies = false;
                 packageY.AddFile("lib/net45/y.dll");
-                packageY.FrameworkReferences.Add(NuGetFramework.Parse("net45"), new string[] { "FrameworkRefY" });
+                packageY.FrameworkContext.Add(new SimpleTestPackageFrameworkContext(NuGetFramework.Parse("net45"), new List<SimpleTestPackageContext>(), new string[] { "FrameworkRefY" }));
 
                 packageX.Dependencies.Add(packageY);
 
@@ -7392,7 +7392,7 @@ namespace NuGet.CommandLine.Test
                     Id = "x",
                     Version = "1.0.0"
                 };
-                packageX.FrameworkReferences.Add(NuGetFramework.Parse("net45"), new string[] { "FrameworkRef" });
+                packageX.FrameworkContext.Add(new SimpleTestPackageFrameworkContext(NuGetFramework.Parse("net45"), new List<SimpleTestPackageContext>(), new string[] { "FrameworkRef" }));
                 packageX.Files.Clear();
                 packageX.AddFile("lib/net45/x.dll");
 
@@ -7476,7 +7476,7 @@ namespace NuGet.CommandLine.Test
                     Id = "x",
                     Version = "1.0.0"
                 };
-                packageX.FrameworkReferences.Add(NuGetFramework.Parse("net45"), new string[] { "FrameworkRef" });
+                packageX.FrameworkContext.Add(new SimpleTestPackageFrameworkContext(NuGetFramework.Parse("net45"), new List<SimpleTestPackageContext>(), new string[] { "FrameworkRef" }));
                 packageX.Files.Clear();
                 packageX.AddFile("lib/net45/x.dll");
 

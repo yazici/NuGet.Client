@@ -172,6 +172,33 @@ namespace NuGet.Test.Utility
                         .Add(new XAttribute(XName.Get("minClientVersion"), packageContext.MinClientVersion));
                 }
 
+                var usedDependenciesFromFrameworkContext = false;
+
+                if (packageContext.FrameworkContext.Any(e => e.Dependencies.Any()))
+                {
+                    usedDependenciesFromFrameworkContext = true;
+                    var metadata = xml.Element(XName.Get("package")).Element(XName.Get("metadata"));
+                    var dependenciesNode = new XElement(XName.Get("dependencies"));
+
+                    foreach (var frameworkContext in packageContext.FrameworkContext)
+                    {
+                        var groupNode = new XElement(XName.Get("group"));
+                        groupNode.SetAttributeValue("targetFramework", frameworkContext.Framework.GetFrameworkString());
+                        dependenciesNode.Add(groupNode);
+                        metadata.Add(dependenciesNode);
+
+                        foreach (var dependency in frameworkContext.Dependencies)
+                        {
+                            var node = new XElement(XName.Get("dependency"));
+                            groupNode.Add(node);
+                            node.Add(new XAttribute(XName.Get("id"), dependency.Id));
+                            node.Add(new XAttribute(XName.Get("version"), VersionRange.Parse(dependency.Version).ToNormalizedString()));
+                            node.Add(new XAttribute(XName.Get("include"), dependency.Include));
+                            node.Add(new XAttribute(XName.Get("exclude"), dependency.Exclude));
+                        }
+                    }
+                }
+
                 var dependencies = packageContext.Dependencies.Select(e =>
                     new PackageDependency(
                         e.Id,
@@ -183,7 +210,7 @@ namespace NuGet.Test.Utility
                             ? new List<string>()
                             : e.Exclude.Split(',').ToList()));
 
-                if (dependencies.Any())
+                if (!usedDependenciesFromFrameworkContext && dependencies.Any())
                 {
                     var metadata = xml.Element(XName.Get("package")).Element(XName.Get("metadata"));
 
@@ -211,23 +238,26 @@ namespace NuGet.Test.Utility
                     }
                 }
 
-                if (packageContext.FrameworkReferences.Any())
+                if (packageContext.FrameworkContext.Any(e => e.FrameworkReferences.Any()))
                 {
                     var metadata = xml.Element(XName.Get("package")).Element(XName.Get("metadata"));
                     var frameworkReferencesNode = new XElement(XName.Get("frameworkReferences"));
 
-                    foreach(var kvp in packageContext.FrameworkReferences)
+                    foreach (var frameworkContext in packageContext.FrameworkContext)
                     {
-                        var groupNode = new XElement(XName.Get("group"));
-                        groupNode.SetAttributeValue("targetFramework", kvp.Key.GetFrameworkString());
-                        frameworkReferencesNode.Add(groupNode);
-                        metadata.Add(frameworkReferencesNode);
-
-                        foreach (var frameworkReference in kvp.Value)
+                        foreach (var frameworkReferences in frameworkContext.FrameworkReferences)
                         {
-                            var node = new XElement(XName.Get("frameworkReference"));
-                            groupNode.Add(node);
-                            node.Add(new XAttribute(XName.Get("name"), frameworkReference));
+                            var groupNode = new XElement(XName.Get("group"));
+                            groupNode.SetAttributeValue("targetFramework", frameworkContext.Framework.GetFrameworkString());
+                            frameworkReferencesNode.Add(groupNode);
+                            metadata.Add(frameworkReferencesNode);
+
+                            foreach (var frameworkReference in frameworkReferences)
+                            {
+                                var node = new XElement(XName.Get("frameworkReference"));
+                                groupNode.Add(node);
+                                node.Add(new XAttribute(XName.Get("name"), frameworkReference));
+                            }
                         }
                     }
                 }

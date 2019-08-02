@@ -75,10 +75,9 @@ namespace NuGet.Commands
                 };
 
                 // Populate assets
-
                 if (lockFileLib.PackageType.Contains(PackageType.DotnetTool))
                 {
-                    AddToolsAssets(library, package, targetGraph, dependencyType, lockFileLib, framework, runtimeIdentifier, contentItems, nuspec, orderedCriteriaSets[i]);
+                    AddToolsAssets(targetGraph, lockFileLib, contentItems, orderedCriteriaSets[i]);
                     if (CompatibilityChecker.HasCompatibleToolsAssets(lockFileLib))
                     {
                         break;
@@ -86,7 +85,7 @@ namespace NuGet.Commands
                 }
                 else
                 { 
-                    AddAssets(library, package, targetGraph, dependencyType, lockFileLib, framework, runtimeIdentifier, contentItems, nuspec, orderedCriteriaSets[i]);
+                    AddAssets(library.Name, package, targetGraph, dependencyType, lockFileLib, framework, runtimeIdentifier, contentItems, nuspec, orderedCriteriaSets[i]);
                     // Check if compatile assets were found.
                     // If no compatible assets were found and this is the last check
                     // continue on with what was given, this will fail in the normal
@@ -110,7 +109,7 @@ namespace NuGet.Commands
             return lockFileLib;
         }
 
-        internal static List<List<SelectionCriteria>> CreateOrderedCriteriaSets(RestoreTargetGraph targetGraph, NuGetFramework framework)
+        internal static List<List<SelectionCriteria>> CreateOrderedCriteriaSets(ManagedCodeConventions codeConventions, NuGetFramework framework, string runtimeIdentifier)
         {
             // Create an ordered list of selection criteria. Each will be applied, if the result is empty
             // fallback frameworks from "imports" will be tried.
@@ -124,15 +123,15 @@ namespace NuGet.Commands
             if (assetTargetFallback != null)
             {
                 // Add the root project framework first.
-                orderedCriteriaSets.Add(CreateCriteria(targetGraph, assetTargetFallback.RootFramework));
+                orderedCriteriaSets.Add(CreateCriteria(codeConventions, assetTargetFallback.RootFramework, runtimeIdentifier));
 
                 // Add all fallbacks in order.
-                orderedCriteriaSets.AddRange(assetTargetFallback.Fallback.Select(e => CreateCriteria(targetGraph, e)));
+                orderedCriteriaSets.AddRange(assetTargetFallback.Fallback.Select(e => CreateCriteria(codeConventions, e, runtimeIdentifier)));
             }
             else
             {
                 // Add the current framework.
-                orderedCriteriaSets.Add(CreateCriteria(targetGraph, framework));
+                orderedCriteriaSets.Add(CreateCriteria(codeConventions, framework, runtimeIdentifier));
             }
 
             return orderedCriteriaSets;
@@ -142,7 +141,7 @@ namespace NuGet.Commands
         /// Populate assets for a <see cref="LockFileLibrary"/>.
         /// </summary>
         private static void AddAssets(
-            LockFileLibrary library,
+            string libraryName,
             LocalPackageInfo package,
             RestoreTargetGraph targetGraph,
             LibraryIncludeFlags dependencyType,
@@ -199,7 +198,7 @@ namespace NuGet.Commands
             lockFileLib.NativeLibraries.AddRange(nativeGroup);
 
             // Add MSBuild files
-            AddMSBuildAssets(library, targetGraph, lockFileLib, orderedCriteria, contentItems);
+            AddMSBuildAssets(libraryName, targetGraph, lockFileLib, orderedCriteria, contentItems);
 
             // Add content files
             AddContentFiles(targetGraph, lockFileLib, framework, contentItems, nuspec);
@@ -217,7 +216,7 @@ namespace NuGet.Commands
         }
 
         private static void AddMSBuildAssets(
-            LockFileLibrary library,
+            string libraryName,
             RestoreTargetGraph targetGraph,
             LockFileTargetLibrary lockFileLib,
             IReadOnlyList<SelectionCriteria> orderedCriteria,
@@ -229,7 +228,7 @@ namespace NuGet.Commands
                 contentItems,
                 targetGraph.Conventions.Patterns.MSBuildTransitiveFiles);
 
-            var filteredBTGroup = GetBuildItemsForPackageId(btGroup, library.Name);
+            var filteredBTGroup = GetBuildItemsForPackageId(btGroup, libraryName);
             lockFileLib.Build.AddRange(filteredBTGroup);
 
             // Build
@@ -239,7 +238,7 @@ namespace NuGet.Commands
                 targetGraph.Conventions.Patterns.MSBuildFiles);
 
             // filter any build asset already being added as part of build transitive
-            var filteredBuildGroup = GetBuildItemsForPackageId(buildGroup, library.Name).
+            var filteredBuildGroup = GetBuildItemsForPackageId(buildGroup, libraryName).
                 Where(buildItem => !filteredBTGroup.Any(
                     btItem => Path.GetFileName(btItem.Path).Equals(Path.GetFileName(buildItem.Path), StringComparison.OrdinalIgnoreCase)));
 
@@ -251,18 +250,13 @@ namespace NuGet.Commands
                 contentItems,
                 targetGraph.Conventions.Patterns.MSBuildMultiTargetingFiles);
 
-            lockFileLib.BuildMultiTargeting.AddRange(GetBuildItemsForPackageId(buildMultiTargetingGroup, library.Name));
+            lockFileLib.BuildMultiTargeting.AddRange(GetBuildItemsForPackageId(buildMultiTargetingGroup, libraryName));
         }
 
-        private static void AddToolsAssets(LockFileLibrary library,
-            LocalPackageInfo package,
+        private static void AddToolsAssets(
             RestoreTargetGraph targetGraph,
-            LibraryIncludeFlags dependencyType,
             LockFileTargetLibrary lockFileLib,
-            NuGetFramework framework,
-            string runtimeIdentifier,
             ContentItemCollection contentItems,
-            NuspecReader nuspec,
             IReadOnlyList<SelectionCriteria> orderedCriteria)
         {
             var toolsGroup = GetLockFileItems(
@@ -552,7 +546,7 @@ namespace NuGet.Commands
                     // Create an ordered list of selection criteria. Each will be applied, if the result is empty
                     // fallback frameworks from "imports" will be tried.
                     // These are only used for framework/RID combinations where content model handles everything.
-                    var orderedCriteria = CreateCriteria(targetGraph, targetGraph.Framework);
+                    var orderedCriteria = CreateCriteria(targetGraph.Conventions, targetGraph.Framework, targetGraph.RuntimeIdentifier);
 
                     // Compile
                     // ref takes precedence over lib
@@ -713,8 +707,9 @@ namespace NuGet.Commands
         /// Creates an ordered list of selection criteria to use. This supports fallback frameworks.
         /// </summary>
         private static List<SelectionCriteria> CreateCriteria(
-            RestoreTargetGraph targetGraph,
-            NuGetFramework framework)
+            ManagedCodeConventions conventions,
+            NuGetFramework framework,
+            string runtimeIdentifier)
         {
             var managedCriteria = new List<SelectionCriteria>(1);
 
@@ -725,9 +720,9 @@ namespace NuGet.Commands
             // the fallback frameworks will be checked later.
             if (fallbackFramework == null)
             {
-                var standardCriteria = targetGraph.Conventions.Criteria.ForFrameworkAndRuntime(
+                var standardCriteria = conventions.Criteria.ForFrameworkAndRuntime(
                     framework,
-                    targetGraph.RuntimeIdentifier);
+                    runtimeIdentifier);
 
                 managedCriteria.Add(standardCriteria);
             }
@@ -735,18 +730,18 @@ namespace NuGet.Commands
             {
                 // Add the project framework
                 var primaryFramework = NuGetFramework.Parse(fallbackFramework.DotNetFrameworkName);
-                var primaryCriteria = targetGraph.Conventions.Criteria.ForFrameworkAndRuntime(
+                var primaryCriteria = conventions.Criteria.ForFrameworkAndRuntime(
                     primaryFramework,
-                    targetGraph.RuntimeIdentifier);
+                    runtimeIdentifier);
 
                 managedCriteria.Add(primaryCriteria);
 
                 // Add each fallback framework in order
                 foreach (var fallback in fallbackFramework.Fallback)
                 {
-                    var fallbackCriteria = targetGraph.Conventions.Criteria.ForFrameworkAndRuntime(
+                    var fallbackCriteria = conventions.Criteria.ForFrameworkAndRuntime(
                         fallback,
-                        targetGraph.RuntimeIdentifier);
+                        runtimeIdentifier);
 
                     managedCriteria.Add(fallbackCriteria);
                 }

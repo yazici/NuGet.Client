@@ -5,18 +5,14 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
-using System.IO;
 using System.Linq;
 using NuGet.Common;
-using NuGet.ContentModel;
 using NuGet.DependencyResolver;
 using NuGet.Frameworks;
 using NuGet.LibraryModel;
 using NuGet.Packaging;
-using NuGet.Packaging.Core;
 using NuGet.ProjectModel;
 using NuGet.Repositories;
-using NuGet.Versioning;
 
 namespace NuGet.Commands
 {
@@ -39,8 +35,7 @@ namespace NuGet.Commands
         public LockFile CreateLockFile(LockFile previousLockFile,
             PackageSpec project,
             IEnumerable<RestoreTargetGraph> targetGraphs,
-            IReadOnlyList<NuGetv3LocalRepository> localRepositories,
-            RemoteWalkContext context)
+            IReadOnlyList<NuGetv3LocalRepository> localRepositories)
         {
             var lockFile = new LockFile()
             {
@@ -243,7 +238,7 @@ namespace NuGet.Commands
                                 dependencies: graphItem.Data.Dependencies,
                                 cache: builderCache);
 
-                            if (!targetLibrary.Equals(targetLibraryWithoutFallback))
+                            if (!targetLibrary.Equals(targetLibraryWithoutFallback) || graphItem.Data.UsedATFForDependencies)
                             {
                                 var libraryName = DiagnosticUtility.FormatIdentity(library);
 
