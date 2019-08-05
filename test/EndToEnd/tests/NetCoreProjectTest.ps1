@@ -227,3 +227,17 @@ function Test-NetCoreToolsVSandMSBuildNoOp {
     #Assert
     Assert-True ($MsBuildRestoreTimestamp -eq $VSRestoreTimestamp)
 }
+
+function Test-NetCoreConsoleApp-WarnsWhenSourceIsUsed {
+
+    # Arrange & Act
+    $project = New-NetCoreConsoleApp ConsoleApp
+    Build-Solution
+    Install-Package Newtonsoft.Json -Version '9.0.1' -ProjectName $project.Name -source "https://api.nuget.org/v3/index.json"
+
+    Assert-AreEqual 0 $errorlist.Count
+
+    $warnings = Get-BuildOutput
+
+    Write-Output $warnings
+}

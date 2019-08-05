@@ -423,7 +423,7 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
                     }
                 }
                 var nVersion = PowerShellCmdletsUtility.GetNuGetVersionFromString(builderForVersion.ToString().TrimEnd('.'));
-                // Set _allowPrerelease to true if nVersion is prerelease version.
+                // Set n to true if nVersion is prerelease version.
                 if (nVersion != null
                     && nVersion.IsPrerelease)
                 {
