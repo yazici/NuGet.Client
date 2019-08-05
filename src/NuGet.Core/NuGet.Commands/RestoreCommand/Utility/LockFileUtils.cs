@@ -77,7 +77,7 @@ namespace NuGet.Commands
                 // Populate assets
                 if (lockFileLib.PackageType.Contains(PackageType.DotnetTool))
                 {
-                    AddToolsAssets(targetGraph, lockFileLib, contentItems, orderedCriteriaSets[i]);
+                    AddToolsAssets(targetGraph.Conventions, lockFileLib, contentItems, orderedCriteriaSets[i]);
                     if (CompatibilityChecker.HasCompatibleToolsAssets(lockFileLib))
                     {
                         break;
@@ -85,7 +85,7 @@ namespace NuGet.Commands
                 }
                 else
                 { 
-                    AddAssets(library.Name, package, targetGraph, dependencyType, lockFileLib, framework, runtimeIdentifier, contentItems, nuspec, orderedCriteriaSets[i]);
+                    AddAssets(library.Name, package, targetGraph.Conventions, dependencyType, lockFileLib, framework, runtimeIdentifier, contentItems, nuspec, orderedCriteriaSets[i]);
                     // Check if compatile assets were found.
                     // If no compatible assets were found and this is the last check
                     // continue on with what was given, this will fail in the normal
@@ -143,7 +143,7 @@ namespace NuGet.Commands
         private static void AddAssets(
             string libraryName,
             LocalPackageInfo package,
-            RestoreTargetGraph targetGraph,
+            ManagedCodeConventions managedCodeConventions,
             LibraryIncludeFlags dependencyType,
             LockFileTargetLibrary lockFileLib,
             NuGetFramework framework,
@@ -160,8 +160,8 @@ namespace NuGet.Commands
             var compileGroup = GetLockFileItems(
                 orderedCriteria,
                 contentItems,
-                targetGraph.Conventions.Patterns.CompileRefAssemblies,
-                targetGraph.Conventions.Patterns.CompileLibAssemblies);
+                managedCodeConventions.Patterns.CompileRefAssemblies,
+                managedCodeConventions.Patterns.CompileLibAssemblies);
 
             lockFileLib.CompileTimeAssemblies.AddRange(compileGroup);
 
@@ -169,7 +169,7 @@ namespace NuGet.Commands
             var runtimeGroup = GetLockFileItems(
                 orderedCriteria,
                 contentItems,
-                targetGraph.Conventions.Patterns.RuntimeAssemblies);
+                managedCodeConventions.Patterns.RuntimeAssemblies);
 
             lockFileLib.RuntimeAssemblies.AddRange(runtimeGroup);
 
@@ -177,7 +177,7 @@ namespace NuGet.Commands
             var embedGroup = GetLockFileItems(
                 orderedCriteria,
                 contentItems,
-                targetGraph.Conventions.Patterns.EmbedAssemblies);
+                managedCodeConventions.Patterns.EmbedAssemblies);
 
             lockFileLib.EmbedAssemblies.AddRange(embedGroup);
 
@@ -185,7 +185,7 @@ namespace NuGet.Commands
             var resourceGroup = GetLockFileItems(
                 orderedCriteria,
                 contentItems,
-                targetGraph.Conventions.Patterns.ResourceAssemblies);
+                managedCodeConventions.Patterns.ResourceAssemblies);
 
             lockFileLib.ResourceAssemblies.AddRange(resourceGroup);
 
@@ -193,20 +193,20 @@ namespace NuGet.Commands
             var nativeGroup = GetLockFileItems(
                 orderedCriteria,
                 contentItems,
-                targetGraph.Conventions.Patterns.NativeLibraries);
+                managedCodeConventions.Patterns.NativeLibraries);
 
             lockFileLib.NativeLibraries.AddRange(nativeGroup);
 
             // Add MSBuild files
-            AddMSBuildAssets(libraryName, targetGraph, lockFileLib, orderedCriteria, contentItems);
+            AddMSBuildAssets(libraryName, managedCodeConventions, lockFileLib, orderedCriteria, contentItems);
 
             // Add content files
-            AddContentFiles(targetGraph, lockFileLib, framework, contentItems, nuspec);
+            AddContentFiles(managedCodeConventions, lockFileLib, framework, contentItems, nuspec);
 
             // Runtime targets
             // These are applied only to non-RID target graphs.
             // They are not used for compatibility checks.
-            AddRuntimeTargets(targetGraph, dependencyType, lockFileLib, framework, runtimeIdentifier, contentItems);
+            AddRuntimeTargets(managedCodeConventions, dependencyType, lockFileLib, framework, runtimeIdentifier, contentItems);
 
             // COMPAT: Support lib/contract so older packages can be consumed
             ApplyLibContract(package, lockFileLib, framework, contentItems);
@@ -217,7 +217,7 @@ namespace NuGet.Commands
 
         private static void AddMSBuildAssets(
             string libraryName,
-            RestoreTargetGraph targetGraph,
+            ManagedCodeConventions managedCodeConventions,
             LockFileTargetLibrary lockFileLib,
             IReadOnlyList<SelectionCriteria> orderedCriteria,
             ContentItemCollection contentItems)
@@ -226,7 +226,7 @@ namespace NuGet.Commands
             var btGroup = GetLockFileItems(
                 orderedCriteria,
                 contentItems,
-                targetGraph.Conventions.Patterns.MSBuildTransitiveFiles);
+                managedCodeConventions.Patterns.MSBuildTransitiveFiles);
 
             var filteredBTGroup = GetBuildItemsForPackageId(btGroup, libraryName);
             lockFileLib.Build.AddRange(filteredBTGroup);
@@ -235,7 +235,7 @@ namespace NuGet.Commands
             var buildGroup = GetLockFileItems(
                 orderedCriteria,
                 contentItems,
-                targetGraph.Conventions.Patterns.MSBuildFiles);
+                managedCodeConventions.Patterns.MSBuildFiles);
 
             // filter any build asset already being added as part of build transitive
             var filteredBuildGroup = GetBuildItemsForPackageId(buildGroup, libraryName).
@@ -248,13 +248,13 @@ namespace NuGet.Commands
             var buildMultiTargetingGroup = GetLockFileItems(
                 orderedCriteria,
                 contentItems,
-                targetGraph.Conventions.Patterns.MSBuildMultiTargetingFiles);
+                managedCodeConventions.Patterns.MSBuildMultiTargetingFiles);
 
             lockFileLib.BuildMultiTargeting.AddRange(GetBuildItemsForPackageId(buildMultiTargetingGroup, libraryName));
         }
 
         private static void AddToolsAssets(
-            RestoreTargetGraph targetGraph,
+            ManagedCodeConventions managedCodeConventions,
             LockFileTargetLibrary lockFileLib,
             ContentItemCollection contentItems,
             IReadOnlyList<SelectionCriteria> orderedCriteria)
@@ -262,15 +262,15 @@ namespace NuGet.Commands
             var toolsGroup = GetLockFileItems(
                 orderedCriteria,
                 contentItems,
-                targetGraph.Conventions.Patterns.ToolsAssemblies);
+                managedCodeConventions.Patterns.ToolsAssemblies);
 
             lockFileLib.ToolsAssemblies.AddRange(toolsGroup);
         }
 
-        private static void AddContentFiles(RestoreTargetGraph targetGraph, LockFileTargetLibrary lockFileLib, NuGetFramework framework, ContentItemCollection contentItems, NuspecReader nuspec)
+        private static void AddContentFiles(ManagedCodeConventions managedCodeConventions, LockFileTargetLibrary lockFileLib, NuGetFramework framework, ContentItemCollection contentItems, NuspecReader nuspec)
         {
             // content v2 items
-            var contentFileGroups = contentItems.FindItemGroups(targetGraph.Conventions.Patterns.ContentFiles).ToList();
+            var contentFileGroups = contentItems.FindItemGroups(managedCodeConventions.Patterns.ContentFiles).ToList();
 
             if (contentFileGroups.Count > 0)
             {
@@ -293,7 +293,7 @@ namespace NuGet.Commands
         /// They are not used for compatibility checks.
         /// </summary>
         private static void AddRuntimeTargets(
-            RestoreTargetGraph targetGraph,
+            ManagedCodeConventions managedCodeConventions,
             LibraryIncludeFlags dependencyType,
             LockFileTargetLibrary lockFileLib,
             NuGetFramework framework,
@@ -314,7 +314,7 @@ namespace NuGet.Commands
                     framework,
                     dependencyType,
                     LibraryIncludeFlags.Runtime,
-                    targetGraph.Conventions.Patterns.RuntimeAssemblies,
+                    managedCodeConventions.Patterns.RuntimeAssemblies,
                     "runtime"));
 
                 // Resource
@@ -323,7 +323,7 @@ namespace NuGet.Commands
                     framework,
                     dependencyType,
                     LibraryIncludeFlags.Runtime,
-                    targetGraph.Conventions.Patterns.ResourceAssemblies,
+                    managedCodeConventions.Patterns.ResourceAssemblies,
                     "resource"));
 
                 // Native
@@ -332,7 +332,7 @@ namespace NuGet.Commands
                     framework,
                     dependencyType,
                     LibraryIncludeFlags.Native,
-                    targetGraph.Conventions.Patterns.NativeLibraries,
+                    managedCodeConventions.Patterns.NativeLibraries,
                     "native"));
 
                 lockFileLib.RuntimeTargets = runtimeTargetItems;
