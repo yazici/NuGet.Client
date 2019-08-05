@@ -30,10 +30,12 @@ namespace Dotnet.Integration.Test
             _cliDirectory = CopyLatestCliForPack();
             TestDotnetCli = Path.Combine(_cliDirectory, "dotnet.exe");
 
-            MsBuildSdksPath = Path.Combine(Directory.GetDirectories
-                (Path.Combine(_cliDirectory, "sdk"))
-                .First(), "Sdks");
+            var sdkPaths = Directory.GetDirectories(Path.Combine(_cliDirectory, "sdk"));
 
+            MsBuildSdksPath = Path.Combine(
+             sdkPaths.Where(path => path.Split(Path.DirectorySeparatorChar).Last().StartsWith("5")).First()
+             , "Sdks");
+       
             _processEnvVars.Add("MSBuildSDKsPath", MsBuildSdksPath);
             _processEnvVars.Add("UseSharedCompilation", "false");
             _processEnvVars.Add("DOTNET_MULTILEVEL_LOOKUP", "0");
@@ -76,6 +78,31 @@ namespace Dotnet.Integration.Test
             Assert.True(string.IsNullOrWhiteSpace(result.Item3), $"Creating project failed with following message in error stream :\n {result.AllOutput}");
         }
 
+        //create a global.json file in temperary testing folder, to make sure testing with the correct sdk when there're multiple of them in CLI folder.
+        internal void CreateTempGlobalJson(string solutionRoot)
+        {
+            //put the global.json at one level up to solutionRoot path
+            var pathToPlaceGlobalJsonFile = solutionRoot.Substring(0, solutionRoot.Length - 1 - solutionRoot.Split(Path.DirectorySeparatorChar).Last().Length);
+            if (File.Exists(pathToPlaceGlobalJsonFile + Path.DirectorySeparatorChar + "global.json"))
+            {
+                return;
+            }
+
+            var sdkVersion = MsBuildSdksPath.Split(Path.DirectorySeparatorChar).ElementAt(MsBuildSdksPath.Split(Path.DirectorySeparatorChar).Count() - 2);
+
+            var globalJsonFile =
+@"{
+    ""sdk"": {
+              ""version"": """  + sdkVersion + @"""
+             }
+}";
+
+            using (var outputFile = new StreamWriter(Path.Combine(pathToPlaceGlobalJsonFile, "global.json")))
+            {
+                outputFile.WriteLine(globalJsonFile);
+                outputFile.Close();
+            }
+        }
         internal void CreateDotnetToolProject(string solutionRoot, string projectName, string targetFramework, string rid, string source, IList<PackageIdentity> packages, int timeOut = 60000)
         {
             var workingDirectory = Path.Combine(solutionRoot, projectName);
@@ -249,15 +276,18 @@ namespace Dotnet.Integration.Test
         private void UpdateCliWithLatestNuGetAssemblies(string cliDirectory)
         {
             var nupkgsDirectory = DotnetCliUtil.GetNupkgDirectoryInRepo();
-
+            
             var pathToPackNupkg = FindMostRecentNupkg(nupkgsDirectory, "NuGet.Build.Tasks.Pack");
 
             var nupkgsToCopy = new List<string> { "NuGet.Build.Tasks", "NuGet.Versioning", "NuGet.Protocol", "NuGet.ProjectModel", "NuGet.Packaging", "NuGet.LibraryModel", "NuGet.Frameworks", "NuGet.DependencyResolver.Core", "NuGet.Configuration", "NuGet.Common", "NuGet.Commands", "NuGet.CommandLine.XPlat", "NuGet.Credentials" };
 
-            var pathToSdkInCli = Path.Combine(
-                    Directory.GetDirectories(Path.Combine(cliDirectory, "sdk"))
-                        .First());
+            var sdkPaths = Directory.GetDirectories(Path.Combine(cliDirectory, "sdk"));
 
+            var pathToSdkInCli = Path.Combine(Directory.GetDirectories(Path.Combine(cliDirectory, "sdk")).Last());
+
+          //  var pathToSdkInCli = Path.Combine(
+          //          Directory.GetDirectories(Path.Combine(cliDirectory, "sdk"))
+          //              .First());
             using (var nupkg = new PackageArchiveReader(pathToPackNupkg))
             {
                 var pathToPackSdk = Path.Combine(pathToSdkInCli, "Sdks", "NuGet.Build.Tasks.Pack");
@@ -276,11 +306,20 @@ namespace Dotnet.Integration.Test
                 using (var nupkg = new PackageArchiveReader(FindMostRecentNupkg(nupkgsDirectory, nupkgName)))
                 {
                      var files = nupkg.GetFiles()
-                    .Where(fileName => fileName.StartsWith("lib/netstandard")
-                                    || fileName.StartsWith("lib/netcoreapp")
+                    .Where(fileName => fileName.StartsWith("lib/netstandard2.1")
+                                    || fileName.StartsWith("lib/netcoreapp5.0")
+                                    || fileName.Contains("NuGet.targets"));
+                                    
+                    if (!files.Any()) 
+                    {
+                        files = nupkg.GetFiles()
+                        .Where(fileName => fileName.StartsWith("lib/netstandard2.0")
                                     || fileName.Contains("NuGet.targets"));
 
+                    }
+
                     CopyFlatlistOfFilesToTarget(nupkg, pathToSdkInCli, files);
+
                 }
             }
         }
