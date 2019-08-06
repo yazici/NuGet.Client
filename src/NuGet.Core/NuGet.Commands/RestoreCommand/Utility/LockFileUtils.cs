@@ -84,7 +84,7 @@ namespace NuGet.Commands
                     }
                 }
                 else
-                { 
+                {
                     AddAssets(library.Name, package, targetGraph.Conventions, dependencyType, lockFileLib, framework, runtimeIdentifier, contentItems, nuspec, orderedCriteriaSets[i]);
                     // Check if compatile assets were found.
                     // If no compatible assets were found and this is the last check
@@ -158,6 +158,7 @@ namespace NuGet.Commands
             // Compile
             // ref takes precedence over lib
             var compileGroup = GetLockFileItems(
+                LockFileItemFactory,
                 orderedCriteria,
                 contentItems,
                 managedCodeConventions.Patterns.CompileRefAssemblies,
@@ -167,6 +168,7 @@ namespace NuGet.Commands
 
             // Runtime
             var runtimeGroup = GetLockFileItems(
+                                LockFileItemFactory,
                 orderedCriteria,
                 contentItems,
                 managedCodeConventions.Patterns.RuntimeAssemblies);
@@ -175,6 +177,8 @@ namespace NuGet.Commands
 
             // Embed
             var embedGroup = GetLockFileItems(
+                                LockFileItemFactory,
+
                 orderedCriteria,
                 contentItems,
                 managedCodeConventions.Patterns.EmbedAssemblies);
@@ -183,6 +187,8 @@ namespace NuGet.Commands
 
             // Resources
             var resourceGroup = GetLockFileItems(
+                                LockFileItemFactory,
+
                 orderedCriteria,
                 contentItems,
                 managedCodeConventions.Patterns.ResourceAssemblies);
@@ -191,6 +197,8 @@ namespace NuGet.Commands
 
             // Native
             var nativeGroup = GetLockFileItems(
+                                LockFileItemFactory,
+
                 orderedCriteria,
                 contentItems,
                 managedCodeConventions.Patterns.NativeLibraries);
@@ -224,6 +232,8 @@ namespace NuGet.Commands
         {
             // Build Transitive
             var btGroup = GetLockFileItems(
+                                LockFileItemFactory,
+
                 orderedCriteria,
                 contentItems,
                 managedCodeConventions.Patterns.MSBuildTransitiveFiles);
@@ -233,6 +243,8 @@ namespace NuGet.Commands
 
             // Build
             var buildGroup = GetLockFileItems(
+                                LockFileItemFactory,
+
                 orderedCriteria,
                 contentItems,
                 managedCodeConventions.Patterns.MSBuildFiles);
@@ -246,6 +258,8 @@ namespace NuGet.Commands
 
             // Build multi targeting
             var buildMultiTargetingGroup = GetLockFileItems(
+                                LockFileItemFactory,
+
                 orderedCriteria,
                 contentItems,
                 managedCodeConventions.Patterns.MSBuildMultiTargetingFiles);
@@ -260,6 +274,8 @@ namespace NuGet.Commands
             IReadOnlyList<SelectionCriteria> orderedCriteria)
         {
             var toolsGroup = GetLockFileItems(
+                                LockFileItemFactory,
+
                 orderedCriteria,
                 contentItems,
                 managedCodeConventions.Patterns.ToolsAssemblies);
@@ -551,6 +567,8 @@ namespace NuGet.Commands
                     // Compile
                     // ref takes precedence over lib
                     var compileGroup = GetLockFileItems(
+                                        LockFileItemFactory,
+
                         orderedCriteria,
                         contentItems,
                         targetGraph.Conventions.Patterns.CompileRefAssemblies,
@@ -561,6 +579,8 @@ namespace NuGet.Commands
 
                     // Runtime
                     var runtimeGroup = GetLockFileItems(
+                                        LockFileItemFactory,
+
                         orderedCriteria,
                         contentItems,
                         targetGraph.Conventions.Patterns.RuntimeAssemblies);
@@ -619,7 +639,8 @@ namespace NuGet.Commands
         /// Create lock file items for the best matching group.
         /// </summary>
         /// <remarks>Enumerate this once after calling.</remarks>
-        private static IEnumerable<LockFileItem> GetLockFileItems(
+        private static IEnumerable<TResult> GetLockFileItems<TResult>(
+            Func<ContentItem, TResult> itemFactory,
             IReadOnlyList<SelectionCriteria> criteria,
             ContentItemCollection items,
             params PatternSet[] patterns)
@@ -635,21 +656,26 @@ namespace NuGet.Commands
                 {
                     foreach (var item in group.Items)
                     {
-                        var newItem = new LockFileItem(item.Path);
-                        object locale;
-                        if (item.Properties.TryGetValue("locale", out locale))
-                        {
-                            newItem.Properties["locale"] = (string)locale;
-                        }
-                        yield return newItem;
+                        yield return itemFactory(item);
                     }
-
                     // Take only the first group that has items
                     break;
                 }
             }
 
             yield break;
+        }
+
+        private static LockFileItem LockFileItemFactory(ContentItem item)
+        {
+            var newItem = new LockFileItem(item.Path);
+            object locale;
+            if (item.Properties.TryGetValue("locale", out locale))
+            {
+                newItem.Properties["locale"] = (string)locale;
+            }
+
+            return newItem;
         }
 
         /// <summary>
