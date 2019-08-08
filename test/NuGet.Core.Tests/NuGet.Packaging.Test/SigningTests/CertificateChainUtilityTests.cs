@@ -100,14 +100,11 @@ namespace NuGet.Packaging.Test
 
                 if (RuntimeEnvironmentHelper.IsWindows || RuntimeEnvironmentHelper.IsLinux)
                 {
-                    Assert.Equal(RuntimeEnvironmentHelper.IsWindows ? 2 : 1, logger.Warnings);
+                    Assert.Equal(2, logger.Warnings);
 
                     SigningTestUtility.AssertOfflineRevocation(logger.LogMessages, LogLevel.Warning);
 
-                    if (RuntimeEnvironmentHelper.IsWindows)
-                    {
-                        SigningTestUtility.AssertRevocationStatusUnknown(logger.LogMessages, LogLevel.Warning);
-                    }
+                    SigningTestUtility.AssertRevocationStatusUnknown(logger.LogMessages, LogLevel.Warning);
                 }
             }
         }
