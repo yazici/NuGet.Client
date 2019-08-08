@@ -618,7 +618,6 @@ namespace Dotnet.Integration.Test
 
                     Assert.Equal(framework,
                         dependencyGroups[0].TargetFramework);
-#endif
                     var packagesA = dependencyGroups[0].Packages.ToList();
                     Assert.Equal(1,
                         packagesA.Count);
@@ -636,7 +635,6 @@ namespace Dotnet.Integration.Test
                         new[]
                         {$"lib/{framework.GetShortFolderName()}/ClassLibrary1.dll", $"lib/{framework.GetShortFolderName()}/ClassLibrary1.runtimeconfig.json"},
                         libItems[0].Items);
-#endif
                 }
             }
         }

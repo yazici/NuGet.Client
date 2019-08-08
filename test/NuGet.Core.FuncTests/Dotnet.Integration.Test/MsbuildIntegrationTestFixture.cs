@@ -78,31 +78,6 @@ namespace Dotnet.Integration.Test
             Assert.True(string.IsNullOrWhiteSpace(result.Item3), $"Creating project failed with following message in error stream :\n {result.AllOutput}");
         }
 
-        //create a global.json file in temperary testing folder, to make sure testing with the correct sdk when there're multiple of them in CLI folder.
-        internal void CreateTempGlobalJson(string solutionRoot)
-        {
-            //put the global.json at one level up to solutionRoot path
-            var pathToPlaceGlobalJsonFile = solutionRoot.Substring(0, solutionRoot.Length - 1 - solutionRoot.Split(Path.DirectorySeparatorChar).Last().Length);
-            if (File.Exists(pathToPlaceGlobalJsonFile + Path.DirectorySeparatorChar + "global.json"))
-            {
-                return;
-            }
-
-            var sdkVersion = MsBuildSdksPath.Split(Path.DirectorySeparatorChar).ElementAt(MsBuildSdksPath.Split(Path.DirectorySeparatorChar).Count() - 2);
-
-            var globalJsonFile =
-@"{
-    ""sdk"": {
-              ""version"": """  + sdkVersion + @"""
-             }
-}";
-
-            using (var outputFile = new StreamWriter(Path.Combine(pathToPlaceGlobalJsonFile, "global.json")))
-            {
-                outputFile.WriteLine(globalJsonFile);
-                outputFile.Close();
-            }
-        }
         internal void CreateDotnetToolProject(string solutionRoot, string projectName, string targetFramework, string rid, string source, IList<PackageIdentity> packages, int timeOut = 60000)
         {
             var workingDirectory = Path.Combine(solutionRoot, projectName);
@@ -283,11 +258,10 @@ namespace Dotnet.Integration.Test
 
             var sdkPaths = Directory.GetDirectories(Path.Combine(cliDirectory, "sdk"));
 
-            var pathToSdkInCli = Path.Combine(Directory.GetDirectories(Path.Combine(cliDirectory, "sdk")).Last());
+            var pathToSdkInCli = Path.Combine(
+                    Directory.GetDirectories(Path.Combine(cliDirectory, "sdk"))
+                        .Last());
 
-          //  var pathToSdkInCli = Path.Combine(
-          //          Directory.GetDirectories(Path.Combine(cliDirectory, "sdk"))
-          //              .First());
             using (var nupkg = new PackageArchiveReader(pathToPackNupkg))
             {
                 var pathToPackSdk = Path.Combine(pathToSdkInCli, "Sdks", "NuGet.Build.Tasks.Pack");
