@@ -130,6 +130,9 @@ namespace ConsoleApp1
                     }
                     catch (Exception e)
                     {
+                        var runtimeIsWindows = RuntimeEnvironmentHelper.IsWindows;
+                        var runtimeIsLinux = RuntimeEnvironmentHelper.IsLinux;
+                        var runtime = System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Linux);
                         var msg = "";
                         var error = "";
                         var warning = "";
@@ -145,7 +148,11 @@ namespace ConsoleApp1
                         {
                             warning += w.ToString();
                         }
-                        throw new NuGet.Packaging.Signing.SignatureException("original e is : \n" +
+                        throw new NuGet.Packaging.Signing.SignatureException(
+                            $"another way to detect runtime = {runtime}" + "\n" +
+                            $"runtimeIsWindows = {runtimeIsWindows}"+ "\n" +
+                            $"runtimeIsLinux = {runtimeIsLinux}" + "\n" + 
+                            "original e is : \n" +
                             e + "\n" +
                             "additional info is : \n" +
                             e.Message + "\n" +
