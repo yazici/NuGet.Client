@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>netcoreapp2.1</TargetFrameworks>
+    <TargetFrameworks>netcoreapp2.1;netcoreapp3.0</TargetFrameworks>
     <ApplicationIcon />
     <StartupObject />
   </PropertyGroup>
@@ -13,11 +13,15 @@
   </ItemGroup>
   
   <ItemGroup>
-    <ProjectReference Include="..\src\NuGet.Core\NuGet.Common\NuGet.Common.csproj" />
-    <ProjectReference Include="..\src\NuGet.Core\NuGet.Packaging\NuGet.Packaging.csproj" />
-    <ProjectReference Include="..\test\NuGet.Clients.FuncTests\NuGet.CommandLine.FuncTest\NuGet.CommandLine.FuncTest.csproj" />
     <ProjectReference Include="..\test\TestUtilities\Test.Utility\Test.Utility.csproj" />
-    <ProjectReference Include="..\test\NuGet.Clients.Tests\NuGet.CommandLine.Test\*.csproj" />
   </ItemGroup>
+   <!--
+   <ProjectReference Include="..\test\NuGet.Clients.FuncTests\NuGet.CommandLine.FuncTest\NuGet.CommandLine.FuncTest.csproj" />
+   <ProjectReference Include="..\test\NuGet.Clients.Tests\NuGet.CommandLine.Test\*.csproj" />
+   <ProjectReference Include="..\src\NuGet.Core\NuGet.Common\NuGet.Common.csproj" />
+    <ProjectReference Include="..\src\NuGet.Core\NuGet.Packaging\NuGet.Packaging.csproj" />
+    <ProjectReference Include="..\test\TestUtilities\Test.Utility\Test.Utility.csproj" />
+     <ProjectReference Include="..\test\NuGet.Configuration.Test\NuGet.Configuration.Test.csproj" />
+   -->
 
 </Project>

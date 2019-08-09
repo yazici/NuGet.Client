@@ -1,4 +1,3 @@
-using NuGet.CommandLine.Test;
 using NuGet.Test.Utility;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Parameters;
@@ -9,7 +8,6 @@ using System.IO;
 using System.Security.Cryptography.X509Certificates;
 using Test.Utility.Signing;
 using Xunit.Sdk;
-using NuGet.CommandLine.FuncTest.Commands;
 using NuGet.Packaging.Signing;
 using NuGet.Common;
 
