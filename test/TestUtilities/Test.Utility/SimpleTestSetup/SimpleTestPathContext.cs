@@ -57,8 +57,18 @@ namespace NuGet.Test.Utility
         public SimpleTestSettingsContext Settings { get; }
 
         public SimpleTestPathContext()
+            : this(TestDirectory.Create())
         {
-            WorkingDirectory = TestDirectory.Create();
+        }
+
+        public SimpleTestPathContext(string subdirectoryName)
+            : this(CreateCustomTestDirectory(subdirectoryName))
+        {
+        }
+
+        private SimpleTestPathContext(TestDirectory workingDirectory)
+        {
+            WorkingDirectory = workingDirectory;
 
             SolutionRoot = Path.Combine(WorkingDirectory.Path, "solution");
             UserPackagesFolder = Path.Combine(WorkingDirectory.Path, "globalPackages");
@@ -80,6 +90,14 @@ namespace NuGet.Test.Utility
         public void Dispose()
         {
             WorkingDirectory.Dispose();
+        }
+
+        private static TestDirectory CreateCustomTestDirectory(string subdirectoryName)
+        {
+            string testRootDirectoryPath = TestFileSystemUtility.NuGetTestFolder;
+            string thisTestRootDirectoryPath = Path.Combine(testRootDirectoryPath, subdirectoryName);
+
+            return TestDirectory.Create(thisTestRootDirectoryPath);
         }
     }
 }

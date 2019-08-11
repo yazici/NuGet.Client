@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
+using System.IO;
 using Microsoft.Test.Apex.VisualStudio;
 using Microsoft.Test.Apex.VisualStudio.Solution;
 using NuGet.Common;
@@ -11,10 +12,11 @@ namespace NuGet.Tests.Apex
 {
     internal class ApexTestContext : IDisposable
     {
+        private const string ParentDirectoryName = "Apex";
 
-        private VisualStudioHost _visualStudio;
+        private readonly VisualStudioHost _visualStudio;
         private readonly ILogger _logger;
-        private SimpleTestPathContext _pathContext;
+        private readonly SimpleTestPathContext _pathContext;
 
         public SolutionService SolutionService { get; }
         public ProjectTestExtension Project { get; }
@@ -25,7 +27,9 @@ namespace NuGet.Tests.Apex
         public ApexTestContext(VisualStudioHost visualStudio, ProjectTemplate projectTemplate, ILogger logger, bool noAutoRestore = false)
         {
             logger.LogInformation("Creating test context");
-            _pathContext = new SimpleTestPathContext();
+            _pathContext = new SimpleTestPathContext(ParentDirectoryName);
+
+            DisablePackageManagementDialog(_pathContext);
 
             if (noAutoRestore)
             {
@@ -49,6 +53,33 @@ namespace NuGet.Tests.Apex
             SolutionService.Close();
 
             _pathContext.Dispose();
+        }
+
+        private static void DisablePackageManagementDialog(SimpleTestPathContext pathContext)
+        {
+            var parentDirectory = new DirectoryInfo(pathContext.WorkingDirectory.Path);
+
+            while (parentDirectory.Name != ParentDirectoryName)
+            {
+                parentDirectory = parentDirectory.Parent;
+            }
+
+            var nugetConfigFile = new FileInfo(Path.Combine(parentDirectory.FullName, "NuGet.Config"));
+
+            if (nugetConfigFile.Exists)
+            {
+                return;
+            }
+
+            var content = @"<?xml version=""1.0"" encoding=""utf-8""?>
+<configuration>
+  <packageManagement>
+    <add key=""format"" value=""0"" />
+    <add key=""disabled"" value=""False"" />
+  </packageManagement>
+</configuration>";
+
+            File.WriteAllText(nugetConfigFile.FullName, content);
         }
     }
 }
