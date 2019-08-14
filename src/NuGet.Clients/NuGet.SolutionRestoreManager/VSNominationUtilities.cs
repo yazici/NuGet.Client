@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using Microsoft.VisualStudio.Shell.Interop;
 using NuGet.Commands;
 using NuGet.Common;
 using NuGet.Configuration;
@@ -109,18 +110,18 @@ namespace NuGet.SolutionRestoreManager
             // Update TFI with fallback properties
             AssetTargetFallbackUtility.ApplyFramework(tfi, ptf, atf);
 
-
             tfi.RuntimeIdentifierGraphPath = GetPropertyValueOrNull(targetFrameworkInfo.Properties, ProjectBuildProperties.RuntimeIdentifierGraphPath);
-            
-            if (targetFrameworkInfo.PackageReferences != null)
-            {
-                tfi.Dependencies.AddRange(
-                    targetFrameworkInfo.PackageReferences
-                        .Cast<IVsReferenceItem>()
-                        .Select(ToPackageLibraryDependency));
-            }
-            
-            if(targetFrameworkInfo is IVsTargetFrameworkInfo2 targetFrameworkInfo2)
+
+            //if (targetFrameworkInfo.PackageReferences != null)
+            //{
+            //    tfi.Dependencies.AddRange(
+            //        targetFrameworkInfo.PackageReferences
+            //            .Cast<IVsReferenceItem>()
+            //            .Select(x => ToPackageLibraryDependency(x)));
+            //}
+            tfi.Dependencies.AddRange(GetPackageReferences(targetFrameworkInfo));
+
+            if (targetFrameworkInfo is IVsTargetFrameworkInfo2 targetFrameworkInfo2)
             {
                 if (targetFrameworkInfo2.PackageDownloads != null)
                 {
@@ -129,7 +130,6 @@ namespace NuGet.SolutionRestoreManager
                            .Cast<IVsReferenceItem>()
                            .Select(ToPackageDownloadDependency));
                 }
-
                 if (targetFrameworkInfo2.FrameworkReferences != null)
                 {
                     PopulateFrameworkDependencies(tfi, targetFrameworkInfo2);
@@ -138,6 +138,64 @@ namespace NuGet.SolutionRestoreManager
 
             return tfi;
         }
+
+        private static IEnumerable<LibraryDependency> GetPackageReferences(IVsTargetFrameworkInfo targetFrameworkInfo)
+        {
+            if(targetFrameworkInfo.PackageReferences == null)
+            {
+                return null;
+            }
+            try
+            {
+                if (targetFrameworkInfo is IVsTargetFrameworkInfo3 targetFrameworkInfo3)
+                {
+                    if (targetFrameworkInfo3.GlobalPackageReferences == null)
+                    {
+                        return targetFrameworkInfo.PackageReferences.Cast<IVsReferenceItem>().Select(x => ToPackageLibraryDependency(x));
+                    }
+                    return GetPackageReferences(targetFrameworkInfo3);
+                }
+                else
+                {
+                    return targetFrameworkInfo.PackageReferences.Cast<IVsReferenceItem>().Select(x => ToPackageLibraryDependency(x));
+                }
+            }
+            catch (Exception e)
+            {
+                var s = e.ToString();
+                return null;
+            }
+        }
+
+        private static IEnumerable<LibraryDependency> GetPackageReferences(IVsTargetFrameworkInfo3 targetFrameworkInfo)
+        {
+            var globalPackRef = targetFrameworkInfo.GlobalPackageReferences.Cast<IVsReferenceItem>();
+
+            foreach (var item in targetFrameworkInfo.PackageReferences.Cast<IVsReferenceItem>())
+            {
+                // This can be Asserted if needed.
+                if (HasVersion(item))
+                {
+                    yield return ToPackageLibraryDependency(item);
+                }
+                else
+                {
+                    // get the information from the global package if exists, or get AllRange
+                    var gprefVersion = globalPackRef.Where(gitem => gitem.Name.Equals(item.Name)).Select(gitem => GetVersionRange(gitem));
+                    // Assert if more than one ?
+                    if(gprefVersion.Any())
+                    {
+                        yield return ToPackageLibraryDependency(item, gprefVersion.First());
+                    }
+                    else
+                    {
+                        // Item in the global reference but without any version. 
+                        yield return ToPackageLibraryDependency(item);
+                    }
+                }
+            }
+        }
+
 
         internal static ProjectRestoreMetadataFrameworkInfo ToProjectRestoreMetadataFrameworkInfo(
             IVsTargetFrameworkInfo targetFrameworkInfo,
@@ -317,13 +375,13 @@ namespace NuGet.SolutionRestoreManager
 
         #region IVSReferenceItemAPIs
 
-        private static LibraryDependency ToPackageLibraryDependency(IVsReferenceItem item)
+        private static LibraryDependency ToPackageLibraryDependency(IVsReferenceItem item, VersionRange customVersionRange = null)
         {
             var dependency = new LibraryDependency
             {
                 LibraryRange = new LibraryRange(
                     name: item.Name,
-                    versionRange: GetVersionRange(item),
+                    versionRange: customVersionRange ?? GetVersionRange(item),
                     typeConstraint: LibraryDependencyTarget.Package),
 
                 // Mark packages coming from the SDK as AutoReferenced
@@ -410,6 +468,13 @@ namespace NuGet.SolutionRestoreManager
             }
 
             return VersionRange.All;
+        }
+
+        private static bool HasVersion(IVsReferenceItem item)
+        {
+            var versionRange = GetPropertyValueOrNull(item, "Version");
+
+            return versionRange != null;
         }
 
         /// <summary>

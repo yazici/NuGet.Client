@@ -609,7 +609,7 @@ namespace NuGet.Commands
 
         private static void AddPackageReferences(PackageSpec spec, IEnumerable<IMSBuildItem> items)
         {
-            foreach (var item in GetItemByType(items, "Dependency"))
+            foreach (var item in MergePackageReferences(items)) //GetItemByType(items, "Dependency")
             {
                 var dependency = new LibraryDependency
                 {
@@ -906,6 +906,71 @@ namespace NuGet.Commands
                 Enumerable.Empty<RestoreLogMessage>();
 
             return logger.LogMessagesAsync(logMessages);
+        }
+
+        /// <summary>
+        /// Merge the Global Package References
+        /// Take the version from teh GlobalPackage and log if the project defined explicitelly a version. 
+        /// </summary>
+        /// <param name="items"></param>
+        /// <returns></returns>
+        private static IEnumerable<IMSBuildItem> MergePackageReferences(IEnumerable<IMSBuildItem> items)
+        {
+            var globalPackageDependencies = GetItemByType(items, "GlobalDependency")
+                .Select(x => (id: x.GetProperty("Id"),
+               version: x.GetProperty("Version") == null ? null : GetVersion(x).ToNormalizedString(),
+               versionRange: x.GetProperty("VersionRange") == null ? null : GetVersionRange(x).ToNormalizedString(),
+               targetFrameworks: x.GetProperty("TargetFrameworks"))); 
+
+            var projectPackageDependencies = GetItemByType(items, "Dependency");
+
+            foreach (var item in projectPackageDependencies)
+            {
+                // more elements if multiple targets 
+                var globalItems = globalPackageDependencies.Where(x => x.id.Equals(item.GetProperty("Id")));
+
+                if (globalItems.Any())
+                {
+                    foreach (var globalItem in globalItems)
+                    {
+                        var globalVersion = globalItem.version;
+                        var globalVersionRange = globalItem.versionRange;
+                        var globalTargetFrameworks = globalItem.targetFrameworks;
+
+                        var metadata = GetBuildItemMetadata(item);
+                        if (globalVersion != null)
+                        {
+                            metadata["Version"] = globalVersion;
+                        }
+                        if (globalVersionRange != null)
+                        {
+                            metadata["VersionRange"] = globalVersionRange;
+                        }
+                        if (globalTargetFrameworks != null)
+                        {
+                            metadata["TargetFrameworks"] = globalTargetFrameworks;
+                        }
+
+                        yield return new MSBuildItem(item.Identity, metadata);
+                    }
+                }
+                else
+                {
+                    yield return item;
+                }
+            }
+        }
+
+        private static Dictionary<string,string> GetBuildItemMetadata(IMSBuildItem item)
+        {
+            var d = new Dictionary<string, string>();
+            foreach(var property in item.Properties)
+            {
+                var value = item.GetProperty(property);
+                d.Add(property, value);
+            }
+
+            return d;
         }
     }
 }
