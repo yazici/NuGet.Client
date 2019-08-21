@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0">
   <!-- Compiler flags -->
   <PropertyGroup Condition=" '$(TargetFramework)' == '$(NETFXTargetFramework)' ">
@@ -327,7 +327,7 @@
   <!--
     ==========================================================================================
     Temporary Workaround Target related to issue https://github.com/dotnet/cli/issues/11378
-    ==========================================================================================
+    =========================================================================================
   -->
   <Target Name="WorkaroundNetStandard" AfterTargets="ResolvePackageAssets" Condition=" '$(TargetFramework)' == 'netcoreapp3.0' ">
     <ItemGroup>
