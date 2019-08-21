@@ -801,16 +801,6 @@ phases:
     condition: "succeededOrFailed()"
 
   - task: PowerShell@1
-    displayName: "Initialize Git Commit Status on GitHub"
-    inputs:
-      scriptType: "inlineScript"
-      arguments: "-VstsPersonalAccessToken $(VstsPersonalAccessToken)"
-      inlineScript: |
-        . $(Build.Repository.LocalPath)\\scripts\\utils\\PostGitCommitStatus.ps1
-        SetCommitStatusForTestResult -PersonalAccessToken $(NuGetLurkerPersonalAccessToken) -VstsPersonalAccessToken $(VstsPersonalAccessToken) -CommitSha $(Build.SourceVersion) -TestName "EndToEnd Tests On Windows"
-    condition: "always()"
-
-  - task: PowerShell@1
     displayName: "Kill running instances of DevEnv"
     inputs:
       scriptType: "inlineScript"
