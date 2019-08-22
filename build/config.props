@@ -24,12 +24,8 @@
     <!-- This branches are used for creating insertion PRs -->
     <VsTargetBranch Condition="'$(IsEscrowMode)' == 'true'">rel/d$(VsTargetMajorVersion).$(MinorNuGetVersion)</VsTargetBranch>
     <VsTargetChannel Condition="'$(IsEscrowMode)' == 'true'">Preview</VsTargetChannel>
-    <CliTargetBranches Condition="'$(OverrideCliTargetBranches)' != ''">$(OverrideCliTargetBranches)</CliTargetBranches>
-    <CliTargetBranches Condition="'$(OverrideCliTargetBranches)' == ''">master</CliTargetBranches>
-    <SdkTargetBranches Condition="'$(OverrideCliTargetBranches)' != ''">$(OverrideCliTargetBranches)</SdkTargetBranches>
-    <SdkTargetBranches Condition="'$(OverrideCliTargetBranches)' == ''">master</SdkTargetBranches>
-    <ToolsetTargetBranches Condition="'$(OverrideToolsetTargetBranches)' != ''">$(OverrideToolsetTargetBranches)</ToolsetTargetBranches>
-    <ToolsetTargetBranches Condition="'$(OverrideToolsetTargetBranches)' == ''">master</ToolsetTargetBranches>
+    <CliReleaseChannels Condition="'$(OverrideCliReleaseChannels)' != ''">$(OverrideCliReleaseChannels)</CliReleaseChannels>
+    <CliReleaseChannels Condition="'$(OverrideCliReleaseChannels)' == ''">.NET Core 3.0 Dev</CliReleaseChannels>
     <!-- We need to update this netcoreassembly build number with every insertion into VS to workaround any breaking api
     changes we might have made.-->
     <NetCoreAssemblyBuildNumber Condition=" '$(NetCoreAssemblyBuildNumber)' == '' ">1</NetCoreAssemblyBuildNumber>
@@ -85,14 +81,8 @@
   <Target Name="GetVsTargetChannel">
     <Message Text="$(VsTargetChannel)" Importance="High"/>
   </Target>
-  <Target Name="GetCliTargetBranches">
-    <Message Text="$(CliTargetBranches)" Importance="High"/>
-  </Target>
-  <Target Name="GetSdkTargetBranches">
-    <Message Text="$(SdkTargetBranches)" Importance="High"/>
-  </Target>
-  <Target Name="GetToolsetTargetBranches">
-    <Message Text="$(ToolsetTargetBranches)" Importance="High"/>
+  <Target Name="GetCliReleaseChannels">
+    <Message Text="$(CliReleaseChannels)" Importance="High"/>
   </Target>
   <Target Name="GetCliBranchForTesting">
       <Message Text="$(CliBranchForTesting)" Importance="High"/>

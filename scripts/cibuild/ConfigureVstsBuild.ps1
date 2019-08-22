@@ -158,39 +158,18 @@ if ($BuildRTM -eq 'true')
     }
 }
 else
-{
-    # Only for backward compatibility with orchestrated builds
-    if(-not $SkipUpdateBuildNumber)
-    {
-        $revision = Get-Content $BuildCounterFile
-        $newBuildCounter = [System.Decimal]::Parse($revision)
-        $newBuildCounter++
-        Set-Content $BuildCounterFile $newBuildCounter
-        # Set the $(Revision) build variable in VSTS build
-        Write-Host "##vso[task.setvariable variable=Revision;]$newBuildCounter"
-        Write-Host "##vso[build.updatebuildnumber]$newBuildCounter"
-        Write-Host "##vso[task.setvariable variable=BuildNumber;isOutput=true]$newBuildCounter"
-    }
-    else
-    {
-        $newBuildCounter = $env:BUILD_BUILDNUMBER
-    }
-
+{ 
     $VsTargetBranch = & $msbuildExe $env:BUILD_REPOSITORY_LOCALPATH\build\config.props /v:m /nologo /t:GetVsTargetBranch
-    $CliTargetBranches = & $msbuildExe $env:BUILD_REPOSITORY_LOCALPATH\build\config.props /v:m /nologo /t:GetCliTargetBranches
-    $SdkTargetBranches = & $msbuildExe $env:BUILD_REPOSITORY_LOCALPATH\build\config.props /v:m /nologo /t:GetSdkTargetBranches
-    $ToolsetTargetBranches = & $msbuildExe $env:BUILD_REPOSITORY_LOCALPATH\build\config.props /v:m /nologo /t:GetToolsetTargetBranches
+    $CliReleaseChannels = & $msbuildExe $env:BUILD_REPOSITORY_LOCALPATH\build\config.props /v:m /nologo /t:GetCliReleaseChannels
     Write-Host $VsTargetBranch
     $jsonRepresentation = @{
-        BuildNumber = $newBuildCounter
+        BuildNumber = $env:BUILD_BUILDNUMBER
         CommitHash = $env:BUILD_SOURCEVERSION
         BuildBranch = $env:BUILD_SOURCEBRANCHNAME
         LocalizationRepositoryBranch = $NuGetLocalizationRepoBranch
         LocalizationRepositoryCommitHash = $LocalizationRepoCommitHash
         VsTargetBranch = $VsTargetBranch.Trim()
-        CliTargetBranches = $CliTargetBranches.Trim()
-        SdkTargetBranches = $SdkTargetBranches.Trim()
-        ToolsetTargetBranches = $ToolsetTargetBranches.Trim()
+        CliReleaseChannels = $CliReleaseChannels.Trim()
     }
 
     # First create the file locally so that we can laster publish it as a build artifact from a local source file instead of a remote source file.
