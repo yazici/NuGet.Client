@@ -22,7 +22,7 @@ namespace NuGet.Common
         public static IEnumerable<T> GetMatches<T>(IEnumerable<T> source, Func<T, string> getPath, IEnumerable<string> wildcards)
         {
             var filters = wildcards.Select(WildcardToRegex);
-            return source.AsParallel().Where(item =>
+            return source.AsParallel().AsOrdered().Where(item =>
             {
                 string path = getPath(item);
                 return filters.Any(f => f.IsMatch(path));
