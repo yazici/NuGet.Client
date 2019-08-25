@@ -1,9 +1,10 @@
-﻿// Copyright (c) .NET Foundation. All rights reserved.
+// Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 using Moq;
 using NuGet.Test.Utility;
 using NuGet.Versioning;
@@ -22,7 +23,7 @@ namespace NuGet.CommandLine.Test
         [InlineData("99.99.99", false, true)]
         [InlineData("99.99.99-beta", true, true)]
         [InlineData("99.99.99-beta", false, false)]
-        public void SelfUpdater_WithArbitraryVersions_UpdateSelf(string version, bool prerelease, bool replaced)
+        public async Task SelfUpdater_WithArbitraryVersions_UpdateSelf(string version, bool prerelease, bool replaced)
         {
             // Arrange
             using (var testDirectory = TestDirectory.Create())
@@ -34,7 +35,7 @@ namespace NuGet.CommandLine.Test
                     .Returns(new SemanticVersion(version));
 
                 // Act
-                tc.Target.UpdateSelf(prerelease);
+                await tc.Target.UpdateSelfAsync(prerelease);
 
                 // Assert
                 tc.VerifyReplacedState(replaced);
@@ -44,7 +45,7 @@ namespace NuGet.CommandLine.Test
         [Theory]
         [InlineData(true)]
         [InlineData(false)]
-        public void SelfUpdater_WithCurrentVersion(bool prerelease)
+        public async Task SelfUpdater_WithCurrentVersion(bool prerelease)
         {
             // Arrange
             using (var testDirectory = TestDirectory.Create())
@@ -53,7 +54,7 @@ namespace NuGet.CommandLine.Test
                 tc.Package.Setup(x => x.Version).Returns(tc.ClientVersion);
 
                 // Act
-                tc.Target.UpdateSelf(prerelease);
+                await tc.Target.UpdateSelfAsync(prerelease);
 
                 // Assert
                 tc.VerifyReplacedState(replaced: false);
@@ -97,8 +98,7 @@ namespace NuGet.CommandLine.Test
                 zero.Setup(x => x.Version).Returns(new SemanticVersion("0.0.0"));
                 zero.Setup(x => x.Listed).Returns(true);
 
-                Target = new SelfUpdater(Factory.Object);
-                Target.Console = Console.Object;
+                Target = new SelfUpdater(Console.Object);
                 Target.AssemblyLocation = Path.Combine(Directory, "nuget.exe");
 
                 Factory
