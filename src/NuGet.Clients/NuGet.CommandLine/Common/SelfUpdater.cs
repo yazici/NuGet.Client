@@ -26,9 +26,10 @@ namespace NuGet.CommandLine
         private string _assemblyLocation;
         private readonly Lazy<string> _lazyAssemblyLocation = new Lazy<string>(() =>
         {
-            var assembly = typeof(SelfUpdater).Assembly;
-            return assembly.Location;
+            return typeof(SelfUpdater).Assembly.Location;
         });
+
+        private readonly IConsole _console;
 
         public SelfUpdater(IConsole console)
         {
@@ -38,8 +39,6 @@ namespace NuGet.CommandLine
             }
             _console = console;
         }
-
-        private readonly IConsole _console;
 
         /// <summary>
         /// This property is used only for testing (so that the self updater does not replace the running test
