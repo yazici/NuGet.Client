@@ -560,7 +560,7 @@ phases:
     BuildNumber: $[dependencies.Initialize_Build.outputs['updatebuildnumber.BuildNumber']]
     FullVstsBuildNumber: $[dependencies.Initialize_Build.outputs['updatebuildnumber.FullVstsBuildNumber']]
     SDKVersionForBuild: $[dependencies.Initialize_Build.outputs['getSDKVersionForBuild.SDKVersionForBuild']]
-  condition: "and(succeeded(),eq(variables['RunFunctionalTestsOnWindows'], 'true')) "
+  condition: "failed() "
   queue:
     name: VSEng-MicroBuildSxS
     timeoutInMinutes: 150
@@ -651,7 +651,7 @@ phases:
     FULLVSTSBUILDNUMBER: $[dependencies.Initialize_Build.outputs['updatebuildnumber.FullVstsBuildNumber']]
     SDKVersionForBuild: $[dependencies.Initialize_Build.outputs['getSDKVersionForBuild.SDKVersionForBuild']]
     MSBUILDDISABLENODEREUSE: 1
-  condition: "and(succeeded(),eq(variables['RunTestsOnLinux'], 'true')) "
+  condition: "failed() "
   queue:
     name: DDNuGet-Linux
     timeoutInMinutes: 60
