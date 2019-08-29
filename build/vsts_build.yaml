@@ -31,6 +31,14 @@ phases:
         InitializeAllTestsToPending -PersonalAccessToken $(NuGetLurkerPersonalAccessToken) -CommitSha $(Build.SourceVersion)
 
   - task: PowerShell@1
+    displayName: "ECHOOOO"
+    inputs:
+      scriptType: "inlineScript"
+      inlineScript: |
+        echo $env:BUILDCOUNTERFILE
+        cat $env:BUILDCOUNTERFILE
+
+  - task: PowerShell@1
     displayName: "Update Build Number"
     name: "updatebuildnumber"
     inputs:
@@ -428,9 +436,7 @@ phases:
     displayName: "Copy LCG Files"
     inputs:
       SourceFolder: "artifacts\\"
-      Contents:
-        - "**\\*.lcg"
-        - "**\\*.dll"
+      Contents: "**\\*.lcg\n**\\*.dll"
       TargetFolder: "$(CIRoot)\\PLOC\\$(Build.SourceBranchName)\\$(Build.BuildNumber)"
     condition: " and(succeeded(),eq(variables['BuildRTM'], 'false'), eq(variables['IsOfficialBuild'], 'true')) "
 
