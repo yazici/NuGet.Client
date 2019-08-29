@@ -107,7 +107,8 @@ phases:
       inlineScript: |
         echo "Env FullVstsBuildNumber $env:FullVstsBuildNumber"
         echo "Env UPPERCASE $env:FULLVSTSBUILDNUMBER"
-        $val = $env:FULLVSTSBUILDNUMBER
+        echo "Build Number $env:BUILD_BUILDNUMBER"
+        $val = $env:BUILD_BUILDNUMBER
         Write-Host "##vso[build.updatebuildnumber]$val"
         gci env:* | sort-object name
 
