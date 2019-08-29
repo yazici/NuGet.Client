@@ -105,7 +105,9 @@ phases:
     inputs:
       scriptType: "inlineScript"
       inlineScript: |
-        Write-Host "##vso[build.updatebuildnumber]$env:FullVstsBuildNumber"
+        echo $env:FullVstsBuildNumber
+        $val = $env:FullVstsBuildNumber
+        Write-Host "##vso[build.updatebuildnumber]$val"
         gci env:* | sort-object name
 
   - task: PowerShell@1
