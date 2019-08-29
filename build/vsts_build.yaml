@@ -74,7 +74,7 @@ phases:
   dependsOn: Initialize_Build
   variables:
     BuildNumber: $[dependencies.Initialize_Build.outputs['updatebuildnumber.BuildNumber']]
-    FullVstsBuildNumber: $[dependencies.Initialize_Build.outputs['updatebuildnumber.FullVstsBuildNumber']]
+    #FullVstsBuildNumber: $[dependencies.Initialize_Build.outputs['updatebuildnumber.FullVstsBuildNumber']]
     VsTargetChannel: $[dependencies.Initialize_Build.outputs['updatebuildnumber.VsTargetChannel']]
     VsTargetMajorVersion: $[dependencies.Initialize_Build.outputs['updatebuildnumber.VsTargetMajorVersion']]
     ShouldSkipOptimize: false
@@ -105,8 +105,9 @@ phases:
     inputs:
       scriptType: "inlineScript"
       inlineScript: |
-        echo $env:FullVstsBuildNumber
-        $val = $env:FullVstsBuildNumber
+        echo "Env FullVstsBuildNumber $env:FullVstsBuildNumber"
+        echo "Env UPPERCASE $env:FULLVSTSBUILDNUMBER"
+        $val = $env:FULLVSTSBUILDNUMBER
         Write-Host "##vso[build.updatebuildnumber]$val"
         gci env:* | sort-object name
 
