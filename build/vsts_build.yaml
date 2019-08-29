@@ -91,6 +91,7 @@ phases:
       - DotNetFramework
       - msbuild
 
+  steps:
   - task: PowerShell@1
     displayName: "ECHOOOO2"
     inputs:
@@ -99,7 +100,6 @@ phases:
         echo $env:BUILDCOUNTERFILE
         cat $env:BUILDCOUNTERFILE
 
-  steps:
   - task: PowerShell@1
     displayName: "Update Build Number"
     inputs:
