@@ -32,7 +32,7 @@ phases:
 
   - task: PowerShell@1
     displayName: "Update Build Number"
-    name: "updatebuildnumber"
+    name: "doupdatebuildnumber"
     inputs:
       scriptType: "inlineScript"
       inlineScript: |
@@ -65,9 +65,9 @@ phases:
 - phase: Build_and_UnitTest
   dependsOn: Initialize_Build
   variables:
-    BuildNumber: $[dependencies.Initialize_Build.outputs['updatebuildnumber.BuildNumber']]
-    VsTargetChannel: $[dependencies.Initialize_Build.outputs['updatebuildnumber.VsTargetChannel']]
-    VsTargetMajorVersion: $[dependencies.Initialize_Build.outputs['updatebuildnumber.VsTargetMajorVersion']]
+    BuildNumber: $[dependencies.Initialize_Build.outputs['doupdatebuildnumber.BuildNumber']]
+    VsTargetChannel: $[dependencies.Initialize_Build.outputs['doupdatebuildnumber.VsTargetChannel']]
+    VsTargetMajorVersion: $[dependencies.Initialize_Build.outputs['doupdatebuildnumber.VsTargetMajorVersion']]
     ShouldSkipOptimize: false
   queue:
     name: VSEng-MicroBuildVS2019
