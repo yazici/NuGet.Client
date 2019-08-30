@@ -435,7 +435,7 @@ phases:
     displayName: "Copy LCG Files"
     inputs:
       SourceFolder: "artifacts\\"
-      Contents: "**\\*.lcg\n**\\*.dll"
+      Contents: "**\\*.lcg"
       TargetFolder: "$(CIRoot)\\PLOC\\$(Build.SourceBranchName)\\$(Build.BuildNumber)"
     condition: " and(succeeded(),eq(variables['BuildRTM'], 'false'), eq(variables['IsOfficialBuild'], 'true')) "
 
