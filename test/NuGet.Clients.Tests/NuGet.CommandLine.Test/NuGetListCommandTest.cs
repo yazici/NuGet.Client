@@ -853,7 +853,12 @@ namespace NuGet.CommandLine.Test
                 Assert.True(
                result.Item3.Contains(
                    "NameResolutionFailure"),
-               "Expected error message not found in " + result.Item3
+                "@@It's mono!!!" + "\n" +
+               "Expected error message not found in " + "\n" +
+               "RuntimeEnvironmentHelper.IsMono : " + RuntimeEnvironmentHelper.IsMono + "\n" +
+               "RuntimeEnvironmentHelper.IsMacOSX : " + RuntimeEnvironmentHelper.IsMono + "\n" +
+               "RuntimeEnvironmentHelper.IsLinux : " + RuntimeEnvironmentHelper.IsMono + "\n" +
+               result.Item3
                );
             }
             else
@@ -861,7 +866,12 @@ namespace NuGet.CommandLine.Test
                 Assert.True(
                     result.Item3.Contains(
                         $"Unable to load the service index for source {invalidInput}."),
-                    "Expected error message not found in " + result.Item3
+                    "Expected error message not found in " + result.Item3 + "\n" +
+                    "##It's not mono!!!" + "\n" +
+               "Expected error message not found in " + "\n" +
+               "RuntimeEnvironmentHelper.IsMono : " + RuntimeEnvironmentHelper.IsMono + "\n" +
+               "RuntimeEnvironmentHelper.IsMacOSX : " + RuntimeEnvironmentHelper.IsMono + "\n" +
+               "RuntimeEnvironmentHelper.IsLinux : " + RuntimeEnvironmentHelper.IsMono + "\n" 
                     );
             }
         }
