@@ -84,20 +84,11 @@ phases:
 
   steps:
   - task: PowerShell@1
-    displayName: "ECHOOOO2"
-    inputs:
-      scriptType: "inlineScript"
-      inlineScript: |
-        echo $env:BUILDCOUNTERFILE
-        cat $env:BUILDCOUNTERFILE
-
-  - task: PowerShell@1
-    displayName: "Update Build Number"
+    displayName: "Print Environment Variables"
     inputs:
       scriptType: "inlineScript"
       inlineScript: |
         gci env:* | sort-object name
-        Write-Host "##vso[build.updatebuildnumber]$env:BUILD_BUILDNUMBER"
 
   - task: PowerShell@1
     displayName: "Define variables"
