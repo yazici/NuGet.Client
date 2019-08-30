@@ -304,13 +304,22 @@ namespace NuGet.Protocol
             {
                 response = await RetryHandler.SendAsync(request, log, cancellationToken);
             }
-            catch
+            catch (Exception e)
             {
                 // If the request fails, release the semaphore. If no exception is thrown by
                 // SendAsync, then the semaphore is released when the HTTP response message is
                 // disposed.
                 _throttle.Release();
-                throw;
+
+                throw new Exception("RuntimeEnvironmentHelper.IsMono : " + RuntimeEnvironmentHelper.IsMono + "\n" +
+                                    "RuntimeEnvironmentHelper.IsMacOSX : " + RuntimeEnvironmentHelper.IsMacOSX + "\n" +
+                                    "RuntimeEnvironmentHelper.IsLinux : " + RuntimeEnvironmentHelper.IsLinux + "\n" +
+                                    "exception name is :" + e.ToString() + "\n" +
+                                    "exception type is : " + e.GetType() + "\n" +
+                                    " messge : " + e.Message + "\n" +
+                                    "exception Source : " + e.Source + "\n" +
+                                    "exception InnerException : " + e.InnerException + "\n" +
+                                    "exception StackTrace : " + e.StackTrace) ;
             }
 
             return new ThrottledResponse(_throttle, response);
