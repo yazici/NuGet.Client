@@ -31,14 +31,6 @@ phases:
         InitializeAllTestsToPending -PersonalAccessToken $(NuGetLurkerPersonalAccessToken) -CommitSha $(Build.SourceVersion)
 
   - task: PowerShell@1
-    displayName: "ECHOOOO"
-    inputs:
-      scriptType: "inlineScript"
-      inlineScript: |
-        echo $env:BUILDCOUNTERFILE
-        cat $env:BUILDCOUNTERFILE
-
-  - task: PowerShell@1
     displayName: "Update Build Number"
     name: "updatebuildnumber"
     inputs:
@@ -74,7 +66,6 @@ phases:
   dependsOn: Initialize_Build
   variables:
     BuildNumber: $[dependencies.Initialize_Build.outputs['updatebuildnumber.BuildNumber']]
-    FullVstsBuildNumber: $[dependencies.Initialize_Build.outputs['updatebuildnumber.FullVstsBuildNumber']]
     VsTargetChannel: $[dependencies.Initialize_Build.outputs['updatebuildnumber.VsTargetChannel']]
     VsTargetMajorVersion: $[dependencies.Initialize_Build.outputs['updatebuildnumber.VsTargetMajorVersion']]
     ShouldSkipOptimize: false
@@ -105,12 +96,8 @@ phases:
     inputs:
       scriptType: "inlineScript"
       inlineScript: |
-        echo "Env FullVstsBuildNumber $env:FullVstsBuildNumber"
-        echo "Env UPPERCASE $env:FULLVSTSBUILDNUMBER"
-        echo "Build Number $env:BUILD_BUILDNUMBER"
-        $val = $env:BUILD_BUILDNUMBER
-        Write-Host "##vso[build.updatebuildnumber]$val"
         gci env:* | sort-object name
+        Write-Host "##vso[build.updatebuildnumber]$env:BUILD_BUILDNUMBER"
 
   - task: PowerShell@1
     displayName: "Define variables"
@@ -559,7 +546,6 @@ phases:
   dependsOn: Initialize_Build
   variables:
     BuildNumber: $[dependencies.Initialize_Build.outputs['updatebuildnumber.BuildNumber']]
-    FullVstsBuildNumber: $[dependencies.Initialize_Build.outputs['updatebuildnumber.FullVstsBuildNumber']]
   condition: "and(succeeded(),eq(variables['RunFunctionalTestsOnWindows'], 'true')) "
   queue:
     name: VSEng-MicroBuildSxS
@@ -579,7 +565,6 @@ phases:
     inputs:
       scriptType: "inlineScript"
       inlineScript: |
-        Write-Host "##vso[build.updatebuildnumber]$env:FullVstsBuildNumber"
         gci env:* | sort-object name
 
   - task: PowerShell@1
@@ -640,7 +625,6 @@ phases:
 - phase: Tests_On_Linux
   dependsOn: Initialize_Build
   variables:
-    FULLVSTSBUILDNUMBER: $[dependencies.Initialize_Build.outputs['updatebuildnumber.FullVstsBuildNumber']]
     MSBUILDDISABLENODEREUSE: 1
   condition: "and(succeeded(),eq(variables['RunTestsOnLinux'], 'true')) "
   queue:
@@ -649,15 +633,6 @@ phases:
     demands: sh
 
   steps:
-  - task: PowerShell@2
-    displayName: "Update Build Number"
-    inputs:
-      targetType: "inline"
-      script: |
-        Write-Host "##vso[build.updatebuildnumber]$env:FULLVSTSBUILDNUMBER"
-      failOnStderr: "true"
-    condition: "always()"
-
   - task: ShellScript@2
     displayName: "Run Tests"
     continueOnError: "true"
@@ -690,8 +665,6 @@ phases:
   dependsOn:
   - Build_and_UnitTest
   - Initialize_Build
-  variables:
-    FULLVSTSBUILDNUMBER: $[dependencies.Initialize_Build.outputs['updatebuildnumber.FullVstsBuildNumber']]
   condition: "and(succeeded(),eq(variables['RunTestsOnMac'], 'true')) "
   queue:
     name: VSEng-MicroBuildMacSierra
@@ -699,15 +672,6 @@ phases:
     demands: sh
 
   steps:
-  - task: PowerShell@2
-    displayName: "Update Build Number"
-    inputs:
-      targetType: "inline"
-      script: |
-        Write-Host "##vso[build.updatebuildnumber]$env:FULLVSTSBUILDNUMBER"
-      failOnStderr: "true"
-    condition: "always()"
-
   - task: DownloadBuildArtifacts@0
     displayName: "Download NuGet.CommandLine.Test artifacts"
     inputs:
@@ -747,8 +711,6 @@ phases:
   dependsOn:
   - Build_and_UnitTest
   - Initialize_Build
-  variables:
-    FullVstsBuildNumber: $[dependencies.Initialize_Build.outputs['updatebuildnumber.FullVstsBuildNumber']]
   condition: "and(succeeded(),eq(variables['RunEndToEndTests'], 'true')) "
   queue:
     timeoutInMinutes: 90
@@ -761,7 +723,6 @@ phases:
     inputs:
       scriptType: "inlineScript"
       inlineScript: |
-        Write-Host "##vso[build.updatebuildnumber]$env:FullVstsBuildNumber"
         gci env:* | sort-object name
 
   - task: DownloadBuildArtifacts@0
@@ -845,7 +806,6 @@ phases:
   - Initialize_Build
   variables:
     BuildNumber: $[dependencies.Initialize_Build.outputs['updatebuildnumber.BuildNumber']]
-    FullVstsBuildNumber: $[dependencies.Initialize_Build.outputs['updatebuildnumber.FullVstsBuildNumber']]
   condition: "and(succeeded(),eq(variables['RunApexTests'], 'true')) "
   queue:
     name: DDNuGet-Windows
@@ -861,7 +821,6 @@ phases:
     inputs:
       scriptType: "inlineScript"
       inlineScript: |
-        Write-Host "##vso[build.updatebuildnumber]$env:FullVstsBuildNumber"
         gci env:* | sort-object name
 
   - task: DownloadBuildArtifacts@0
