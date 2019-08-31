@@ -98,6 +98,7 @@ namespace NuGet.CommandLine.Test
                 zero.Setup(x => x.Version).Returns(new SemanticVersion("0.0.0"));
                 zero.Setup(x => x.Listed).Returns(true);
 
+                Console = new Mock<IConsole>();
                 Target = new SelfUpdater(Console.Object);
                 Target.AssemblyLocation = Path.Combine(Directory, "nuget.exe");
 

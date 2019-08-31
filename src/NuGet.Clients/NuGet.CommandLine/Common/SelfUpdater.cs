@@ -33,7 +33,7 @@ namespace NuGet.CommandLine
 
         public SelfUpdater(IConsole console)
         {
-            if (_console == null)
+            if (console == null)
             {
                 throw new ArgumentNullException(nameof(console));
             }
