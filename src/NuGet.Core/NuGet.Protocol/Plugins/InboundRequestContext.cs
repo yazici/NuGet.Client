@@ -148,9 +148,9 @@ namespace NuGet.Protocol.Plugins
                 _logger.Write(new TaskLogMessage(_logger.Now, response.RequestId, response.Method, response.Type, TaskState.Queued));
             }
 
-            Task.Run(async () =>
+            Task.Factory.StartNew(async () =>
                 {
-                    // Top-level exception handler for a worker pool thread.
+                    // Top-level exception handler for a worker thread.
                     try
                     {
                         if (_logger.IsEnabled)
@@ -171,7 +171,9 @@ namespace NuGet.Protocol.Plugins
                         }
                     }
                 },
-                _cancellationToken);
+                _cancellationToken,
+                TaskCreationOptions.LongRunning | TaskCreationOptions.DenyChildAttach,
+                TaskScheduler.Default);
         }
 
         /// <summary>
@@ -211,9 +213,9 @@ namespace NuGet.Protocol.Plugins
                 _logger.Write(new TaskLogMessage(_logger.Now, request.RequestId, request.Method, request.Type, TaskState.Queued));
             }
 
-            Task.Run(async () =>
+            Task.Factory.StartNew(async () =>
                 {
-                    // Top-level exception handler for a worker pool thread.
+                    // Top-level exception handler for a worker thread.
                     try
                     {
                         if (_logger.IsEnabled)
@@ -245,7 +247,9 @@ namespace NuGet.Protocol.Plugins
                         }
                     }
                 },
-                _cancellationToken);
+                _cancellationToken,
+                TaskCreationOptions.LongRunning | TaskCreationOptions.DenyChildAttach,
+                TaskScheduler.Default);
         }
 
         /// <summary>

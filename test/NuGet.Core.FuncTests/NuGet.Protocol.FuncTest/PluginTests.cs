@@ -24,6 +24,7 @@ namespace NuGet.Protocol.FuncTest
     public class PluginTests
     {
         private static readonly FileInfo PluginFile;
+        private static readonly string PluginName;
         private static readonly ushort PortNumber = 11000;
         private static readonly IEnumerable<string> PluginArguments = PluginConstants.PluginArguments
             .Concat(new[] { $"-PortNumber {PortNumber} -TestRunnerProcessId {GetCurrentProcessId()}" });
@@ -34,6 +35,7 @@ namespace NuGet.Protocol.FuncTest
             var filePath = Path.Combine(Directory.GetCurrentDirectory(), "TestablePlugin", "Plugin.Testable.exe");
 
             PluginFile = new FileInfo(filePath);
+            PluginName = Path.GetFileNameWithoutExtension(PluginFile.Name);
         }
 
         public PluginTests(ITestOutputHelper logger)
@@ -47,6 +49,20 @@ namespace NuGet.Protocol.FuncTest
             using (var test = await PluginTest.CreateAsync())
             {
                 Assert.Equal(PluginProtocolConstants.CurrentVersion, test.Plugin.Connection.ProtocolVersion);
+            }
+        }
+
+        [PlatformFact(Platform.Windows)]
+        public async Task GetOrCreateAsync_WhenCancellationTokenIsCancelled_Throws()
+        {
+            using (var pluginFactory = new PluginFactory(PluginConstants.IdleTimeout))
+            {
+                await Assert.ThrowsAsync<OperationCanceledException>(() => pluginFactory.GetOrCreateAsync(
+                    PluginFile.FullName,
+                    PluginConstants.PluginArguments,
+                    new RequestHandlers(),
+                    ConnectionOptions.CreateDefault(),
+                    new CancellationToken(canceled: true)));
             }
         }
 
@@ -66,7 +82,7 @@ namespace NuGet.Protocol.FuncTest
                 Assert.True(
                     Regex.IsMatch(
                         exception.Message,
-                        "^Plugin 'Plugin.Testable' failed within \\d.\\d{3} seconds with exit code -?\\d+.$"),
+                        $"^Plugin '{PluginName}' failed within \\d.\\d{{3}} seconds with exit code -?\\d+.$"),
                     exception.Message);
             }
         }
@@ -87,7 +103,7 @@ namespace NuGet.Protocol.FuncTest
                 Assert.True(
                     Regex.IsMatch(
                         exception.Message,
-                        "^Plugin 'Plugin.Testable' failed within \\d.\\d{3} seconds with exit code 1.$"),
+                        $"^Plugin '{PluginName}' failed within \\d.\\d{{3}} seconds with exit code 1.$"),
                     exception.Message);
             }
         }
@@ -108,7 +124,7 @@ namespace NuGet.Protocol.FuncTest
                 Assert.True(
                     Regex.IsMatch(
                         exception.Message,
-                        "^Plugin 'Plugin.Testable' failed within \\d.\\d{3} seconds with exit code -1.$"),
+                        $"^Plugin '{PluginName}' failed within \\d.\\d{{3}} seconds with exit code -1.$"),
                     exception.Message);
             }
         }
@@ -126,7 +142,7 @@ namespace NuGet.Protocol.FuncTest
                     ConnectionOptions.CreateDefault(),
                     cancellationTokenSource.Token));
 
-                Assert.Equal("Plugin 'Plugin.Testable' failed with the exception:  The plugin handshake failed.", exception.Message);
+                Assert.Equal($"Plugin '{PluginName}' failed with the exception:  The plugin handshake failed.", exception.Message);
             }
         }
 

@@ -1,4 +1,4 @@
-﻿// Copyright (c) .NET Foundation. All rights reserved.
+// Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
@@ -24,7 +24,9 @@ namespace NuGet.Protocol.Plugins.Tests
         [Fact]
         public void Constructor_AcceptsInfiniteTimeSpan()
         {
-            new PluginFactory(Timeout.InfiniteTimeSpan);
+            using (new PluginFactory(Timeout.InfiniteTimeSpan))
+            {
+            }
         }
 
         [Fact]
@@ -42,79 +44,84 @@ namespace NuGet.Protocol.Plugins.Tests
         [InlineData("")]
         public async Task GetOrCreateAsync_ThrowsForNullOrEmptyFilePath(string filePath)
         {
-            var factory = new PluginFactory(Timeout.InfiniteTimeSpan);
+            using (var factory = new PluginFactory(Timeout.InfiniteTimeSpan))
+            {
+                var exception = await Assert.ThrowsAsync<ArgumentException>(
+                    () => factory.GetOrCreateAsync(
+                        filePath,
+                        PluginConstants.PluginArguments,
+                        new RequestHandlers(),
+                        ConnectionOptions.CreateDefault(),
+                        CancellationToken.None));
 
-            var exception = await Assert.ThrowsAsync<ArgumentException>(
-                () => factory.GetOrCreateAsync(
-                    filePath,
-                    PluginConstants.PluginArguments,
-                    new RequestHandlers(),
-                    ConnectionOptions.CreateDefault(),
-                    CancellationToken.None));
-
-            Assert.Equal("filePath", exception.ParamName);
+                Assert.Equal("filePath", exception.ParamName);
+            }
         }
 
         [Fact]
         public async Task GetOrCreateAsync_ThrowsForNullArguments()
         {
-            var factory = new PluginFactory(Timeout.InfiniteTimeSpan);
+            using (var factory = new PluginFactory(Timeout.InfiniteTimeSpan))
+            {
+                var exception = await Assert.ThrowsAsync<ArgumentNullException>(
+                    () => factory.GetOrCreateAsync(
+                        filePath: "a",
+                        arguments: null,
+                        requestHandlers: new RequestHandlers(),
+                        options: ConnectionOptions.CreateDefault(),
+                        sessionCancellationToken: CancellationToken.None));
 
-            var exception = await Assert.ThrowsAsync<ArgumentNullException>(
-                () => factory.GetOrCreateAsync(
-                    filePath: "a",
-                    arguments: null,
-                    requestHandlers: new RequestHandlers(),
-                    options: ConnectionOptions.CreateDefault(),
-                    sessionCancellationToken: CancellationToken.None));
-
-            Assert.Equal("arguments", exception.ParamName);
+                Assert.Equal("arguments", exception.ParamName);
+            }
         }
 
         [Fact]
         public async Task GetOrCreateAsync_ThrowsForNullRequestHandlers()
         {
-            var factory = new PluginFactory(Timeout.InfiniteTimeSpan);
+            using (var factory = new PluginFactory(Timeout.InfiniteTimeSpan))
+            {
+                var exception = await Assert.ThrowsAsync<ArgumentNullException>(
+                    () => factory.GetOrCreateAsync(
+                        filePath: "a",
+                        arguments: PluginConstants.PluginArguments,
+                        requestHandlers: null,
+                        options: ConnectionOptions.CreateDefault(),
+                        sessionCancellationToken: CancellationToken.None));
 
-            var exception = await Assert.ThrowsAsync<ArgumentNullException>(
-                () => factory.GetOrCreateAsync(
-                    filePath: "a",
-                    arguments: PluginConstants.PluginArguments,
-                    requestHandlers: null,
-                    options: ConnectionOptions.CreateDefault(),
-                    sessionCancellationToken: CancellationToken.None));
-
-            Assert.Equal("requestHandlers", exception.ParamName);
+                Assert.Equal("requestHandlers", exception.ParamName);
+            }
         }
 
         [Fact]
         public async Task GetOrCreateAsync_ThrowsForNullConnectionOptions()
         {
-            var factory = new PluginFactory(Timeout.InfiniteTimeSpan);
+            using (var factory = new PluginFactory(Timeout.InfiniteTimeSpan))
+            {
+                var exception = await Assert.ThrowsAsync<ArgumentNullException>(
+                    () => factory.GetOrCreateAsync(
+                        filePath: "a",
+                        arguments: PluginConstants.PluginArguments,
+                        requestHandlers: new RequestHandlers(),
+                        options: null,
+                        sessionCancellationToken: CancellationToken.None));
 
-            var exception = await Assert.ThrowsAsync<ArgumentNullException>(
-                () => factory.GetOrCreateAsync(
-                    filePath: "a",
-                    arguments: PluginConstants.PluginArguments,
-                    requestHandlers: new RequestHandlers(),
-                    options: null,
-                    sessionCancellationToken: CancellationToken.None));
-
-            Assert.Equal("options", exception.ParamName);
+                Assert.Equal("options", exception.ParamName);
+            }
         }
 
         [Fact]
         public async Task GetOrCreateAsync_ThrowsIfCancelled()
         {
-            var factory = new PluginFactory(Timeout.InfiniteTimeSpan);
-
-            await Assert.ThrowsAsync<OperationCanceledException>(
-                () => factory.GetOrCreateAsync(
-                    filePath: "a",
-                    arguments: PluginConstants.PluginArguments,
-                    requestHandlers: new RequestHandlers(),
-                    options: ConnectionOptions.CreateDefault(),
-                    sessionCancellationToken: new CancellationToken(canceled: true)));
+            using (var factory = new PluginFactory(Timeout.InfiniteTimeSpan))
+            {
+                await Assert.ThrowsAsync<OperationCanceledException>(
+                    () => factory.GetOrCreateAsync(
+                        filePath: "a",
+                        arguments: PluginConstants.PluginArguments,
+                        requestHandlers: new RequestHandlers(),
+                        options: ConnectionOptions.CreateDefault(),
+                        sessionCancellationToken: new CancellationToken(canceled: true)));
+            }
         }
 
         [Fact]
