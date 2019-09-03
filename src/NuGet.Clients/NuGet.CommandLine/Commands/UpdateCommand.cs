@@ -69,7 +69,7 @@ namespace NuGet.CommandLine
             if (Self)
             {
                 var selfUpdater = new SelfUpdater(Console);
-                await selfUpdater.UpdateSelfAsync(Prerelease);
+                await selfUpdater.UpdateSelfAsync(Prerelease, NuGetConstants.V3FeedUrl);
                 return;
             }
 

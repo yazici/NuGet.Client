@@ -7,8 +7,8 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using NuGet.Configuration;
 using NuGet.Packaging;
+using NuGet.Packaging.Core;
 using NuGet.Protocol;
 using NuGet.Protocol.Core.Types;
 using NuGet.Versioning;
@@ -56,11 +56,11 @@ namespace NuGet.CommandLine
             }
         }
 
-        public async Task UpdateSelfAsync(bool prerelease)
+        public async Task UpdateSelfAsync(bool prerelease, string updateFeed)
         {
             Assembly assembly = typeof(SelfUpdater).Assembly;
             var version = GetNuGetVersion(assembly) ?? new NuGetVersion(assembly.GetName().Version);
-            await SelfUpdateAsync(AssemblyLocation, prerelease, version, NuGetConstants.V3FeedUrl);
+            await SelfUpdateAsync(AssemblyLocation, prerelease, version, updateFeed);
         }
 
         internal async Task SelfUpdateAsync(string exePath, bool prerelease, NuGetVersion currentVersion, string updateFeed)
@@ -68,7 +68,6 @@ namespace NuGet.CommandLine
             _console.WriteLine(LocalizedResourceManager.GetString("UpdateCommandCheckingForUpdates"), updateFeed);
 
             var sourceRepository = Repository.Factory.GetCoreV3(updateFeed);
-
             var feed = await sourceRepository.GetResourceAsync<FindPackageByIdResource>(CancellationToken.None);
             var versions = await feed.GetAllVersionsAsync(NuGetCommandLinePackageId, new SourceCacheContext(), _console, CancellationToken.None);
 
@@ -86,7 +85,9 @@ namespace NuGet.CommandLine
                 _console.WriteLine(LocalizedResourceManager.GetString("UpdateCommandUpdatingNuGet"), latestVersion);
 
                 // Get NuGet.exe file from the package
-                var downloader = await feed.GetPackageDownloaderAsync(new Packaging.Core.PackageIdentity(NuGetCommandLinePackageId, latestVersion), new SourceCacheContext(), _console, CancellationToken.None);
+                var downloader = await feed.GetPackageDownloaderAsync(new PackageIdentity(NuGetCommandLinePackageId, latestVersion), new SourceCacheContext(), _console, CancellationToken.None);
+
+                // todo NK - DEFINE THE destination path.
                 await downloader.CopyNupkgFileToAsync("destinationPath", CancellationToken.None);
 
                 using (var reader = new PackageArchiveReader(File.OpenRead("destinationPath")))

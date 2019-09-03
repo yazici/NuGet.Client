@@ -2,10 +2,10 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System.IO;
-using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Moq;
+using NuGet.Configuration;
 using NuGet.Test.Utility;
 using NuGet.Versioning;
 using Xunit;
@@ -29,13 +29,11 @@ namespace NuGet.CommandLine.Test
             using (var testDirectory = TestDirectory.Create())
             {
                 var tc = new TestContext(testDirectory);
-                tc
-                    .Package
-                    .Setup(x => x.Version)
-                    .Returns(new SemanticVersion(version));
+
+                System.Console.Write(version);
 
                 // Act
-                await tc.Target.UpdateSelfAsync(prerelease);
+                await tc.Target.UpdateSelfAsync(prerelease, NuGetConstants.V3FeedUrl);
 
                 // Assert
                 tc.VerifyReplacedState(replaced);
@@ -51,10 +49,10 @@ namespace NuGet.CommandLine.Test
             using (var testDirectory = TestDirectory.Create())
             {
                 var tc = new TestContext(testDirectory);
-                tc.Package.Setup(x => x.Version).Returns(tc.ClientVersion);
+                // TODO make the latest available be current version
 
                 // Act
-                await tc.Target.UpdateSelfAsync(prerelease);
+                await tc.Target.UpdateSelfAsync(prerelease, NuGetConstants.V3FeedUrl);
 
                 // Assert
                 tc.VerifyReplacedState(replaced: false);
@@ -66,11 +64,7 @@ namespace NuGet.CommandLine.Test
             public TestContext(TestDirectory directory)
             {
                 Directory = directory;
-                Factory = new Mock<IPackageRepositoryFactory>();
-                Repository = new Mock<IPackageRepository>();
                 Console = new Mock<IConsole>();
-                Package = new Mock<IPackage>();
-                PackageFile = new Mock<IPackageFile>();
                 OriginalContent = new byte[] { 0 };
                 NewContent = new byte[] { 1 };
 
@@ -83,43 +77,18 @@ namespace NuGet.CommandLine.Test
                     .Parse(clientVersion)
                     .IsPrerelease;
 
-                PackageFile.Setup(x => x.Path).Returns("nuget.exe");
-                PackageFile.Setup(x => x.GetStream()).Returns(() => new MemoryStream(NewContent));
-
-                Package.Setup(x => x.Id).Returns("NuGet.CommandLine");
-                Package.Setup(x => x.Version).Returns(new SemanticVersion("99.99.99"));
-                Package.Setup(x => x.Listed).Returns(true);
-                Package
-                    .Setup(x => x.GetFiles())
-                    .Returns(() => PackageFile != null ? new[] { PackageFile.Object }.AsEnumerable() : null);
-
-                var zero = new Mock<IPackage>();
-                zero.Setup(x => x.Id).Returns("NuGet.CommandLine");
-                zero.Setup(x => x.Version).Returns(new SemanticVersion("0.0.0"));
-                zero.Setup(x => x.Listed).Returns(true);
-
                 Console = new Mock<IConsole>();
                 Target = new SelfUpdater(Console.Object);
+
                 Target.AssemblyLocation = Path.Combine(Directory, "nuget.exe");
-
-                Factory
-                    .Setup(x => x.CreateRepository(It.IsAny<string>()))
-                    .Returns(Repository.Object);
-
-                Repository
-                    .Setup(x => x.GetPackages())
-                    .Returns(() => Package != null ? new[] { zero.Object, Package.Object }.AsQueryable() : null);
 
                 File.WriteAllBytes(Target.AssemblyLocation, OriginalContent);
             }
 
-            public Mock<IPackageRepositoryFactory> Factory { get; }
-            public Mock<IPackageRepository> Repository { get; }
             public Mock<IConsole> Console { get; }
             public SelfUpdater Target { get; }
             public Mock<IPackage> Package { get; set; }
             public TestDirectory Directory { get; }
-            public Mock<IPackageFile> PackageFile { get; }
             public byte[] NewContent { get; set; }
             public byte[] OriginalContent { get; }
             public SemanticVersion ClientVersion { get; }
