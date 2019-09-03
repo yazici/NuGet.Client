@@ -128,7 +128,14 @@ namespace NuGet.Test.TestExtensions.TestablePlugin
         {
             if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("NUGET_PLUGIN_DEBUG")))
             {
-                Debugger.Break();
+                if (Debugger.IsAttached)
+                {
+                    Debugger.Break();
+                }
+                else
+                {
+                    Debugger.Launch();
+                }
             }
         }
 
