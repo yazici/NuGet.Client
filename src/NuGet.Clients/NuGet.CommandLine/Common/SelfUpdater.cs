@@ -7,6 +7,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using NuGet.Common;
 using NuGet.Packaging;
 using NuGet.Packaging.Core;
 using NuGet.Protocol;
@@ -60,18 +61,20 @@ namespace NuGet.CommandLine
         {
             Assembly assembly = typeof(SelfUpdater).Assembly;
             var version = GetNuGetVersion(assembly) ?? new NuGetVersion(assembly.GetName().Version);
-            await SelfUpdateAsync(AssemblyLocation, prerelease, version, updateFeed);
+            await SelfUpdateAsync(AssemblyLocation, prerelease, version, updateFeed, CancellationToken.None);
         }
 
-        internal async Task SelfUpdateAsync(string exePath, bool prerelease, NuGetVersion currentVersion, string updateFeed)
+        internal async Task SelfUpdateAsync(string exePath, bool prerelease, NuGetVersion currentVersion, string updateFeed, CancellationToken cancellationToken)
         {
+            currentVersion = NuGetVersion.Parse("5.0.0");
+
             _console.WriteLine(LocalizedResourceManager.GetString("UpdateCommandCheckingForUpdates"), updateFeed);
 
             var sourceRepository = Repository.Factory.GetCoreV3(updateFeed);
-            var feed = await sourceRepository.GetResourceAsync<FindPackageByIdResource>(CancellationToken.None);
-            var versions = await feed.GetAllVersionsAsync(NuGetCommandLinePackageId, new SourceCacheContext(), _console, CancellationToken.None);
+            var feed = await sourceRepository.GetResourceAsync<FindPackageByIdResource>(cancellationToken);
+            var versions = await feed.GetAllVersionsAsync(NuGetCommandLinePackageId, new SourceCacheContext(), _console, cancellationToken);
 
-            var latestVersion = versions.LastOrDefault(e => e.IsPrerelease && prerelease);
+            var latestVersion = versions.LastOrDefault(e => e.IsPrerelease == prerelease);
 
             _console.WriteLine(LocalizedResourceManager.GetString("UpdateCommandCurrentlyRunningNuGetExe"), currentVersion);
 
@@ -84,17 +87,18 @@ namespace NuGet.CommandLine
             {
                 _console.WriteLine(LocalizedResourceManager.GetString("UpdateCommandUpdatingNuGet"), latestVersion);
 
-                // Get NuGet.exe file from the package
-                var downloader = await feed.GetPackageDownloaderAsync(new PackageIdentity(NuGetCommandLinePackageId, latestVersion), new SourceCacheContext(), _console, CancellationToken.None);
-
-                // todo NK - DEFINE THE destination path.
-                await downloader.CopyNupkgFileToAsync("destinationPath", CancellationToken.None);
-
-                using (var reader = new PackageArchiveReader(File.OpenRead("destinationPath")))
+                var tempDir = Path.Combine(NuGetEnvironment.GetFolderPath(NuGetFolderPath.Temp), "updateSelf");
+                var tempPath = FileUtility.GetTempFilePath(tempDir);
+                try
                 {
+                    DirectoryUtility.CreateSharedDirectory(tempDir);
+                    // Get NuGet.exe file from the package
+                    var downloader = await feed.GetPackageDownloaderAsync(new PackageIdentity(NuGetCommandLinePackageId, latestVersion), new SourceCacheContext(), _console, cancellationToken);
+                    await downloader.CopyNupkgFileToAsync(tempPath, cancellationToken);
+
                     // Get the exe path and move it to a temp file (NuGet.exe.old) so we can replace the running exe with the bits we got 
                     // from the package repository
-                    var nugetExeFile = (await reader.GetFilesAsync(CancellationToken.None)).FirstOrDefault(f => Path.GetFileName(f).Equals(NuGetExe, StringComparison.OrdinalIgnoreCase));
+                    var nugetExeFile = (await downloader.CoreReader.GetFilesAsync(CancellationToken.None)).FirstOrDefault(f => Path.GetFileName(f).Equals(NuGetExe, StringComparison.OrdinalIgnoreCase));
 
                     // If for some reason this package doesn't have NuGet.exe then we don't want to use it
                     if (nugetExeFile == null)
@@ -102,15 +106,21 @@ namespace NuGet.CommandLine
                         throw new CommandLineException(LocalizedResourceManager.GetString("UpdateCommandUnableToLocateNuGetExe"));
                     }
                     string renamedPath = exePath + ".old";
+
                     Move(exePath, renamedPath);
 
-                    using (Stream fromStream = await reader.GetStreamAsync(nugetExeFile, CancellationToken.None), toStream = File.Create(exePath))
+                    using (Stream fromStream = await downloader.CoreReader.GetStreamAsync(nugetExeFile, cancellationToken), toStream = File.Create(exePath))
                     {
                         fromStream.CopyTo(toStream);
                     }
                 }
-                _console.WriteLine(LocalizedResourceManager.GetString("UpdateCommandUpdateSuccessful"));
+                finally
+                {
+                    // Delete the temporary directory
+                    FileUtility.Delete(tempDir);
+                }
             }
+            _console.WriteLine(LocalizedResourceManager.GetString("UpdateCommandUpdateSuccessful"));
         }
 
         internal static NuGetVersion GetNuGetVersion(Assembly assembly)
