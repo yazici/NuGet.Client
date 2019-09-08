@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
-using System.Text;
 using NuGet.Common;
 
 namespace NuGet.Packaging.Signing
@@ -79,11 +78,8 @@ namespace NuGet.Packaging.Signing
                 var fatalStatuses = new List<X509ChainStatus>();
                 var logCode = certificateType == CertificateType.Timestamp ? NuGetLogCode.NU3028 : NuGetLogCode.NU3018;
 
-                var status = new StringBuilder();
                 foreach (var chainStatus in chain.ChainStatus)
                 {
-                    status.AppendLine($"({chainStatus.Status}):  {chainStatus.StatusInformation}");
-
                     if ((chainStatus.Status & errorStatusFlags) != 0)
                     {
                         fatalStatuses.Add(chainStatus);
@@ -94,32 +90,15 @@ namespace NuGet.Packaging.Signing
                         logger.Log(LogMessage.CreateWarning(logCode, chainStatus.StatusInformation?.Trim()));
                     }
                 }
-                var elements = new StringBuilder();
-                int i = 0;
-                foreach (var chainElement in chain.ChainElements)
-                {
-                    elements.AppendLine($"=================   The ({i}) th certificate is   :=================");
-                    elements.AppendLine($"chainElement.Certificate.Subject : ({chainElement.Certificate.Subject})");
-                    elements.AppendLine($"chainElement.Certificate.Thumbprint : ({chainElement.Certificate.Thumbprint})");
-                    elements.AppendLine($"chainElement.Certificate.isvalid : ({chainElement.Certificate.Verify()})");
-                    elements.AppendLine($"    --------   The chainElementStatus are : -------");
-                    foreach (var chainElementStatus in chainElement.ChainElementStatus)
-                    {
-                        elements.AppendLine($"  status : ({chainElementStatus.Status.ToString()})");
-                        elements.AppendLine($"  info: ({chainElementStatus.StatusInformation})");
-                    }
-                    i++;
-                }
 
                 if (fatalStatuses.Any())
                 {
                     if (certificateType == CertificateType.Timestamp)
                     {
-                        throw new Exception("@@timestamp has someting wrong:\r\n" + status.ToString() + elements.ToString());
-                        //throw new TimestampException(logCode, Strings.CertificateChainValidationFailed);
+                        throw new TimestampException(logCode, Strings.CertificateChainValidationFailed);
                     }
-                    throw new Exception("@@signature has someting wrong:\r\n" + status.ToString() + elements.ToString());
-                    //throw new SignatureException(logCode, Strings.CertificateChainValidationFailed);
+
+                    throw new SignatureException(logCode, Strings.CertificateChainValidationFailed);
                 }
 
                 return GetCertificateChain(chain);
