@@ -513,7 +513,7 @@ namespace NuGet.CommandLine.Test
             }
         }
 
-        [Fact]
+        [Fact(Skip="times out on the newest mac pool.")]
         public void NetworkCallCount_CancelPackageDownloadForV3()
         {
             // Arrange
