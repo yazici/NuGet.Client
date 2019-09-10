@@ -1,4 +1,4 @@
-﻿// Copyright (c) .NET Foundation. All rights reserved.
+// Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
@@ -49,7 +49,9 @@ namespace NuGet.Protocol
         private const string FirstParameterFormat = "?{0}";
         private const string ParameterFormat = "&{0}";
         private const string TagsProperty = "Tags";
+#pragma warning disable IDE1006 // Naming Styles
         private static readonly string[] _propertiesToSearch = new[]
+#pragma warning restore IDE1006 // Naming Styles
         {
             IdProperty,
             "Description",

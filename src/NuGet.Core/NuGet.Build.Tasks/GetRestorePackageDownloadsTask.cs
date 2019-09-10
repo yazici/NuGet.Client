@@ -35,6 +35,8 @@ namespace NuGet.Build.Tasks
 
         public override bool Execute()
         {
+            System.Diagnostics.Debugger.Launch();
+
             var log = new MSBuildLogger(Log);
             log.LogDebug($"(in) ProjectUniqueName '{ProjectUniqueName}'");
             log.LogDebug($"(in) TargetFrameworks '{TargetFrameworks}'");

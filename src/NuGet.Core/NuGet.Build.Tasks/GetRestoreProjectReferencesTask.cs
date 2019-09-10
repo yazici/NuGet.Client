@@ -1,4 +1,4 @@
-﻿// Copyright (c) .NET Foundation. All rights reserved.
+// Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
@@ -41,6 +41,9 @@ namespace NuGet.Build.Tasks
 
         public override bool Execute()
         {
+            System.Diagnostics.Debugger.Launch();
+
+
             // Log inputs
             var log = new MSBuildLogger(Log);
             log.LogDebug($"(in) ProjectUniqueName '{ProjectUniqueName}'");
@@ -63,7 +66,9 @@ namespace NuGet.Build.Tasks
                 // Match the same behavior as NuGet.targets
                 // ReferenceOutputAssembly == '' OR ReferenceOutputAssembly == 'true'
                 if (string.IsNullOrEmpty(refOutput)
+#pragma warning disable IDE0049 // Simplify Names
                     || Boolean.TrueString.Equals(refOutput, StringComparison.OrdinalIgnoreCase))
+#pragma warning restore IDE0049 // Simplify Names
                 {
                     // Get the absolute path
                     var referencePath = Path.GetFullPath(Path.Combine(parentDirectory, project.ItemSpec));

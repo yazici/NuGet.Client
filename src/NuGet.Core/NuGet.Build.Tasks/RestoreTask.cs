@@ -82,6 +82,7 @@ namespace NuGet.Build.Tasks
 
         public override bool Execute()
         {
+           
 #if DEBUG
             var debugPackTask = Environment.GetEnvironmentVariable("DEBUG_RESTORE_TASK");
             if (!string.IsNullOrEmpty(debugPackTask) && debugPackTask.Equals(bool.TrueString, StringComparison.OrdinalIgnoreCase))
@@ -96,6 +97,7 @@ namespace NuGet.Build.Tasks
                 }
                 Debugger.Break();
 #else
+
             Debugger.Launch();
 #endif
             }
