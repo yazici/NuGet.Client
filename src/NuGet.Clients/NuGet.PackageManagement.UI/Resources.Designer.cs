@@ -286,6 +286,15 @@ namespace NuGet.PackageManagement.UI {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Copy.
+        /// </summary>
+        public static string Button_Copy {
+            get {
+                return ResourceManager.GetString("Button_Copy", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Dismiss.
         /// </summary>
         public static string Button_Dismiss {
@@ -781,15 +790,6 @@ namespace NuGet.PackageManagement.UI {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to {0} version {1}.
-        /// </summary>
-        public static string Label_DeprecatedPackageIdAndMinVersion {
-            get {
-                return ResourceManager.GetString("Label_DeprecatedPackageIdAndMinVersion", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Alternate package.
         /// </summary>
         public static string Label_DeprecationAlternatePackage {
@@ -880,6 +880,15 @@ namespace NuGet.PackageManagement.UI {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to You have {0} deprecated package(s) installed..
+        /// </summary>
+        public static string Label_Installed_DeprecatedWarning {
+            get {
+                return ResourceManager.GetString("Label_Installed_DeprecatedWarning", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Installed:.
         /// </summary>
         public static string Label_InstalledColon {
@@ -939,15 +948,6 @@ namespace NuGet.PackageManagement.UI {
         public static string Label_Options {
             get {
                 return ResourceManager.GetString("Label_Options", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to  (or higher).
-        /// </summary>
-        public static string Label_OrHigher {
-            get {
-                return ResourceManager.GetString("Label_OrHigher", resourceCulture);
             }
         }
         

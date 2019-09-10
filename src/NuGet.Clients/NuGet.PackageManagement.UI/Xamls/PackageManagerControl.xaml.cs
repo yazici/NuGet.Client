@@ -11,6 +11,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using Microsoft.VisualStudio.Shell.Interop;
+using Microsoft.VisualStudio.Threading;
 using NuGet.Common;
 using NuGet.Configuration;
 using NuGet.PackageManagement.Telemetry;
@@ -27,6 +28,7 @@ using VSThreadHelper = Microsoft.VisualStudio.Shell.ThreadHelper;
 using Task = System.Threading.Tasks.Task;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.Shell;
+using NuGet.Protocol;
 
 namespace NuGet.PackageManagement.UI
 {
@@ -44,9 +46,15 @@ namespace NuGet.PackageManagement.UI
         // list in response to PackageSourcesChanged event.
         private bool _dontStartNewSearch;
 
-        private PackageRestoreBar _restoreBar;
+        // When executing a UI operation, we disable the PM UI and ignore any refresh requests.
+        // This tells the operation execution part that it needs to trigger a refresh when done.
+        private bool _isRefreshRequired;
 
+        // Signifies where an action is being executed. Should be updated in a coordinated fashion with IsEnabled
+        private bool _isExecutingAction;
         private RestartRequestBar _restartBar;
+
+        public PackageRestoreBar RestoreBar { get; private set; }
 
         private PRMigratorBar _migratorBar;
 
@@ -61,7 +69,7 @@ namespace NuGet.PackageManagement.UI
 
         public PackageManagerModel Model { get; }
 
-        public Configuration.ISettings Settings { get; }
+        public ISettings Settings { get; }
 
         internal ItemFilter ActiveFilter { get => _topPanel.Filter; set => _topPanel.SelectFilter(value); }
 
@@ -87,14 +95,18 @@ namespace NuGet.PackageManagement.UI
 
         public bool IncludePrerelease => _topPanel.CheckboxPrerelease.IsChecked == true;
 
+        private readonly Guid _sessionGuid = Guid.NewGuid();
+        private readonly Stopwatch _sinceLastRefresh;
+
         public PackageManagerControl(
             PackageManagerModel model,
-            Configuration.ISettings nugetSettings,
+            ISettings nugetSettings,
             IVsWindowSearchHostFactory searchFactory,
             IVsShell4 vsShell,
             INuGetUILogger uiLogger = null)
         {
             VSThreadHelper.ThrowIfNotOnUIThread();
+            _sinceLastRefresh = Stopwatch.StartNew();
 
             _uiLogger = uiLogger;
             Model = model;
@@ -142,7 +154,7 @@ namespace NuGet.PackageManagement.UI
             _packageList.CheckBoxesEnabled = _topPanel.Filter == ItemFilter.UpdatesAvailable;
             _packageList.IsSolution = Model.IsSolution;
 
-            Loaded += PackageManagerLoaded;            
+            Loaded += PackageManagerLoaded;
 
             // register with the UI controller
             var controller = model.UIController as NuGetUI;
@@ -171,11 +183,6 @@ namespace NuGet.PackageManagement.UI
             _missingPackageStatus = false;
         }
 
-        private void PackagesErrorBar_RefreshUI(object sender, EventArgs e)
-        {
-            Refresh();
-        }
-
         private void SolutionManager_ProjectsUpdated(object sender, NuGetProjectEventArgs e)
         {
             Model.Context.Projects = _detailModel.NuGetProjects;
@@ -187,7 +194,6 @@ namespace NuGet.PackageManagement.UI
             if (!Model.IsSolution)
             {
                 var currentNugetProject = Model.Context.Projects.First();
-                var newNugetProject = e.NuGetProject;
                 string currentFullPath, newFullPath;
                 currentNugetProject.TryGetMetadata(NuGetProjectMetadataKeys.FullPath, out currentFullPath);
                 e.NuGetProject.TryGetMetadata(NuGetProjectMetadataKeys.FullPath, out newFullPath);
@@ -202,7 +208,10 @@ namespace NuGet.PackageManagement.UI
 
         private void SolutionManager_ProjectsChanged(object sender, NuGetProjectEventArgs e)
         {
-            if (Model.IsSolution)
+            var timeSpan = GetTimeSinceLastRefreshAndRestart();
+
+            // Do not refresh if the UI is not visible. It will be refreshed later when the loaded event is called.
+            if (IsVisible && Model.IsSolution)
             {
                 var solutionModel = _detailModel as PackageSolutionDetailControlModel;
                 if (solutionModel == null)
@@ -214,60 +223,124 @@ namespace NuGet.PackageManagement.UI
                 var projects = solutionModel.Projects.Select(p => p.NuGetProject);
                 Model.Context.Projects = projects;
 
-                // refresh UI
-                Refresh();
+                RefreshWhenNotExecutingAction(RefreshOperationSource.ProjectsChanged, timeSpan);
+            }
+            else
+            {
+                EmitRefreshEvent(timeSpan, RefreshOperationSource.ProjectsChanged, RefreshOperationStatus.NoOp);
             }
         }
 
         private void SolutionManager_ActionsExecuted(object sender, ActionsExecutedEventArgs e)
         {
-            if (Model.IsSolution)
+            var timeSpan = GetTimeSinceLastRefreshAndRestart();
+            // Do not refresh if the UI is not visible. It will be refreshed later when the loaded event is called.
+            if (IsVisible)
             {
-                Refresh();
+                if (Model.IsSolution)
+                {
+                    RefreshWhenNotExecutingAction(RefreshOperationSource.ActionsExecuted, timeSpan);
+                }
+                else
+                {
+                    // this is a project package manager, so there is one and only one project.
+                    var project = Model.Context.Projects.First();
+                    var projectName = NuGetProject.GetUniqueNameOrName(project);
+
+                    // we need refresh when packages are installed into or uninstalled from the project
+                    if (e.Actions.Any(action =>
+                        NuGetProject.GetUniqueNameOrName(action.Project) == projectName))
+                    {
+                        RefreshWhenNotExecutingAction(RefreshOperationSource.ActionsExecuted, timeSpan);
+                    }
+                    else
+                    {
+                        EmitRefreshEvent(timeSpan, RefreshOperationSource.ActionsExecuted, RefreshOperationStatus.NotApplicable);
+                    }
+                }
             }
             else
             {
-                // this is a project package manager, so there is one and only one project.
-                var project = Model.Context.Projects.First();
-                var projectName = NuGetProject.GetUniqueNameOrName(project);
-
-                // we need refresh when packages are installed into or uninstalled from the project
-                if (e.Actions.Any(action =>
-                    NuGetProject.GetUniqueNameOrName(action.Project) == projectName))
-                {
-                    Refresh();
-                }
+                EmitRefreshEvent(timeSpan, RefreshOperationSource.ActionsExecuted, RefreshOperationStatus.NoOp);
             }
         }
 
         private void SolutionManager_CacheUpdated(object sender, NuGetEventArgs<string> e)
         {
-            if (Model.IsSolution)
+            var timeSpan = GetTimeSinceLastRefreshAndRestart();
+            // Do not refresh if the UI is not visible. It will be refreshed later when the loaded event is called.
+            if (IsVisible)
             {
-                // This means that the UI is open for the solution.
-                Refresh();
+                if (Model.IsSolution)
+                {
+                    RefreshWhenNotExecutingAction(RefreshOperationSource.CacheUpdated, timeSpan);
+                }
+                else
+                {
+                    // This is a project package manager, so there is one and only one project.
+                    var project = Model.Context.Projects.First();
+
+                    string projectFullName;
+
+                    var projectContainsFullPath = project.TryGetMetadata(NuGetProjectMetadataKeys.FullPath, out projectFullName);
+
+                    var eventProjectFullName = e.Arg;
+
+                    // This ensures that we refresh the UI only if the event.project.FullName matches the NuGetProject.FullName.
+                    // We also refresh the UI if projectFullPath is not present.
+                    if (!projectContainsFullPath || projectFullName == eventProjectFullName)
+                    {
+                        RefreshWhenNotExecutingAction(RefreshOperationSource.CacheUpdated, timeSpan);
+                    }
+                    else
+                    {
+                        EmitRefreshEvent(timeSpan, RefreshOperationSource.CacheUpdated, RefreshOperationStatus.NotApplicable);
+                    }
+                }
             }
             else
             {
-                // This is a project package manager, so there is one and only one project.
-                var project = Model.Context.Projects.First();
-
-                string projectFullName;
-
-                var projectContainsFullPath = project.TryGetMetadata(NuGetProjectMetadataKeys.FullPath, out projectFullName);
-
-                var eventProjectFullName = e.Arg;
-
-                // This ensures that we refresh the UI only if the event.project.FullName matches the NuGetProject.FullName.
-                // We also refresh the UI if projectFullPath is not present.
-                if (!projectContainsFullPath || projectFullName == eventProjectFullName)
-                {
-                    Refresh();
-                }
+                EmitRefreshEvent(timeSpan, RefreshOperationSource.CacheUpdated, RefreshOperationStatus.NoOp);
             }
         }
 
-        public PackageRestoreBar RestoreBar => _restoreBar;
+        private void RefreshWhenNotExecutingAction(RefreshOperationSource source, TimeSpan timeSpanSinceLastRefresh)
+        {
+            // Only refresh if there is no executing action. Tell the operation execution to refresh when done otherwise.
+            if (_isExecutingAction)
+            {
+                _isRefreshRequired = true;
+                EmitRefreshEvent(timeSpanSinceLastRefresh, source, RefreshOperationStatus.NoOp);
+            }
+            else
+            {
+                Refresh();
+                EmitRefreshEvent(timeSpanSinceLastRefresh, source, RefreshOperationStatus.Success);
+            }
+        }
+
+        private void EmitRefreshEvent(TimeSpan timeSpan, RefreshOperationSource refreshOperationSource, RefreshOperationStatus status)
+        {
+            TelemetryActivity.EmitTelemetryEvent(
+                                new PackageManagerUIRefreshEvent(
+                                    _sessionGuid,
+                                    Model.IsSolution,
+                                    refreshOperationSource,
+                                    status,
+                                    _topPanel.Filter.ToString(),
+                                    timeSpan));
+        }
+
+        private TimeSpan GetTimeSinceLastRefreshAndRestart()
+        {
+            TimeSpan elapsed;
+            lock (_sinceLastRefresh)
+            {
+                elapsed = _sinceLastRefresh.Elapsed;
+                _sinceLastRefresh.Restart();
+            }
+            return elapsed;
+        }
 
         private void InitializeFilterList(UserSettings settings)
         {
@@ -279,12 +352,18 @@ namespace NuGet.PackageManagement.UI
 
         private void PackageManagerLoaded(object sender, RoutedEventArgs e)
         {
+            var timeSpan = GetTimeSinceLastRefreshAndRestart();
             // Do not trigger a refresh if the browse tab is open and this is not the first load of the control.
             // The loaded event is triggered once all the data binding has occurred, which effectively means we'll just display what was loaded earlier and not trigger another search
             if (!(_loadedAndInitialized && _topPanel.Filter == ItemFilter.All))
             {
                 _loadedAndInitialized = true;
                 SearchPackagesAndRefreshUpdateCount(useCacheForUpdates: false);
+                EmitRefreshEvent(timeSpan, RefreshOperationSource.PackageManagerLoaded, RefreshOperationStatus.Success);
+            }
+            else
+            {
+                EmitRefreshEvent(timeSpan, RefreshOperationSource.PackageManagerLoaded, RefreshOperationStatus.NoOp);
             }
             RefreshConsolidatablePackagesCount();
         }
@@ -374,16 +453,22 @@ namespace NuGet.PackageManagement.UI
             // _sourceRepoList_SelectionChanged(). This method will start the new
             // search when needed by itself.
             _dontStartNewSearch = true;
+            var timeSpan = GetTimeSinceLastRefreshAndRestart();
             try
             {
                 var prevSelectedItem = SelectedSource;
                 PopulateSourceRepoList();
 
-                // force a new search explicitly if active source has changed
-                if (prevSelectedItem != SelectedSource)
+                // force a new search explicitly only if active source has changed
+                if (prevSelectedItem == SelectedSource)
+                {
+                    EmitRefreshEvent(timeSpan, RefreshOperationSource.PackageSourcesChanged, RefreshOperationStatus.NotApplicable);
+                }
+                else
                 {
                     SaveSettings();
                     SearchPackagesAndRefreshUpdateCount(useCacheForUpdates: false);
+                    EmitRefreshEvent(timeSpan, RefreshOperationSource.PackageSourcesChanged, RefreshOperationStatus.Success);
                 }
             }
             finally
@@ -456,10 +541,10 @@ namespace NuGet.PackageManagement.UI
         {
             if (Model.Context.PackageRestoreManager != null)
             {
-                _restoreBar = new PackageRestoreBar(Model.Context.SolutionManager, Model.Context.PackageRestoreManager);
-                DockPanel.SetDock(_restoreBar, Dock.Top);
+                RestoreBar = new PackageRestoreBar(Model.Context.SolutionManager, Model.Context.PackageRestoreManager);
+                DockPanel.SetDock(RestoreBar, Dock.Top);
 
-                _root.Children.Insert(0, _restoreBar);
+                _root.Children.Insert(0, RestoreBar);
 
                 Model.Context.PackageRestoreManager.PackagesMissingStatusChanged += packageRestoreManager_PackagesMissingStatusChanged;
             }
@@ -467,11 +552,9 @@ namespace NuGet.PackageManagement.UI
 
         private void RemoveRestoreBar()
         {
-            if (_restoreBar != null)
+            if (RestoreBar != null)
             {
-                _restoreBar.CleanUp();
-
-                // TODO: clean this up during dispose also
+                RestoreBar.CleanUp();
                 Model.Context.PackageRestoreManager.PackagesMissingStatusChanged -= packageRestoreManager_PackagesMissingStatusChanged;
             }
         }
@@ -535,8 +618,9 @@ namespace NuGet.PackageManagement.UI
         private void UpdateAfterPackagesMissingStatusChanged()
         {
             VSThreadHelper.ThrowIfNotOnUIThread();
-
+            var timeSinceLastRefresh = GetTimeSinceLastRefreshAndRestart();
             Refresh();
+            EmitRefreshEvent(timeSinceLastRefresh, RefreshOperationSource.PackagesMissingStatusChanged, RefreshOperationStatus.Success);
             _packageDetail.Refresh();
         }
 
@@ -628,7 +712,8 @@ namespace NuGet.PackageManagement.UI
                     useCacheForUpdates: useCacheForUpdates,
                     pSearchCallback: null,
                     searchTask: null);
-            });
+            })
+            .FileAndForget(TelemetryUtility.CreateFileAndForgetEventName(nameof(PackageManagerControl), nameof(SearchPackagesAndRefreshUpdateCount)));
         }
 
         /// <summary>
@@ -643,7 +728,7 @@ namespace NuGet.PackageManagement.UI
             if (useCacheForUpdates)
             {
                 loadContext.CachedPackages = Model.CachedUpdates;
-            };
+            }
 
             var packageFeed = await CreatePackageFeedAsync(loadContext, _topPanel.Filter, _uiLogger);
 
@@ -668,7 +753,7 @@ namespace NuGet.PackageManagement.UI
                 pSearchCallback.ReportComplete(searchTask, (uint)searchResult.RawItemsCount);
             }
 
-            // We only refresh update count, when we don't use cache so check it it's false
+            // We only refresh update count, when we don't use cache so check if it's false
             if (!useCacheForUpdates)
             {
                 // clear existing caches
@@ -688,32 +773,47 @@ namespace NuGet.PackageManagement.UI
                     };
 
                     _topPanel._labelUpgradeAvailable.Count = Model.CachedUpdates.Packages.Count;
-                        
                 }
                 else
                 {
-                    RefreshAvailableUpdatesCount();
+                    RefreshInstalledAndUpdatesTabs();
                 }
             }
         }
 
-        private void RefreshAvailableUpdatesCount()
+        private void RefreshInstalledAndUpdatesTabs()
         {
             NuGetUIThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
                 await NuGetUIThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
+                _topPanel._labelInstalled.ShowWarning = false;
                 _topPanel._labelUpgradeAvailable.Count = 0;
                 var loadContext = new PackageLoadContext(ActiveSources, Model.IsSolution, Model.Context);
                 var packageFeed = await CreatePackageFeedAsync(loadContext, ItemFilter.UpdatesAvailable, _uiLogger);
                 var loader = new PackageItemLoader(
                     loadContext, packageFeed, includePrerelease: IncludePrerelease);
+                var metadataProvider = CreatePackageMetadataProvider(loadContext);
 
-                // cancel previous refresh update count task, if any
+                // cancel previous refresh tabs task, if any
                 // and start a new one.
                 var refreshCts = new CancellationTokenSource();
                 Interlocked.Exchange(ref _refreshCts, refreshCts)?.Cancel();
 
+                // Update installed tab warning icon
+                var installedDeprecatedPackagesCount = await GetInstalledDeprecatedPackagesCountAsync(
+                    loadContext, metadataProvider, refreshCts.Token);
+
+                var hasInstalledDeprecatedPackages = installedDeprecatedPackagesCount > 0;
+                _topPanel._labelInstalled.ShowWarning = hasInstalledDeprecatedPackages;
+                _topPanel._labelInstalled.WarningToolTip = hasInstalledDeprecatedPackages
+                    ? string.Format(
+                        CultureInfo.CurrentCulture,
+                        Resx.Resources.Label_Installed_DeprecatedWarning,
+                        installedDeprecatedPackagesCount)
+                    : null;
+
+                // Update updates tab count
                 Model.CachedUpdates = new PackageSearchMetadataCache
                 {
                     Packages = await loader.GetAllPackagesAsync(refreshCts.Token),
@@ -721,7 +821,33 @@ namespace NuGet.PackageManagement.UI
                 };
 
                 _topPanel._labelUpgradeAvailable.Count = Model.CachedUpdates.Packages.Count;
-            });
+            })
+            .FileAndForget(TelemetryUtility.CreateFileAndForgetEventName(nameof(PackageManagerControl), nameof(RefreshInstalledAndUpdatesTabs)));
+        }
+
+        private static async Task<int> GetInstalledDeprecatedPackagesCountAsync(PackageLoadContext loadContext, IPackageMetadataProvider metadataProvider, CancellationToken token)
+        {
+            // Switch off the UI thread before fetching installed packages and deprecation metadata.
+            await TaskScheduler.Default;
+
+            var installedPackages = await loadContext.GetInstalledPackagesAsync();
+
+            var installedPackageDeprecationMetadata = await Task.WhenAll(
+                installedPackages.Select(p => GetPackageDeprecationMetadataAsync(p, metadataProvider, token)));
+
+            return installedPackageDeprecationMetadata.Count(d => d != null);
+        }
+
+        private static async Task<PackageDeprecationMetadata> GetPackageDeprecationMetadataAsync(
+            PackageCollectionItem package, IPackageMetadataProvider metadataProvider, CancellationToken refreshToken)
+        {
+            var metadata = await metadataProvider.GetPackageMetadataAsync(package, includePrerelease: true, refreshToken);
+            if (metadata == null)
+            {
+                return null;
+            }
+
+            return await metadata.GetDeprecationMetadataAsync();
         }
 
         private void RefreshConsolidatablePackagesCount()
@@ -750,7 +876,9 @@ namespace NuGet.PackageManagement.UI
 
         private void PackageList_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            NuGetUIThreadHelper.JoinableTaskFactory.RunAsync(UpdateDetailPaneAsync);
+            NuGetUIThreadHelper.JoinableTaskFactory
+                .RunAsync(UpdateDetailPaneAsync)
+                .FileAndForget(TelemetryUtility.CreateFileAndForgetEventName(nameof(PackageManagerControl), nameof(PackageList_SelectionChanged)));
         }
 
         /// <summary>
@@ -776,7 +904,7 @@ namespace NuGet.PackageManagement.UI
 
                 var context = new PackageLoadContext(ActiveSources, Model.IsSolution, Model.Context);
                 var metadataProvider = CreatePackageMetadataProvider(context);
-                await _detailModel.LoadPackageMetadaAsync(metadataProvider, CancellationToken.None);
+                await _detailModel.LoadPackageMetadataAsync(metadataProvider, CancellationToken.None);
             }
         }
 
@@ -853,8 +981,10 @@ namespace NuGet.PackageManagement.UI
 
         private void SourceRepoList_SelectionChanged(object sender, EventArgs e)
         {
+            var timeSpan = GetTimeSinceLastRefreshAndRestart();
             if (_dontStartNewSearch || !_initialized)
             {
+                EmitRefreshEvent(timeSpan, RefreshOperationSource.SourceSelectionChanged, RefreshOperationStatus.NoOp);
                 return;
             }
 
@@ -863,9 +993,9 @@ namespace NuGet.PackageManagement.UI
                 _topPanel.SourceToolTip.Visibility = Visibility.Visible;
                 _topPanel.SourceToolTip.DataContext = SelectedSource.GetTooltip();
 
-                //Model.Context.SourceProvider.PackageSourceProvider.SaveActivePackageSource(ActiveSource.PackageSource);
                 SaveSettings();
                 SearchPackagesAndRefreshUpdateCount(useCacheForUpdates: false);
+                EmitRefreshEvent(timeSpan, RefreshOperationSource.SourceSelectionChanged, RefreshOperationStatus.Success);
             }
         }
 
@@ -873,8 +1003,10 @@ namespace NuGet.PackageManagement.UI
         {
             if (_initialized)
             {
+                var timeSpan = GetTimeSinceLastRefreshAndRestart();
                 _packageList.CheckBoxesEnabled = _topPanel.Filter == ItemFilter.UpdatesAvailable;
                 SearchPackagesAndRefreshUpdateCount(useCacheForUpdates: true);
+                EmitRefreshEvent(timeSpan, RefreshOperationSource.FilterSelectionChanged, RefreshOperationStatus.Success);
 
                 _detailModel.OnFilterChanged(e.PreviousFilter, _topPanel.Filter);
             }
@@ -898,9 +1030,10 @@ namespace NuGet.PackageManagement.UI
                     var installedPackages = await PackageCollection.FromProjectsAsync(Model.Context.Projects,
                         CancellationToken.None);
                     _packageList.UpdatePackageStatus(installedPackages.ToArray());
-                });
+                })
+                .FileAndForget(TelemetryUtility.CreateFileAndForgetEventName(nameof(PackageManagerControl), nameof(Refresh)));
 
-                RefreshAvailableUpdatesCount();
+                RefreshInstalledAndUpdatesTabs();
             }
 
             RefreshConsolidatablePackagesCount();
@@ -916,26 +1049,17 @@ namespace NuGet.PackageManagement.UI
             return installedPackages.ToArray();
         }
 
-        private void SearchControl_SearchStart(object sender, EventArgs e)
-        {
-            if (!_initialized)
-            {
-                return;
-            }
-
-            SearchPackagesAndRefreshUpdateCount(useCacheForUpdates: true);
-        }
-
         private void CheckboxPrerelease_CheckChanged(object sender, EventArgs e)
         {
             if (!_initialized)
             {
                 return;
             }
-
+            var timeSpan = GetTimeSinceLastRefreshAndRestart();
             RegistrySettingUtility.SetBooleanSetting(
                 Constants.IncludePrereleaseRegistryName,
                 _topPanel.CheckboxPrerelease.IsChecked == true);
+            EmitRefreshEvent(timeSpan, RefreshOperationSource.CheckboxPrereleaseChanged, RefreshOperationStatus.Success);
             SearchPackagesAndRefreshUpdateCount(useCacheForUpdates: false);
         }
 
@@ -961,6 +1085,7 @@ namespace NuGet.PackageManagement.UI
 
         public void ClearSearch()
         {
+            EmitRefreshEvent(GetTimeSinceLastRefreshAndRestart(), RefreshOperationSource.ClearSearch, RefreshOperationStatus.Success);
             SearchPackagesAndRefreshUpdateCount(useCacheForUpdates: true);
         }
 
@@ -1019,7 +1144,8 @@ namespace NuGet.PackageManagement.UI
                 await NuGetUIThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
                 _windowSearchHost.Activate();
-            });
+            })
+            .FileAndForget(TelemetryUtility.CreateFileAndForgetEventName(nameof(PackageManagerControl), nameof(FocusOnSearchBox_Executed)));
         }
 
         public void Search(string searchText)
@@ -1090,6 +1216,8 @@ namespace NuGet.PackageManagement.UI
             NuGetUIThreadHelper.JoinableTaskFactory.RunAsync(async delegate
             {
                 IsEnabled = false;
+                _isExecutingAction = true;
+
                 NuGetEventTrigger.Instance.TriggerEvent(NuGetEvent.PackageOperationBegin);
                 try
                 {
@@ -1113,8 +1241,17 @@ namespace NuGet.PackageManagement.UI
                     _actionCompleted?.Invoke(this, EventArgs.Empty);
                     NuGetEventTrigger.Instance.TriggerEvent(NuGetEvent.PackageOperationEnd);
                     IsEnabled = true;
+                    _isExecutingAction = false;
+                    if (_isRefreshRequired)
+                    {
+                        var timeSinceLastRefresh = GetTimeSinceLastRefreshAndRestart();
+                        Refresh();
+                        EmitRefreshEvent(timeSinceLastRefresh, RefreshOperationSource.ExecuteAction, RefreshOperationStatus.Success);
+                        _isRefreshRequired = false;
+                    }
                 }
-            });
+            })
+            .FileAndForget(TelemetryUtility.CreateFileAndForgetEventName(nameof(PackageManagerControl), nameof(ExecuteAction)));
         }
 
         private void ExecuteUninstallPackageCommand(object sender, ExecutedRoutedEventArgs e)
@@ -1168,6 +1305,7 @@ namespace NuGet.PackageManagement.UI
 
         private void ExecuteRestartSearchCommand(object sender, ExecutedRoutedEventArgs e)
         {
+            EmitRefreshEvent(GetTimeSinceLastRefreshAndRestart(), RefreshOperationSource.RestartSearchCommand, RefreshOperationStatus.Success);
             SearchPackagesAndRefreshUpdateCount(useCacheForUpdates: false);
             RefreshConsolidatablePackagesCount();
         }

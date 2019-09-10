@@ -91,7 +91,7 @@ namespace NuGet.SolutionRestoreManager
                 throw new ArgumentNullException(nameof(projectRestoreInfo));
             }
 
-            if (projectRestoreInfo == null && projectRestoreInfo2 == null)
+            if (projectRestoreInfo != null && projectRestoreInfo2 != null)
             {
                 throw new ArgumentException($"Internal error: Both {nameof(projectRestoreInfo)} and {nameof(projectRestoreInfo2)} cannot have values. Please file an issue at NuGet/Home if you see this exception.");
             }
@@ -129,16 +129,14 @@ namespace NuGet.SolutionRestoreManager
 
                 return restoreTask;
             }
-            catch (Exception e)
-            when (e is InvalidOperationException || e is ArgumentException || e is FormatException)
+            catch (OperationCanceledException)
             {
-                _logger.LogError(e.ToString());
-                return Task.FromResult(false);
+                throw;
             }
             catch (Exception e)
             {
                 _logger.LogError(e.ToString());
-                throw;
+                return Task.FromResult(false);
             }
         }
 

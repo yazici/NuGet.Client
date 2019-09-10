@@ -2,10 +2,8 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,6 +12,7 @@ using NuGet.Packaging.Core;
 using NuGet.ProjectManagement;
 using NuGet.ProjectManagement.Projects;
 using NuGet.Protocol;
+using NuGet.Protocol.Core.Types;
 using NuGet.Versioning;
 using NuGet.VisualStudio;
 
@@ -30,7 +29,7 @@ namespace NuGet.PackageManagement.UI
 
         // all versions of the _searchResultPackage
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1051:DoNotDeclareVisibleInstanceFields")]
-        protected List<NuGetVersion> _allPackageVersions;
+        protected List<(NuGetVersion version, bool isDeprecated)> _allPackageVersions;
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1051:DoNotDeclareVisibleInstanceFields")]
         protected PackageItemListViewModel _searchResultPackage;
@@ -143,8 +142,12 @@ namespace NuGet.PackageManagement.UI
                 }
             }
 
-            // Add Current package version to package versions list.
-            _allPackageVersions = new List<NuGetVersion>() { searchResultPackage.Version };
+            // Show the current package version as the only package in the list at first just in case fetching the versions takes a while.
+            _allPackageVersions = new List<(NuGetVersion version, bool isDeprecated)>()
+            {
+                (searchResultPackage.Version, false)
+            };
+
             CreateVersions();
             OnCurrentPackageChanged();
 
@@ -158,9 +161,9 @@ namespace NuGet.PackageManagement.UI
             }
 
             // Get the list of available versions, ignoring null versions
-            _allPackageVersions = versions
+            _allPackageVersions = (await Task.WhenAll(versions
                 .Where(v => v?.Version != null)
-                .Select(v => v.Version)
+                .Select(GetVersion)))
                 .ToList();
 
             // hook event handler for dependency behavior changed
@@ -168,6 +171,17 @@ namespace NuGet.PackageManagement.UI
 
             CreateVersions();
             OnCurrentPackageChanged();
+        }
+
+        private async Task<(NuGetVersion version, bool isDeprecated)> GetVersion(VersionInfo versionInfo)
+        {
+            var isDeprecated = false;
+            if (versionInfo.PackageSearchMetadata != null)
+            {
+                isDeprecated = await versionInfo.PackageSearchMetadata.GetDeprecationMetadataAsync() != null;
+            }
+
+            return (versionInfo.Version, isDeprecated);
         }
 
         protected virtual void DependencyBehavior_SelectedChanged(object sender, EventArgs e)
@@ -366,16 +380,21 @@ namespace NuGet.PackageManagement.UI
                 {
                     _packageMetadata = value;
 
+                    string newDeprecationReasons = null;
+                    string newAlternatePackageText = null;
                     if (_packageMetadata?.DeprecationMetadata != null)
                     {
-                        PackageDeprecationReasons = ExplainPackageDeprecationReasons(_packageMetadata.DeprecationMetadata.Reasons?.ToList());
+                        newDeprecationReasons = ExplainPackageDeprecationReasons(_packageMetadata.DeprecationMetadata.Reasons?.ToList());
 
                         var alternatePackage = _packageMetadata.DeprecationMetadata.AlternatePackage;
                         if (alternatePackage != null)
                         {
-                            PackageDeprecationAlternatePackageText = GetPackageDeprecationAlternatePackageText(alternatePackage);
+                            newAlternatePackageText = GetPackageDeprecationAlternatePackageText(alternatePackage);
                         }
                     }
+
+                    PackageDeprecationReasons = newDeprecationReasons;
+                    PackageDeprecationAlternatePackageText = newAlternatePackageText;
 
                     OnPropertyChanged(nameof(PackageMetadata));
                     OnPropertyChanged(nameof(IsPackageDeprecated));
@@ -390,28 +409,8 @@ namespace NuGet.PackageManagement.UI
                 return null;
             }
 
-            var text = alternatePackageMetadata.PackageId;
-
-            if (alternatePackageMetadata.Range.IsFloating)
-            {
-                return text;
-            }
-
-            if (alternatePackageMetadata.Range.HasLowerBound)
-            {
-                text = string.Format(
-                    CultureInfo.CurrentCulture,
-                    Resources.Label_DeprecatedPackageIdAndMinVersion,
-                    alternatePackageMetadata.PackageId,
-                    alternatePackageMetadata.Range.MinVersion.ToNormalizedString());
-            }
-
-            if (!alternatePackageMetadata.Range.HasUpperBound)
-            {
-                text += Resources.Label_OrHigher;
-            }
-
-            return text;
+            var versionString = VersionRangeFormatter.Instance.Format("p", alternatePackageMetadata.Range, VersionRangeFormatter.Instance);
+            return $"{alternatePackageMetadata.PackageId} {versionString}";
         }
 
         protected abstract void CreateVersions();
@@ -477,21 +476,21 @@ namespace NuGet.PackageManagement.UI
             }
         }
 
-        internal async Task LoadPackageMetadaAsync(IPackageMetadataProvider metadataProvider, CancellationToken token)
+        internal async Task LoadPackageMetadataAsync(IPackageMetadataProvider metadataProvider, CancellationToken token)
         {
-            var versions = await _searchResultPackage.GetVersionsAsync();
+            var versions = await GetVersionsWithDeprecationMetadataAsync();
 
             // First try to load the metadata from the version info. This will happen if we already fetched metadata
-            // about each version at the same time as fetching the version list (that it, V2). This also acts as a
+            // about each version at the same time as fetching the version list (that is, V2). This also acts as a
             // means to cache version metadata.
             _metadataDict = versions
-                .Where(v => v.PackageSearchMetadata != null)
+                .Where(v => v.versionInfo.PackageSearchMetadata != null)
                 .ToDictionary(
-                    v => v.Version,
-                    v => new DetailedPackageMetadata(v.PackageSearchMetadata, v.DownloadCount));
+                    v => v.versionInfo.Version,
+                    v => new DetailedPackageMetadata(v.versionInfo.PackageSearchMetadata, v.deprecationMetadata, v.versionInfo.DownloadCount));
 
             // If we are missing any metadata, go to the metadata provider and fetch all of the data again.
-            if (versions.Select(v => v.Version).Except(_metadataDict.Keys).Any())
+            if (versions.Select(v => v.versionInfo.Version).Except(_metadataDict.Keys).Any())
             {
                 try
                 {
@@ -502,26 +501,33 @@ namespace NuGet.PackageManagement.UI
                         includeUnlisted: false,
                         cancellationToken: token);
 
-                    var uniquePackages = packages
+                    var packagesWithDeprecationMetadata = await Task.WhenAll(
+                        packages.Select(async searchMetadata =>
+                        {
+                            var deprecationMetadata = await searchMetadata.GetDeprecationMetadataAsync();
+                            return (searchMetadata, deprecationMetadata);
+                        }));
+
+                    var uniquePackages = packagesWithDeprecationMetadata
                         .GroupBy(
-                            m => m.Identity.Version,
+                            m => m.searchMetadata.Identity.Version,
                             (v, ms) => ms.First());
 
                     _metadataDict = uniquePackages
                         .GroupJoin(
                             versions,
-                            m => m.Identity.Version,
-                            d => d.Version,
+                            m => m.searchMetadata.Identity.Version,
+                            d => d.versionInfo.Version,
                             (m, d) =>
                             {
-                                var versionInfo = d.OrderByDescending(v => v.DownloadCount).FirstOrDefault();
-                                if (versionInfo != null)
-                                {
-                                    // Save the metadata about this version to the VersionInfo instance.
-                                    versionInfo.PackageSearchMetadata = m;
-                                }
+                                var (versionInfo, deprecationMetadata) = d
+                                    .OrderByDescending(v => v.versionInfo.DownloadCount ?? 0)
+                                    .FirstOrDefault();
 
-                                return new DetailedPackageMetadata(m, versionInfo?.DownloadCount);
+                                return new DetailedPackageMetadata(
+                                    m.searchMetadata ?? versionInfo.PackageSearchMetadata,
+                                    m.deprecationMetadata,
+                                    m.searchMetadata?.DownloadCount ?? versionInfo?.DownloadCount);
                             })
                          .ToDictionary(m => m.Version);
                 }
@@ -537,6 +543,20 @@ namespace NuGet.PackageManagement.UI
             {
                 PackageMetadata = p;
             }
+        }
+
+        private async Task<IEnumerable<(VersionInfo versionInfo, PackageDeprecationMetadata deprecationMetadata)>> GetVersionsWithDeprecationMetadataAsync()
+        {
+            var versions = await _searchResultPackage.GetVersionsAsync();
+            return await Task.WhenAll(
+                versions.Select(async version =>
+                {
+                    var deprecationMetadata = version != null && version.PackageSearchMetadata != null
+                        ? await version.PackageSearchMetadata.GetDeprecationMetadataAsync()
+                        : null;
+
+                    return (version, deprecationMetadata);
+                }));
         }
 
         public abstract bool IsSolution { get; }

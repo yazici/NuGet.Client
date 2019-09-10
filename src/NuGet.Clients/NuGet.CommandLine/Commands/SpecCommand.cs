@@ -1,4 +1,5 @@
-﻿extern alias CoreV2;
+﻿// Copyright (c) .NET Foundation. All rights reserved.
+// Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
 using System.Collections.Generic;
@@ -6,21 +7,19 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using NuGet.Common;
+using NuGet.Frameworks;
+using NuGet.Packaging;
+using NuGet.Packaging.Core;
+using NuGet.Packaging.Licenses;
+using NuGet.Versioning;
 
 namespace NuGet.CommandLine
 {
+
     [Command(typeof(NuGetCommand), "spec", "SpecCommandDescription", MaxArgs = 1,
             UsageSummaryResourceName = "SpecCommandUsageSummary", UsageExampleResourceName = "SpecCommandUsageExamples")]
     public class SpecCommand : Command
     {
-        internal static readonly string SampleProjectUrl = "http://PROJECT_URL_HERE_OR_DELETE_THIS_LINE";
-        internal static readonly string SampleLicenseUrl = "http://LICENSE_URL_HERE_OR_DELETE_THIS_LINE";
-        internal static readonly string SampleIconUrl = "http://ICON_URL_HERE_OR_DELETE_THIS_LINE";
-        internal static readonly string SampleTags = "Tag1 Tag2";
-        internal static readonly string SampleReleaseNotes = "Summary of changes made in this release of the package.";
-        internal static readonly string SampleDescription = "Package description";
-        internal static readonly CoreV2.NuGet.ManifestDependency SampleManifestDependency = new CoreV2.NuGet.ManifestDependency { Id = "SampleDependency", Version = "1.0" };
-
         [Option(typeof(NuGetCommand), "SpecCommandAssemblyPathDescription")]
         public string AssemblyPath
         {
@@ -37,9 +36,18 @@ namespace NuGet.CommandLine
 
         public override void ExecuteCommand()
         {
-            var manifest = new CoreV2.NuGet.Manifest();
+            string sampleProjectUrl = "http://project_url_here_or_delete_this_line/";
+            string sampleIconUrl = "http://icon_url_here_or_delete_this_line/";
+            string sampleTags = "Tag1 Tag2";
+            string sampleReleaseNotes = "Summary of changes made in this release of the package.";
+            string sampleDescription = "Package description";
+            NuGetFramework sampleTfm = NuGet.Frameworks.FrameworkConstants.CommonFrameworks.NetStandard21;
+            PackageDependency sampleManifestDependency = new PackageDependency("SampleDependency", new VersionRange(new NuGetVersion("1.0.0")));
+
+            var manifest = new Manifest(new ManifestMetadata());
             string projectFile = null;
             string fileName = null;
+            bool hasProjectFile = false;
 
             if (!String.IsNullOrEmpty(AssemblyPath))
             {
@@ -47,8 +55,8 @@ namespace NuGet.CommandLine
                 string path = Path.Combine(CurrentDirectory, AssemblyPath);
                 AssemblyMetadata metadata = AssemblyMetadataExtractor.GetMetadata(path);
                 manifest.Metadata.Id = metadata.Name;
-                manifest.Metadata.Version = metadata.Version.ToString();
-                manifest.Metadata.Authors = metadata.Company;
+                manifest.Metadata.Version = Versioning.NuGetVersion.Parse(metadata.Version.ToString());
+                manifest.Metadata.Authors = new List<string>() { metadata.Company };
                 manifest.Metadata.Description = metadata.Description;
             }
             else
@@ -56,16 +64,18 @@ namespace NuGet.CommandLine
                 if (!ProjectHelper.TryGetProjectFile(CurrentDirectory, out projectFile))
                 {
                     manifest.Metadata.Id = Arguments.Any() ? Arguments[0] : "Package";
-                    manifest.Metadata.Version = "1.0.0";
+                    manifest.Metadata.Version = Versioning.NuGetVersion.Parse("1.0.0");
                 }
                 else
                 {
+                    hasProjectFile = true;
                     fileName = Path.GetFileNameWithoutExtension(projectFile);
-                    manifest.Metadata.Id = "$id$";
+                    manifest.Metadata.Id = "mydummyidhere123123123";
                     manifest.Metadata.Title = "$title$";
-                    manifest.Metadata.Version = "$version$";
+                    // This is replaced with `$version$` below.
+                    manifest.Metadata.Version = new Versioning.NuGetVersion("1.0.0");
                     manifest.Metadata.Description = "$description$";
-                    manifest.Metadata.Authors = "$author$";
+                    manifest.Metadata.Authors = new List<string>() { "$author$" };
                 }
             }
 
@@ -75,25 +85,23 @@ namespace NuGet.CommandLine
             // If we're using a project file then we want the a minimal nuspec
             if (String.IsNullOrEmpty(projectFile))
             {
-                manifest.Metadata.Description = manifest.Metadata.Description ?? SampleDescription;
-                if (String.IsNullOrEmpty(manifest.Metadata.Authors))
+                manifest.Metadata.Description = manifest.Metadata.Description ?? sampleDescription;
+                if (!manifest.Metadata.Authors.Any() || String.IsNullOrEmpty(manifest.Metadata.Authors.First()))
                 {
-                    manifest.Metadata.Authors = Environment.UserName;
+                    manifest.Metadata.Authors = new List<string>() { Environment.UserName };
                 }
-                manifest.Metadata.DependencySets = new List<CoreV2.NuGet.ManifestDependencySet>();
-                manifest.Metadata.DependencySets.Add(new CoreV2.NuGet.ManifestDependencySet
-                {
-                    Dependencies = new List<CoreV2.NuGet.ManifestDependency> { SampleManifestDependency }
-                });
+                manifest.Metadata.DependencyGroups = new List<PackageDependencyGroup>() {
+                    new PackageDependencyGroup(sampleTfm, new List<PackageDependency>() { sampleManifestDependency })
+                };
             }
 
-            manifest.Metadata.ProjectUrl = SampleProjectUrl;
-            manifest.Metadata.LicenseUrl = SampleLicenseUrl;
-            manifest.Metadata.IconUrl = SampleIconUrl;
-            manifest.Metadata.Tags = SampleTags;
+            manifest.Metadata.SetProjectUrl(sampleProjectUrl);
+            manifest.Metadata.LicenseMetadata = new LicenseMetadata(LicenseType.Expression, "MIT", NuGetLicenseExpression.Parse("MIT"), new string[] {}, LicenseMetadata.CurrentVersion);
+            manifest.Metadata.SetIconUrl(sampleIconUrl);
+            manifest.Metadata.Tags = sampleTags;
             manifest.Metadata.Copyright = "Copyright " + DateTime.Now.Year;
-            manifest.Metadata.ReleaseNotes = SampleReleaseNotes;
-            string nuspecFile = fileName + CoreV2.NuGet.Constants.ManifestExtension;
+            manifest.Metadata.ReleaseNotes = sampleReleaseNotes;
+            string nuspecFile = fileName + PackagingConstants.ManifestExtension;
 
             // Skip the creation if the file exists and force wasn't specified
             if (File.Exists(nuspecFile) && !Force)
@@ -106,9 +114,16 @@ namespace NuGet.CommandLine
                 {
                     using (var stream = new MemoryStream())
                     {
-                        manifest.Save(stream, validate: false);
+                        manifest.Save(stream, generateBackwardsCompatible: false);
                         stream.Seek(0, SeekOrigin.Begin);
                         string content = stream.ReadToEnd();
+                        // We have to replace it here because we can't have
+                        // arbitrary string versions in ManifestMetadata
+                        if (hasProjectFile)
+                        {
+                            content = content.Replace("<id>mydummyidhere123123123</id>", "<id>$id$</id>");
+                            content = content.Replace("<version>1.0.0</version>", "<version>$version$</version>");
+                        }
                         File.WriteAllText(nuspecFile, RemoveSchemaNamespace(content));
                     }
 

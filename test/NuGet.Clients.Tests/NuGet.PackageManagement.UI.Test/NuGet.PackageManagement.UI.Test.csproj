@@ -29,6 +29,7 @@
     <Compile Include="Converters\VersionToStringConverterTests.cs" />
     <Compile Include="ConverterTests.cs" />
     <Compile Include="GlobalSuppressions.cs" />
+    <Compile Include="Models\PreviewWindowModelTests.cs" />
     <Compile Include="Models\DetailedPackageMetadataTests.cs" />
     <Compile Include="PackageItemLoaderTests.cs" />
     <Compile Include="PackageLicenseUtilitiesTests.cs" />
@@ -63,6 +64,9 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="compiler\resources\EntityFrameworkSearch.json" />
+    <EmbeddedResource Include="compiler\resources\index.json" />
+    <EmbeddedResource Include="compiler\resources\nugetSearchPage1.json" />
+    <EmbeddedResource Include="compiler\resources\nugetSearchPage2.json" />
   </ItemGroup>
   <ItemGroup>
     <None Include="xunit.runner.json">

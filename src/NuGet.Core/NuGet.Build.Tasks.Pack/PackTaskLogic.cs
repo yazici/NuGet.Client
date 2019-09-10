@@ -108,7 +108,7 @@ namespace NuGet.Build.Tasks.Pack
                     assetsFilePath));
             }
 
-            var builder = new PackageBuilder
+            var builder = new PackageBuilder(request.Deterministic)
             {
                 Id = request.PackageId,
                 Description = request.Description,
@@ -174,6 +174,8 @@ namespace NuGet.Build.Tasks.Pack
             }
 
             builder.LicenseMetadata = BuildLicenseMetadata(request);
+
+            builder.Icon = request.PackageIcon;
 
             if (request.MinClientVersion != null)
             {

@@ -5,6 +5,7 @@
   xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
   xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
   xmlns:imaging="clr-namespace:Microsoft.VisualStudio.Imaging;assembly=Microsoft.VisualStudio.Imaging"  
+  xmlns:catalog="clr-namespace:Microsoft.VisualStudio.Imaging;assembly=Microsoft.VisualStudio.ImageCatalog"  
   x:Name="_self"
   mc:Ignorable="d"
   xmlns:nuget="clr-namespace:NuGet.PackageManagement.UI"
@@ -237,15 +238,16 @@
                         <ColumnDefinition Width="auto" />
                       </Grid.ColumnDefinitions>
 
-                      <!-- installed indicator -->
+                      <!-- deprecation indicator -->
                       <imaging:CrispImage
-                        x:Name="_installedIndicator"
+                        x:Name="_deprecationIndicator"
                         Grid.Column="0"
                         Width="12"
                         Height="12"
                         Visibility="Visible"
                         VerticalAlignment="Center"
-                        Moniker="{x:Static nuget:PackageIconMonikers.InstalledIndicator}"/>
+                        ToolTip="{x:Static nuget:Resources.Label_Deprecated}"
+                        Moniker="{x:Static catalog:KnownMonikers.StatusWarning}"/>
 
                       <!-- installed version -->
                       <TextBlock
@@ -401,26 +403,17 @@
                   <Setter TargetName="_installButton" Property="Visibility" Value="Collapsed" />
                 </DataTrigger>
 
-                <!-- installed version is visible when
-                     * IsSolution is false;
-                     * InstalledVersion is not null;
-                -->
+                <!-- installed version is visible when InstalledVersion is not null -->
                 <MultiDataTrigger>
                   <MultiDataTrigger.Conditions>
                     <Condition
                       Binding="{Binding InstalledVersion,Converter={StaticResource NullToBooleanConverter}}"
                       Value="False" />
-                    <Condition
-                      Binding="{Binding IsSolution, RelativeSource={RelativeSource AncestorType={x:Type nuget:InfiniteScrollList}}}"
-                      Value="False" />
                   </MultiDataTrigger.Conditions>
                   <Setter TargetName="_installedVersion" Property="Visibility" Value="Visible" />
                 </MultiDataTrigger>
 
-                <!-- version to install is visible when
-                     * Status is NotInstalled
-                     * Or IsSolution is true
-                -->
+                <!-- version to install is visible when Status is NotInstalled -->
                 <MultiDataTrigger>
                   <MultiDataTrigger.Conditions>
                     <Condition
@@ -435,33 +428,12 @@
                     Property="Visibility" Value="Visible" />
                 </MultiDataTrigger>
 
-                <MultiDataTrigger>
-                  <MultiDataTrigger.Conditions>
-                    <Condition
-                      Binding="{Binding IsSolution, RelativeSource={RelativeSource AncestorType={x:Type nuget:InfiniteScrollList}}}"
-                      Value="True">
-                    </Condition>
-                    <Condition
-                      Binding="{Binding LatestVersion,Converter={StaticResource NullToBooleanConverter}}"
-                      Value="False" />
-                  </MultiDataTrigger.Conditions>
-                  <Setter
-                    TargetName="_versionToInstall"
-                    Property="Visibility" Value="Visible" />
-                </MultiDataTrigger>
-
-                <!-- version to update to is visible when
-                     * Status is UpdateAvailable;
-                     * IsSolution is false
-                -->
+                <!-- version to update to is visible when Status is UpdateAvailable -->
                 <MultiDataTrigger>
                   <MultiDataTrigger.Conditions>
                     <Condition
                       Binding="{Binding Status}"
                       Value="UpdateAvailable" />
-                    <Condition
-                      Binding="{Binding IsSolution, RelativeSource={RelativeSource AncestorType={x:Type nuget:InfiniteScrollList}}}"
-                      Value="False" />
                   </MultiDataTrigger.Conditions>
                   <Setter
                     TargetName="_versionToUpdateTo"
@@ -537,17 +509,10 @@
                   <Setter TargetName="_updateButton" Property="Visibility" Value="Collapsed" />
                 </DataTrigger>
 
-                <!-- The installed version indicator becomes invisible when
-                   * IsSolution is true; or
-                   * InstalledVersion is null;
-                -->
+                <!-- The deprecation indicator becomes visible when IsPackageDeprecated is true -->
                 <DataTrigger
-                  Binding="{Binding IsSolution, RelativeSource={RelativeSource AncestorType={x:Type nuget:InfiniteScrollList}}}" Value="true">
-                  <Setter TargetName="_installedIndicator" Property="Visibility" Value="Collapsed" />
-                </DataTrigger>
-                <DataTrigger
-                  Binding="{Binding InstalledVersion}" Value="{x:Null}">
-                  <Setter TargetName="_installedIndicator" Property="Visibility" Value="Collapsed" />
+                  Binding="{Binding IsPackageDeprecated}" Value="false">
+                  <Setter TargetName="_deprecationIndicator" Property="Visibility" Value="Collapsed" />
                 </DataTrigger>
               </ControlTemplate.Triggers>
             </ControlTemplate>

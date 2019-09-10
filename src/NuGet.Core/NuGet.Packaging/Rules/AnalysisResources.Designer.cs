@@ -79,6 +79,15 @@ namespace NuGet.Packaging.Rules {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to - At least one {0} file was found in &apos;{1}&apos;, but &apos;{2}&apos; was not..
+        /// </summary>
+        public static string BuildConventionIsViolatedWarning {
+            get {
+                return ResourceManager.GetString("BuildConventionIsViolatedWarning", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The value &quot;{0}&quot; for {1} is a sample value and should be removed. Replace it with an appropriate value or remove it and rebuild your package..
         /// </summary>
         public static string DefaultSpecValueWarning {
@@ -88,11 +97,74 @@ namespace NuGet.Packaging.Rules {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to - Add lib or ref assemblies for the.
+        /// </summary>
+        public static string DependenciesGroupsForEachTFMBeginningToFiles {
+            get {
+                return ResourceManager.GetString("DependenciesGroupsForEachTFMBeginningToFiles", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to - Add a dependency group for.
+        /// </summary>
+        public static string DependenciesGroupsForEachTFMBeginningToNuspec {
+            get {
+                return ResourceManager.GetString("DependenciesGroupsForEachTFMBeginningToNuspec", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to target framework.
+        /// </summary>
+        public static string DependenciesGroupsForEachTFMEndingToFile {
+            get {
+                return ResourceManager.GetString("DependenciesGroupsForEachTFMEndingToFile", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to to the nuspec.
+        /// </summary>
+        public static string DependenciesGroupsForEachTFMEndingToNuspec {
+            get {
+                return ResourceManager.GetString("DependenciesGroupsForEachTFMEndingToNuspec", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Some target frameworks declared in the dependencies group of the nuspec and the lib/ref folder have compatible matches, but not exact matches in the other location. Unless intentional, consult the list of actions below:.
+        /// </summary>
+        public static string DependenciesGroupsForEachTFMHasCompatMatch {
+            get {
+                return ResourceManager.GetString("DependenciesGroupsForEachTFMHasCompatMatch", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Some target frameworks declared in the dependencies group of the nuspec and the lib/ref folder do not have exact matches in the other location. Consult the list of actions below:.
+        /// </summary>
+        public static string DependenciesGroupsForEachTFMHasNoExactMatch {
+            get {
+                return ResourceManager.GetString("DependenciesGroupsForEachTFMHasNoExactMatch", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The file &apos;{0}&apos; path, name, or both are too long. Your package might not work without long file path support. Please shorten the file path or file name..
         /// </summary>
         public static string FilePathTooLongWarning {
             get {
                 return ResourceManager.GetString("FilePathTooLongWarning", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The &apos;PackageIconUrl&apos;/&apos;iconUrl&apos; element is deprecated. Consider using the &apos;PackageIcon&apos;/&apos;icon&apos; element instead. Learn more at https://aka.ms/deprecateIconUrl.
+        /// </summary>
+        public static string IconUrlDeprecationWarning {
+            get {
+                return ResourceManager.GetString("IconUrlDeprecationWarning", resourceCulture);
             }
         }
         
@@ -196,8 +268,7 @@ namespace NuGet.Packaging.Rules {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to This package does not contain a lib/ or ref/ folder, and will therefore be treated as compatible for all
-        ///frameworks. Since framework specific files were found under the build/ directory for {0}, consider creating the following empty files to correctly narrow the compatibility of the package:
+        ///   Looks up a localized string similar to This package does not contain a lib/ or ref/ folder, and will therefore be treated as compatible for all frameworks. Since framework specific files were found under the build/ directory for {0}, consider creating the following empty files to correctly narrow the compatibility of the package:
         ///{1}.
         /// </summary>
         public static string NoRefOrLibFolderInPackage {
@@ -212,6 +283,42 @@ namespace NuGet.Packaging.Rules {
         public static string PlaceholderFileInPackageWarning {
             get {
                 return ResourceManager.GetString("PlaceholderFileInPackageWarning", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to References were found in the nuspec, but some reference assemblies were not found in both the nuspec and ref folder. Add the following reference assemblies:.
+        /// </summary>
+        public static string ReferencesInNuspecAndRefFilesDontMatchWarning {
+            get {
+                return ResourceManager.GetString("ReferencesInNuspecAndRefFilesDontMatchWarning", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to - Add {0} to the {1} reference group in the nuspec.
+        /// </summary>
+        public static string ReferencesInNuspecAndRefFilesDontMatchWarningAddToNuspecListItemFormat {
+            get {
+                return ResourceManager.GetString("ReferencesInNuspecAndRefFilesDontMatchWarningAddToNuspecListItemFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to - Add {0} to the references element in the nuspec.
+        /// </summary>
+        public static string ReferencesInNuspecAndRefFilesDontMatchWarningAddToNuspecNoTfmListItemFormat {
+            get {
+                return ResourceManager.GetString("ReferencesInNuspecAndRefFilesDontMatchWarningAddToNuspecNoTfmListItemFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to - Add {0} to the ref/{1}/ directory.
+        /// </summary>
+        public static string ReferencesInNuspecAndRefFilesDontMatchWarningAddToRefListItemFormat {
+            get {
+                return ResourceManager.GetString("ReferencesInNuspecAndRefFilesDontMatchWarningAddToRefListItemFormat", resourceCulture);
             }
         }
         

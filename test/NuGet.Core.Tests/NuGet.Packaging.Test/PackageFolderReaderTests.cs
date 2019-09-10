@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using NuGet.Common;
 using NuGet.Packaging.Core;
+using NuGet.Repositories;
 using NuGet.Test.Utility;
 using Xunit;
 
@@ -24,15 +25,13 @@ namespace NuGet.Packaging.Test
             {
                 using (var zip = new ZipArchive(File.OpenRead(packageFile)))
                 using (var zipReader = new PackageArchiveReader(zip))
+                using (var testDirectory = TestDirectory.Create())
+                using (var zipFile = new ZipArchive(File.OpenRead(packageFile)))
                 {
-                    var folder = Path.Combine(Path.GetDirectoryName(packageFile), Guid.NewGuid().ToString());
+                    zipFile.ExtractAll(testDirectory);
 
-                    using (var zipFile = new ZipArchive(File.OpenRead(packageFile)))
+                    using (var folderReader = new PackageFolderReader(testDirectory))
                     {
-                        zipFile.ExtractAll(folder);
-
-                        var folderReader = new PackageFolderReader(folder);
-
                         Assert.Equal(zipReader.GetIdentity(), folderReader.GetIdentity(), new PackageIdentityComparer());
 
                         Assert.Equal(zipReader.GetLibItems().Count(), folderReader.GetLibItems().Count());
@@ -372,7 +371,9 @@ namespace NuGet.Packaging.Test
                     var exception = Assert.Throws<PackagingException>(() => reader.GetNuspec());
 
                     // Assert
-                    Assert.Equal("Nuspec file does not exist in package.", exception.Message);
+                    var log = exception.AsLogMessage();
+                    Assert.Equal(NuGetLogCode.NU5037, log.Code);
+                    Assert.Contains("The package is missing the required nuspec file.", log.Message);
                 }
             }
         }
@@ -424,7 +425,9 @@ namespace NuGet.Packaging.Test
                     var exception = Assert.Throws<PackagingException>(() => reader.GetNuspec());
 
                     // Assert
-                    Assert.Equal("Nuspec file does not exist in package.", exception.Message);
+                    var log = exception.AsLogMessage();
+                    Assert.Equal(NuGetLogCode.NU5037, log.Code);
+                    Assert.Contains("The package is missing the required nuspec file.", log.Message);
                 }
             }
         }
@@ -454,7 +457,9 @@ namespace NuGet.Packaging.Test
                     var exception = Assert.Throws<PackagingException>(() => reader.GetNuspec());
 
                     // Assert
-                    Assert.Equal("Nuspec file does not exist in package.", exception.Message);
+                    var log = exception.AsLogMessage();
+                    Assert.Equal(NuGetLogCode.NU5037, log.Code);
+                    Assert.Contains("The package is missing the required nuspec file.", log.Message);
                 }
             }
         }

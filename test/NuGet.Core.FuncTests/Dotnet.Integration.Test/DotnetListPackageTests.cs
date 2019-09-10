@@ -1,13 +1,18 @@
 // Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
+using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 using System.Xml.Linq;
 using NuGet.Packaging;
 using NuGet.Test.Utility;
 using NuGet.XPlat.FuncTest;
 using Xunit;
+using Strings = NuGet.CommandLine.XPlat.Strings;
 
 namespace Dotnet.Integration.Test
 {
@@ -23,9 +28,8 @@ namespace Dotnet.Integration.Test
             _fixture = fixture;
         }
 
-
         [PlatformFact(Platform.Windows)]
-        public async void DotnetListPackage_Succeed()
+        public async Task DotnetListPackage_Succeed()
         {
             using (var pathContext = new SimpleTestPathContext())
             {
@@ -55,7 +59,7 @@ namespace Dotnet.Integration.Test
         }
 
         [PlatformFact(Platform.Windows)]
-        public async void DotnetListPackage_NoRestore_Fail()
+        public async Task DotnetListPackage_NoRestore_Fail()
         {
             using (var pathContext = new SimpleTestPathContext())
             {
@@ -82,7 +86,7 @@ namespace Dotnet.Integration.Test
         }
 
         [PlatformFact(Platform.Windows)]
-        public async void DotnetListPackage_Transitive()
+        public async Task DotnetListPackage_Transitive()
         {
             using (var pathContext = new SimpleTestPathContext())
             {
@@ -128,7 +132,7 @@ namespace Dotnet.Integration.Test
         [InlineData("--framework net451 --framework net46", "net451", null)]
         [InlineData("--framework net451", "net451", "net46")]
         [InlineData("--framework net46", "net46", "net451")]
-        public async void DotnetListPackage_FrameworkSpecific_Success(string args, string shouldInclude, string shouldntInclude)
+        public async Task DotnetListPackage_FrameworkSpecific_Success(string args, string shouldInclude, string shouldntInclude)
         {
             using (var pathContext = new SimpleTestPathContext())
             {
@@ -165,7 +169,7 @@ namespace Dotnet.Integration.Test
         }
 
         [PlatformFact(Platform.Windows)]
-        public async void DotnetListPackage_InvalidFramework_Fail()
+        public async Task DotnetListPackage_InvalidFramework_Fail()
         {
             using (var pathContext = new SimpleTestPathContext())
             {
@@ -197,11 +201,26 @@ namespace Dotnet.Integration.Test
             }
         }
 
+        [Fact(Skip = "Requires a version of dotnet.exe that supports forwarding the --deprecated command argument. https://github.com/NuGet/Home/issues/8440")]
+        public void DotnetListPackage_DeprecatedAndOutdated_Fail()
+        {
+            using (var pathContext = new SimpleTestPathContext())
+            {
+                var projectA = XPlatTestUtils.CreateProject(ProjectName, pathContext, "net46");
+
+                var listResult = _fixture.RunDotnet(Directory.GetParent(projectA.ProjectPath).FullName,
+                    $"list {projectA.ProjectPath} package --deprecated --outdated",
+                    true);
+
+                Assert.False(listResult.Success);
+                Assert.Contains(Strings.ListPkg_InvalidOptionsOutdatedAndDeprecated, listResult.Errors);
+            }
+        }
 
         // In 2.2.100 of CLI. DotNet list package would show a section for each TFM and for each TFM/RID.
         // This is testing to ensure that it only shows one section for each TFM.
         [PlatformFact(Platform.Windows)]
-        public async void DotnetListPackage_ShowFrameworksOnly_SDK()
+        public async Task DotnetListPackage_ShowFrameworksOnly_SDK()
         {
             using (var pathContext = new SimpleTestPathContext())
             {
@@ -240,10 +259,9 @@ namespace Dotnet.Integration.Test
 
                 //make sure there is no duplicate in output
                 Assert.True(NoDuplicateSection(listResult.AllOutput), listResult.AllOutput);
-               
+
             }
         }
-        
 
         [PlatformTheory(Platform.Windows)]
         [InlineData("1.0.0", "", "2.1.0")]
@@ -253,7 +271,7 @@ namespace Dotnet.Integration.Test
         [InlineData("1.0.0", "--highest-minor", "1.9.0")]
         [InlineData("1.0.0", "--highest-patch --include-prerelease", "1.0.10-beta")]
         [InlineData("1.0.0", "--highest-minor --include-prerelease", "1.10.0-beta")]
-        public async void DotnetListPackage_Outdated_Succeed(string currentVersion, string args, string expectedVersion)
+        public async Task DotnetListPackage_Outdated_Succeed(string currentVersion, string args, string expectedVersion)
         {
             using (var pathContext = new SimpleTestPathContext())
             {
@@ -287,10 +305,98 @@ namespace Dotnet.Integration.Test
             }
         }
 
+        [PlatformTheory(Platform.Windows)]
+        [InlineData(false, false)]
+        [InlineData(true, false)]
+        [InlineData(false, true)]
+        [InlineData(true, true)]
+        public void DotnetListPackage_ProjectReference_Succeeds(bool includeTransitive, bool outdated)
+        {
+            // Arrange
+            using (var pathContext = new SimpleTestPathContext())
+            {
+                var projectA = XPlatTestUtils.CreateProject("ProjectA", pathContext, "net46");
+                var projectB = XPlatTestUtils.CreateProject("ProjectB", pathContext, "net46");
+
+                var addResult = _fixture.RunDotnet(Directory.GetParent(projectA.ProjectPath).FullName,
+                    $"add {projectA.ProjectPath} reference {projectB.ProjectPath}");
+                Assert.True(addResult.Success);
+
+                var restoreResult = _fixture.RunDotnet(Directory.GetParent(projectA.ProjectPath).FullName,
+                    $"restore {projectA.ProjectName}.csproj");
+                Assert.True(restoreResult.Success);
+
+                var argsBuilder = new StringBuilder();
+                if (includeTransitive)
+                {
+                    argsBuilder.Append(" --include-transitive");
+                }
+                if (outdated)
+                {
+                    argsBuilder.Append(" --outdated");
+                }
+
+                // Act
+                var listResult = _fixture.RunDotnet(Directory.GetParent(projectA.ProjectPath).FullName,
+                    $"list {projectA.ProjectPath} package {argsBuilder}");
+
+                // Assert
+                if (outdated)
+                {
+                    Assert.Contains("The given project `ProjectA` has no updates given the current sources.", listResult.AllOutput);
+                }
+                else if (includeTransitive)
+                {
+                    Assert.Contains("ProjectB", listResult.AllOutput);
+                }
+                else
+                {
+                    Assert.Contains("No packages were found for this framework.", listResult.AllOutput);
+                }
+            }
+        }
+
+        [PlatformFact(Platform.Windows)]
+        public async Task DotnetListPackage_OutdatedWithNoVersionsFound_Succeeds()
+        {
+            // Arrange
+            using (var pathContext = new SimpleTestPathContext())
+            {
+                var projectA = XPlatTestUtils.CreateProject("ProjectA", pathContext, "net46");
+                var packageX = XPlatTestUtils.CreatePackage(packageId: "packageX", packageVersion: "1.0.0");
+
+                await SimpleTestPackageUtility.CreateFolderFeedV3Async(
+                        pathContext.PackageSource,
+                        PackageSaveMode.Defaultv3,
+                        packageX);
+
+                var addResult = _fixture.RunDotnet(Directory.GetParent(projectA.ProjectPath).FullName,
+                    $"add {projectA.ProjectPath} package packageX --version 1.0.0 --no-restore");
+                Assert.True(addResult.Success);
+
+                var restoreResult = _fixture.RunDotnet(Directory.GetParent(projectA.ProjectPath).FullName,
+                    $"restore {projectA.ProjectName}.csproj");
+                Assert.True(restoreResult.Success);
+
+                foreach (var nupkg in Directory.EnumerateDirectories(pathContext.PackageSource))
+                {
+                    Directory.Delete(nupkg, recursive: true);
+                }
+
+                // Act
+                var listResult = _fixture.RunDotnet(Directory.GetParent(projectA.ProjectPath).FullName,
+                    $"list {projectA.ProjectPath} package --outdated");
+
+                // Assert
+                var lines = listResult.AllOutput.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
+                Assert.True(lines.Any(l => l.Contains("packageX") && l.Contains("Not found at the sources")), "Line containing 'packageX' and 'Not found at the sources' not found: " + listResult.AllOutput);
+            }
+        }
+
         // We read the original PackageReference items by calling the CollectPackageReference target.
         // If a project has InitialTargets we need to deal with the response properly in the C# based invocation.
         [PlatformFact(Platform.Windows)]
-        public async void DotnetListPackage_ProjectWithInitialTargets_Succeeds()
+        public async Task DotnetListPackage_ProjectWithInitialTargets_Succeeds()
         {
             using (var pathContext = new SimpleTestPathContext())
             {
@@ -344,7 +450,7 @@ namespace Dotnet.Integration.Test
             {
                 return false;
             }
-            
+
             for (var i = 1; i <= sections.Length - 2; i++)
             {
                 for (var j = i + 1; j <= sections.Length - 1; j++)

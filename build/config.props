@@ -10,37 +10,49 @@
 
   <!-- Version -->
   <PropertyGroup>
-    <IsEscrowMode>false</IsEscrowMode>
+    <!-- **  Change for each new version -->
     <!-- when changing any of the NuGetVersion props below, also update ProductVersion in src\NuGet.Clients\NuGet.Tools\NuGetPackage.cs -->
     <MajorNuGetVersion Condition="'$(MajorNuGetVersion)' == ''">5</MajorNuGetVersion>
-    <MinorNuGetVersion Condition="'$(MinorNuGetVersion)' == ''">3</MinorNuGetVersion>
+    <MinorNuGetVersion Condition="'$(MinorNuGetVersion)' == ''">4</MinorNuGetVersion>
     <PatchNuGetVersion Condition="'$(PatchNuGetVersion)' == ''">0</PatchNuGetVersion>
     <SemanticVersion Condition=" '$(SemanticVersion)' == '' ">$(MajorNuGetVersion).$(MinorNuGetVersion).$(PatchNuGetVersion)</SemanticVersion>
+    
+    <!-- ** Change for each new preview/rtm -->
+    <!-- Check the VS schedule and manually enter a preview number here that makes sense. -->
+    <ReleaseLabel Condition=" '$(ReleaseLabel)' == '' ">preview.1</ReleaseLabel>
+    
+    <!-- ** Increment each insertion, set to zero after incrementing Major/Minor or Patch version -->
+    <!-- We need to update this netcoreassembly build number with EVERY insertion into VS to workaround any breaking api
+    changes we might have made.-->
+    <NetCoreAssemblyBuildNumber Condition=" '$(NetCoreAssemblyBuildNumber)' == '' ">0</NetCoreAssemblyBuildNumber>
+
+    <IsEscrowMode>false</IsEscrowMode>
+
+    <!-- Visual Studio Insertion Logic -->    
+    <VsTargetMajorVersion>$([MSBuild]::Add(11, $(MajorNuGetVersion)))</VsTargetMajorVersion>
     <VsTargetBranch>master</VsTargetBranch>
+    <VsTargetChannel>int.$(VsTargetBranch)</VsTargetChannel>
+    <VsTargetBranch Condition="'$(IsEscrowMode)' == 'true'">rel/d$(VsTargetMajorVersion).$(MinorNuGetVersion)</VsTargetBranch>
+    <VsTargetChannel Condition="'$(IsEscrowMode)' == 'true'">Preview</VsTargetChannel>
+
+    <!-- .NET Core SDK Insertion Logic -->    
     <CliBranchForTesting Condition="'$(OverrideCliBranchForTesting)' != ''">$(OverrideCliBranchForTesting)</CliBranchForTesting>
     <CliBranchForTesting Condition="'$(OverrideCliBranchForTesting)' == ''">release/2.2.3xx</CliBranchForTesting>
-    <!-- This branches are used for creating insertion PRs -->
-    <VsTargetBranch Condition="'$(IsEscrowMode)' == 'true'">rel/d16.$(MinorNuGetVersion)</VsTargetBranch>
     <CliTargetBranches Condition="'$(OverrideCliTargetBranches)' != ''">$(OverrideCliTargetBranches)</CliTargetBranches>
     <CliTargetBranches Condition="'$(OverrideCliTargetBranches)' == ''">master</CliTargetBranches>
     <SdkTargetBranches Condition="'$(OverrideCliTargetBranches)' != ''">$(OverrideCliTargetBranches)</SdkTargetBranches>
     <SdkTargetBranches Condition="'$(OverrideCliTargetBranches)' == ''">master</SdkTargetBranches>
     <ToolsetTargetBranches Condition="'$(OverrideToolsetTargetBranches)' != ''">$(OverrideToolsetTargetBranches)</ToolsetTargetBranches>
     <ToolsetTargetBranches Condition="'$(OverrideToolsetTargetBranches)' == ''">master</ToolsetTargetBranches>
-    <!-- We need to update this netcoreassembly build number with every insertion into VS to workaround any breaking api
-    changes we might have made.-->
-    <NetCoreAssemblyBuildNumber Condition=" '$(NetCoreAssemblyBuildNumber)' == '' ">0</NetCoreAssemblyBuildNumber>
-    <!-- Check the VS schedule and manually enter a preview number here that makes sense. -->
-    <ReleaseLabel Condition=" '$(ReleaseLabel)' == '' ">preview.2</ReleaseLabel>
   </PropertyGroup>
 
   <!-- Dependency versions -->
   <PropertyGroup>
     <NewtonsoftJsonVersionCore Condition="$(NewtonsoftJsonPackageVersion) == ''">9.0.1</NewtonsoftJsonVersionCore>
     <NewtonsoftJsonVersionCore Condition="$(NewtonsoftJsonPackageVersion) != ''">$(NewtonsoftJsonPackageVersion)</NewtonsoftJsonVersionCore>
-    <XunitVersion>2.3.1</XunitVersion>
+    <XunitVersion>2.4.1</XunitVersion>
     <TestSDKVersion>15.5.0</TestSDKVersion>
-    <MoqVersion>4.10.1</MoqVersion>
+    <MoqVersion>4.12.0</MoqVersion>
     <FluentAssertionsVersion>4.19.4</FluentAssertionsVersion>
     <MicrosoftBuildPackageVersion Condition="$(MicrosoftBuildPackageVersion) == ''">16.0.461</MicrosoftBuildPackageVersion>
   </PropertyGroup>
@@ -73,8 +85,14 @@
   <Target Name="GetSemanticVersion">
     <Message Text="$(SemanticVersion)" Importance="High"/>
   </Target>
+  <Target Name="GetVsTargetMajorVersion">
+    <Message Text="$(VsTargetMajorVersion)" Importance="High"/>
+  </Target>
   <Target Name="GetVsTargetBranch">
     <Message Text="$(VsTargetBranch)" Importance="High"/>
+  </Target>
+  <Target Name="GetVsTargetChannel">
+    <Message Text="$(VsTargetChannel)" Importance="High"/>
   </Target>
   <Target Name="GetCliTargetBranches">
     <Message Text="$(CliTargetBranches)" Importance="High"/>

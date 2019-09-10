@@ -5,7 +5,7 @@ namespace NuGet.Common
 {
     /// <summary>
     /// This enum is used to quantify NuGet error and warning codes. 
-    /// Format - NUxyzw where NU is the profix indicating NuGet and xyzw is a 4 digit code
+    /// Format - NUxyzw where NU is the prefix indicating NuGet and xyzw is a 4 digit code
     ///
     /// Numbers - xyzw
     ///     x - 'x' is the largest digit and should be used to quantify a set of errors.
@@ -641,6 +641,36 @@ namespace NuGet.Common
         NU5035 = 5035,
 
         /// <summary>
+        /// https://aka.ms/malformedNuGetLicenseUrl
+        /// </summary>
+        NU5036 = 5036,
+
+        /// <summary>
+        /// Error_MissingNuspecFile
+        /// </summary>
+        NU5037 = 5037,
+
+        /// <summary>
+        /// Error_Manifest_IconCannotOpenFile
+        /// </summary>
+        NU5046 = 5046,
+
+        /// <summary>
+        /// Error_Icon_InvalidSize
+        /// </summary>
+        NU5047 = 5047,
+
+        /// <summary>
+        /// IconUrlDeprecationWarning
+        /// </summary>
+        NU5048 = 5048,
+
+        /// <summary>
+        /// IconUrlAndIconWarning
+        /// </summary>
+        NU5049 = 5049,
+
+        /// <summary>
         /// AssemblyOutsideLibWarning
         /// </summary>
         NU5100 = 5100,
@@ -776,9 +806,28 @@ namespace NuGet.Common
         NU5127 = 5127,
 
         /// <summary>
+        /// TFM dependencies in the lib or ref folder don't have exact matches in the nuspec
+        /// </summary>
+        NU5128 = 5128,
+
+        /// <summary>
+        /// No build files that follow the build convention ("package_id".props)
+        /// </summary>
+        NU5129 = 5129,
+
+        /// <summary>
+        /// TFM dependencies in the lib or ref folder has a compatible match, but not an exact match
+        /// </summary>
+        NU5130 = 5130,
+
+        /// <summary>
+        /// References in the nuspec don't match up with the ref folder in the package
+        /// </summary>
+        NU5131 = 5131,
+
+        /// <summary>
         /// Undefined package warning
         /// </summary>
         NU5500 = 5500,
-
     }
 }

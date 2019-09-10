@@ -3,16 +3,15 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using NuGet.Common;
-using System.Globalization;
 
 namespace NuGet.Configuration
 {
     public static class SettingsUtility
     {
-        private const string GlobalPackagesFolderKey = "globalPackagesFolder";
         private const string GlobalPackagesFolderEnvironmentKey = "NUGET_PACKAGES";
         private const string FallbackPackagesFolderEnvironmentKey = "NUGET_FALLBACK_PACKAGES";
         private const string HttpCacheEnvironmentKey = "NUGET_HTTP_CACHE_PATH";
@@ -283,7 +282,7 @@ namespace NuGet.Configuration
                 }
             }
 
-            for (var i=0; i < paths.Count; i++)
+            for (var i = 0; i < paths.Count; i++)
             {
                 paths[i] = paths[i].Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
                 paths[i] = Path.GetFullPath(paths[i]);
@@ -327,7 +326,7 @@ namespace NuGet.Configuration
                 path = Path.GetFullPath(path);
                 return path;
             }
-            
+
             return NuGetEnvironment.GetFolderPath(NuGetFolderPath.HttpCacheDirectory);
         }
 
@@ -356,8 +355,7 @@ namespace NuGet.Configuration
                 throw new ArgumentNullException(nameof(settings));
             }
 
-            var provider = new PackageSourceProvider(settings);
-            return provider.LoadPackageSources().Where(e => e.IsEnabled == true).ToList();
+            return PackageSourceProvider.LoadPackageSources(settings).Where(e => e.IsEnabled == true).ToList();
         }
 
         /// <summary>
@@ -383,8 +381,7 @@ namespace NuGet.Configuration
             if (sourceUri != null && !sourceUri.IsAbsoluteUri)
             {
                 // For non-absolute sources, it could be the name of a config source, or a relative file path.
-                IPackageSourceProvider sourceProvider = new PackageSourceProvider(settings);
-                var allSources = sourceProvider.LoadPackageSources();
+                var allSources = PackageSourceProvider.LoadPackageSources(settings);
 
                 if (!allSources.Any(s => s.IsEnabled && s.Name.Equals(source, StringComparison.OrdinalIgnoreCase)))
                 {
@@ -396,9 +393,11 @@ namespace NuGet.Configuration
             return source;
         }
 
-        public static RevocationMode GetRevocationMode()
+        public static RevocationMode GetRevocationMode(IEnvironmentVariableReader environmentVariableReader = null)
         {
-            var revocationModeSetting = Environment.GetEnvironmentVariable(RevocationModeEnvironmentKey);
+            var reader = environmentVariableReader ?? EnvironmentVariableWrapper.Instance;
+            var revocationModeSetting = reader.GetEnvironmentVariable(RevocationModeEnvironmentKey);
+
             if (!string.IsNullOrEmpty(revocationModeSetting) && Enum.TryParse(revocationModeSetting, ignoreCase: true, result: out RevocationMode revocationMode))
             {
                 return revocationMode;

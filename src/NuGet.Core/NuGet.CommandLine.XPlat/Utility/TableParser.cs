@@ -5,37 +5,39 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace NuGet.CommandLine.XPlat.Utility
 {
     public static class TableParser
     {
-        internal static IEnumerable<string> ToStringTable<T>(
+        internal static Task<IEnumerable<string>> ToStringTableAsync<T>(
           this IEnumerable<T> values,
           string[] columnHeaders,
-          Func<T, UpdateLevel> updateLevel,
-          params Func<T, object>[] valueSelectors)
+          params Func<T, Task<object>>[] valueSelectors)
         {
-            return ToStringTable(values.ToArray(), columnHeaders, updateLevel, valueSelectors);
+            return ToStringTableAsync(values.ToArray(), columnHeaders, valueSelectors);
         }
 
-        internal static IEnumerable<string> ToStringTable<T>(
+        internal static async Task<IEnumerable<string>> ToStringTableAsync<T>(
           this T[] values,
           string[] columnHeaders,
-          Func<T, UpdateLevel> updateLevel,
-          params Func<T, object>[] valueSelectors)
+          params Func<T, Task<object>>[] valueSelectors)
         {
             var headerSpace = 1;
+
             if (columnHeaders == null)
             {
                 headerSpace = 0;
             }
+
             var arrValues = new string[values.Length + headerSpace, valueSelectors.Length];
 
             // Fill headers
             if (columnHeaders != null)
             {
                 Debug.Assert(columnHeaders.Length == valueSelectors.Length);
+
                 for (var colIndex = 0; colIndex < arrValues.GetLength(1); colIndex++)
                 {
                     arrValues[0, colIndex] = columnHeaders[colIndex];
@@ -47,24 +49,16 @@ namespace NuGet.CommandLine.XPlat.Utility
             {
                 for (var colIndex = 0; colIndex < arrValues.GetLength(1); colIndex++)
                 {
-                    if (colIndex == 1)
-                    {
-                        arrValues[rowIndex, colIndex] = "> " + valueSelectors[colIndex]
-                      .Invoke(values[rowIndex - headerSpace]).ToString();
-                    }
-                    else
-                    {
-                        arrValues[rowIndex, colIndex] = valueSelectors[colIndex]
-                      .Invoke(values[rowIndex - headerSpace]).ToString();
-                    }
-                    
+                    var data = await valueSelectors[colIndex](values[rowIndex - headerSpace]);
+                    var cellContent = (colIndex == 1 ? "> " : "") + data.ToString();
+                    arrValues[rowIndex, colIndex] = cellContent;
                 }
             }
 
-            return ToStringTable(values, arrValues, updateLevel);
+            return ToStringTable(values, arrValues);
         }
 
-        internal static IEnumerable<string> ToStringTable<T>(this T[] values, string[,] arrValues, Func<T, UpdateLevel> updateLevel)
+        internal static IEnumerable<string> ToStringTable<T>(this T[] values, string[,] arrValues)
         {
             var maxColumnsWidth = GetMaxColumnsWidth(arrValues);
             var rows = new List<string>();
@@ -75,10 +69,12 @@ namespace NuGet.CommandLine.XPlat.Utility
                 {
                     var cell = arrValues[rowIndex, colIndex];
                     cell = cell.PadRight(maxColumnsWidth[colIndex]);
+
                     if (colIndex != 0)
                     {
                         cell = "   " + cell;
                     }
+
                     rows.Add(cell);
                 }
 

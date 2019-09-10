@@ -47,13 +47,13 @@ namespace NuGet.Protocol.Plugins
         private PluginManager()
         {
             Initialize(
-                new EnvironmentVariableWrapper(),
+                EnvironmentVariableWrapper.Instance,
                 new Lazy<IPluginDiscoverer>(InitializeDiscoverer),
                 (TimeSpan idleTimeout) => new PluginFactory(idleTimeout),
                 new Lazy<string>(() => SettingsUtility.GetPluginsCacheFolder()));
         }
 
-        internal PluginManager(
+        public PluginManager(
             IEnvironmentVariableReader reader,
             Lazy<IPluginDiscoverer> pluginDiscoverer,
             Func<TimeSpan, IPluginFactory> pluginFactoryCreator,
@@ -304,8 +304,15 @@ namespace NuGet.Protocol.Plugins
             {
                 throw new ArgumentNullException(nameof(pluginFactoryCreator));
             }
-
-            _rawPluginPaths = reader.GetEnvironmentVariable(EnvironmentVariableConstants.PluginPaths);
+#if IS_DESKTOP
+            _rawPluginPaths = reader.GetEnvironmentVariable(EnvironmentVariableConstants.DesktopPluginPaths);
+#else
+            _rawPluginPaths = reader.GetEnvironmentVariable(EnvironmentVariableConstants.CorePluginPaths);
+#endif
+            if (string.IsNullOrEmpty(_rawPluginPaths))
+            {
+                _rawPluginPaths = reader.GetEnvironmentVariable(EnvironmentVariableConstants.PluginPaths);
+            }
 
             _connectionOptions = ConnectionOptions.CreateDefault(reader);
 

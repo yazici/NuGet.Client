@@ -516,6 +516,7 @@ Write-Host 'Assertion successful'
 }
 
 function Test-InstallPackageWithNestedContentFile {
+    [SkipTest('https://github.com/NuGet/Home/issues/8486')]
     param(
         $context
     )
@@ -1683,6 +1684,7 @@ function Test-InstallPackageWithFrameworkRefsOnlyRequiredForSL {
 }
 
 function Test-InstallPackageWithValuesFromPipe {
+    [SkipTest('https://github.com/NuGet/Home/issues/8496')]
     param(
         $context
     )

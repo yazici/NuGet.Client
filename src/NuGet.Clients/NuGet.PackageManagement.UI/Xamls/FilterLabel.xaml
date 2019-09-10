@@ -4,6 +4,8 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:nuget="clr-namespace:NuGet.PackageManagement.UI"
+             xmlns:imaging="clr-namespace:Microsoft.VisualStudio.Imaging;assembly=Microsoft.VisualStudio.Imaging"
+             xmlns:catalog="clr-namespace:Microsoft.VisualStudio.Imaging;assembly=Microsoft.VisualStudio.ImageCatalog"  
              x:Name="_self"
              mc:Ignorable="d"
              d:DesignHeight="25" d:DesignWidth="100">
@@ -25,9 +27,10 @@
       AutomationProperties.AutomationId="{Binding ElementName=_labelText, Path=Text}"
       FocusVisualStyle="{DynamicResource ControlsFocusVisualStyle}">
       <AutomationProperties.Name>
-        <MultiBinding StringFormat=" {0} {1}">
+        <MultiBinding StringFormat=" {0} {1} {2}">
           <Binding ElementName="_labelText" Path="Text" />
           <Binding ElementName="_textBlockCount" Path="Text" />
+          <Binding ElementName="_warningIcon" Path="ToolTip" />
         </MultiBinding>
       </AutomationProperties.Name>
       <nuget:TabItemButton.Template>
@@ -46,7 +49,7 @@
           Foreground="{DynamicResource {x:Static nuget:Brushes.UIText}}"
           Text="Sample"/>
 
-        <!-- the texblock that displays the count -->
+        <!-- the textblock that displays the count -->
         <Border
           x:Name="_textBlockCountContainer"
           CornerRadius="2"
@@ -62,6 +65,16 @@
             VerticalAlignment="Top"
             Foreground="{DynamicResource {x:Static nuget:Brushes.TabPopupTextBrushKey}}"/>
         </Border>
+
+        <imaging:CrispImage
+            x:Name="_warningIcon"
+            Margin="3,0"
+            Width="13"
+            Height="13"
+            Visibility="Collapsed"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            Moniker="{x:Static catalog:KnownMonikers.StatusWarning}" />
       </StackPanel>
     </nuget:TabItemButton>
 
