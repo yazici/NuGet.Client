@@ -39,7 +39,7 @@ namespace NuGet.Packaging.FuncTest
             _trustedRepoTestCert.Dispose();
         }
 
-        [CIOnlyFact]
+        [Fact]
         public async Task GetTrustResultAsync_AuthorSignedPackage_WithCertificateInAllowList_SuccessAsync()
         {
             // Arrange
