@@ -143,8 +143,20 @@ namespace NuGet.Commands.Test
 
                 await test.Runner.ExecuteCommandAsync(test.Args);
 
+                System.Text.StringBuilder sb = new System.Text.StringBuilder();
+                int cnt = test.Logger.LogMessages.Count;
+                sb.AppendLine("@@@@ " + test.Logger.LogMessages.Count.ToString() + "   error msgs in total ");
+                foreach (var msg in test.Logger.LogMessages)
+                {
+                    sb.AppendLine(msg.ToString() + "  @ message.Level =" + msg.Level.ToString() + "  @message.Code = " + msg.Code.ToString());
+                }
+                sb.AppendLine("@@@@ end @@@@");
+
+                throw new Exception(sb.ToString());
+                /*
                 Assert.Equal(1, test.Logger.LogMessages.Count(
                     message => message.Level == LogLevel.Warning && message.Code == NuGetLogCode.NU3018));
+                    */
             }
         }
 
