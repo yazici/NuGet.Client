@@ -81,6 +81,7 @@ phases:
     VsTargetMajorVersion: $[dependencies.Initialize_Build.outputs['updatebuildnumber.VsTargetMajorVersion']]
     ShouldSkipOptimize: false
     SDKVersionForBuild: $[dependencies.Initialize_Build.outputs['getSDKVersionForBuild.SDKVersionForBuild']]
+    condition: "failed() "
   queue:
     name: VSEng-MicroBuildVS2019
     timeoutInMinutes: 90
@@ -560,7 +561,7 @@ phases:
     BuildNumber: $[dependencies.Initialize_Build.outputs['updatebuildnumber.BuildNumber']]
     FullVstsBuildNumber: $[dependencies.Initialize_Build.outputs['updatebuildnumber.FullVstsBuildNumber']]
     SDKVersionForBuild: $[dependencies.Initialize_Build.outputs['getSDKVersionForBuild.SDKVersionForBuild']]
-  condition: "and(succeeded(),eq(variables['RunFunctionalTestsOnWindows'], 'true')) "
+  condition: "failed() "
   queue:
     name: VSEng-MicroBuildSxS
     timeoutInMinutes: 150
@@ -710,7 +711,7 @@ phases:
   variables:
     FULLVSTSBUILDNUMBER: $[dependencies.Initialize_Build.outputs['updatebuildnumber.FullVstsBuildNumber']]
     SDKVersionForBuild: $[dependencies.Initialize_Build.outputs['getSDKVersionForBuild.SDKVersionForBuild']]
-  condition: "and(succeeded(),eq(variables['RunTestsOnMac'], 'true')) "
+  condition: "failed() "
   queue:
     name: VSEng-MicroBuildMacSierra
     timeoutInMinutes: 75
@@ -776,7 +777,7 @@ phases:
   variables:
     FullVstsBuildNumber: $[dependencies.Initialize_Build.outputs['updatebuildnumber.FullVstsBuildNumber']]
     SDKVersionForBuild: $[dependencies.Initialize_Build.outputs['getSDKVersionForBuild.SDKVersionForBuild']]
-  condition: "and(succeeded(),eq(variables['RunEndToEndTests'], 'true')) "
+  condition: "failed() "
   queue:
     timeoutInMinutes: 90
     name: DDNuGet-Windows
@@ -882,7 +883,7 @@ phases:
     BuildNumber: $[dependencies.Initialize_Build.outputs['updatebuildnumber.BuildNumber']]
     FullVstsBuildNumber: $[dependencies.Initialize_Build.outputs['updatebuildnumber.FullVstsBuildNumber']]
     SDKVersionForBuild: $[dependencies.Initialize_Build.outputs['getSDKVersionForBuild.SDKVersionForBuild']]
-  condition: "and(succeeded(),eq(variables['RunApexTests'], 'true')) "
+  condition: "failed() "
   queue:
     name: DDNuGet-Windows
     demands: DotNetFramework
