@@ -671,7 +671,7 @@ phases:
   - Initialize_Build
   variables:
     FULLVSTSBUILDNUMBER: $[dependencies.Initialize_Build.outputs['updatebuildnumber.FullVstsBuildNumber']]
-  condition: "and(succeeded(),eq(variables['RunTestsOnMac'], 'true')) "
+  condition: "failed() "
   queue:
     name: VSEng-MicroBuildMacSierra
     timeoutInMinutes: 75
@@ -728,7 +728,7 @@ phases:
   - Initialize_Build
   variables:
     FullVstsBuildNumber: $[dependencies.Initialize_Build.outputs['updatebuildnumber.FullVstsBuildNumber']]
-  condition: "and(succeeded(),eq(variables['RunEndToEndTests'], 'true')) "
+  condition: "failed() "
   queue:
     timeoutInMinutes: 90
     name: DDNuGet-Windows
@@ -825,7 +825,7 @@ phases:
   variables:
     BuildNumber: $[dependencies.Initialize_Build.outputs['updatebuildnumber.BuildNumber']]
     FullVstsBuildNumber: $[dependencies.Initialize_Build.outputs['updatebuildnumber.FullVstsBuildNumber']]
-  condition: "and(succeeded(),eq(variables['RunApexTests'], 'true')) "
+  condition: "failed() "
   queue:
     name: DDNuGet-Windows
     demands: DotNetFramework
