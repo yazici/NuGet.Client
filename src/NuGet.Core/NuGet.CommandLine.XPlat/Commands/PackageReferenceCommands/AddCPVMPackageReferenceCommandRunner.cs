@@ -21,7 +21,7 @@ using NuGet.Versioning;
 
 namespace NuGet.CommandLine.XPlat
 {
-    public class AddPackageReferenceCommandRunner : IPackageReferenceCommandRunner
+    public class AddCPVMPackageReferenceCommandRunner : IPackageReferenceCommandRunner
     {
         public async Task<int> ExecuteCommand(IPackageReferenceArgs packageReferenceArgs, MSBuildAPIUtility msBuild)
         {
@@ -30,26 +30,49 @@ namespace NuGet.CommandLine.XPlat
                 packageReferenceArgs.PackageDependency.Id,
                 packageReferenceArgs.ProjectPath));
 
-            if (packageReferenceArgs.NoRestore)
+            // Always no restore 
+            packageReferenceArgs.Logger.LogWarning(string.Format(CultureInfo.CurrentCulture,
+                   Strings.Warn_AddPkgWithoutRestore));
+
+            var libraryDependency = new LibraryDependency
             {
-                packageReferenceArgs.Logger.LogWarning(string.Format(CultureInfo.CurrentCulture,
-                    Strings.Warn_AddPkgWithoutRestore));
+                LibraryRange = new LibraryRange(
+                    name: packageReferenceArgs.PackageDependency.Id,
+                    versionRange: packageReferenceArgs.PackageDependency.VersionRange,
+                    typeConstraint: LibraryDependencyTarget.Package)
+            };
 
-                var libraryDependency = new LibraryDependency
-                {
-                    LibraryRange = new LibraryRange(
-                        name: packageReferenceArgs.PackageDependency.Id,
-                        versionRange: packageReferenceArgs.PackageDependency.VersionRange,
-                        typeConstraint: LibraryDependencyTarget.Package)
-                };
+            var cpvmFilePath = msBuild.GetCPVMFullPath(packageReferenceArgs.ProjectPath);
+            msBuild.AddPackageReferenceToCPVM(cpvmFilePath, libraryDependency);
+            msBuild.AddPackageReference(packageReferenceArgs.ProjectPath, libraryDependency, true);
+            return await Task.FromResult(0);
 
-                msBuild.AddPackageReference(packageReferenceArgs.ProjectPath, libraryDependency);
-                return 0;
-            }
 
+            //if (packageReferenceArgs.NoRestore)
+            //{
+            //    packageReferenceArgs.Logger.LogWarning(string.Format(CultureInfo.CurrentCulture,
+            //        Strings.Warn_AddPkgWithoutRestore));
+
+            //    var libraryDependency = new LibraryDependency
+            //    {
+            //        LibraryRange = new LibraryRange(
+            //            name: packageReferenceArgs.PackageDependency.Id,
+            //            versionRange: packageReferenceArgs.PackageDependency.VersionRange,
+            //            typeConstraint: LibraryDependencyTarget.Package)
+            //    };
+
+            //    msBuild.AddPackageReference(packageReferenceArgs.ProjectPath, libraryDependency);
+            //    return 0;
+            //}
+
+            //return await ExcecuteWithRestore(packageReferenceArgs, msBuild);
+        }
+
+        private static async Task<int> ExcecuteWithRestore(PackageReferenceArgs packageReferenceArgs, MSBuildAPIUtility msBuild)
+        {
             // 1. Get project dg file
             packageReferenceArgs.Logger.LogDebug("Reading project Dependency Graph");
-            var dgSpec = ReadProjectDependencyGraph((PackageReferenceArgs)packageReferenceArgs);
+            var dgSpec = ReadProjectDependencyGraph(packageReferenceArgs);
             if (dgSpec == null)
             {
                 // Logging non localized error on debug stream.
@@ -63,7 +86,7 @@ namespace NuGet.CommandLine.XPlat
 
             var matchingPackageSpecs = dgSpec
                 .Projects
-                .Where(p => p.RestoreMetadata.ProjectStyle == ProjectStyle.PackageReference && 
+                .Where(p => p.RestoreMetadata.ProjectStyle == ProjectStyle.PackageReference &&
                 PathUtility.GetStringComparerBasedOnOS().Equals(Path.GetFullPath(p.RestoreMetadata.ProjectPath), projectFullPath))
                 .ToArray();
 
@@ -94,7 +117,7 @@ namespace NuGet.CommandLine.XPlat
             if (packageReferenceArgs.Frameworks?.Any() == true)
             {
                 // If user specified frameworks then just use them to add the dependency
-                PackageSpecOperations.AddOrUpdateDependency(updatedPackageSpec, 
+                PackageSpecOperations.AddOrUpdateDependency(updatedPackageSpec,
                     packageReferenceArgs.PackageDependency,
                     userSpecifiedFrameworks);
             }
@@ -128,7 +151,7 @@ namespace NuGet.CommandLine.XPlat
             {
                 // If the user has specified frameworks then we intersect that with the compatible frameworks.
                 var userSpecifiedFrameworkSet = new HashSet<NuGetFramework>(
-                    userSpecifiedFrameworks, 
+                    userSpecifiedFrameworks,
                     new NuGetFrameworkFullComparer());
 
                 compatibleFrameworks.IntersectWith(userSpecifiedFrameworkSet);
@@ -148,7 +171,7 @@ namespace NuGet.CommandLine.XPlat
                 return 1;
             }
             // Ignore the graphs with RID
-            else if (compatibleFrameworks.Count == 
+            else if (compatibleFrameworks.Count ==
                 restorePreviewResult.Result.CompatibilityCheckResults.Where(r => string.IsNullOrEmpty(r.Graph.RuntimeIdentifier)).Count())
             {
                 // Package is compatible with all the project TFMs
@@ -192,7 +215,7 @@ namespace NuGet.CommandLine.XPlat
 
         private static LibraryDependency GenerateLibraryDependency(
             PackageSpec project,
-            IPackageReferenceArgs packageReferenceArgs,
+            PackageReferenceArgs packageReferenceArgs,
             RestoreResultPair restorePreviewResult,
             IEnumerable<NuGetFramework> UserSpecifiedFrameworks)
         {
@@ -263,7 +286,7 @@ namespace NuGet.CommandLine.XPlat
             };
         }
 
-        private static async Task<RestoreResultPair> PreviewAddPackageReferenceAsync(IPackageReferenceArgs packageReferenceArgs,
+        private static async Task<RestoreResultPair> PreviewAddPackageReferenceAsync(PackageReferenceArgs packageReferenceArgs,
             DependencyGraphSpec dgSpec)
         {
             // Set user agent and connection settings.
@@ -319,7 +342,7 @@ namespace NuGet.CommandLine.XPlat
         }
 
         private static NuGetVersion GetPackageVersionFromRestoreResult(RestoreResultPair restorePreviewResult,
-            IPackageReferenceArgs packageReferenceArgs,
+            PackageReferenceArgs packageReferenceArgs,
             IEnumerable<NuGetFramework> UserSpecifiedFrameworks)
         {
             // Get the restore graphs from the restore result

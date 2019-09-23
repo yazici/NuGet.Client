@@ -122,7 +122,8 @@ namespace NuGet.CommandLine.XPlat
         /// </summary>
         /// <param name="projectPath">Path to the csproj file of the project.</param>
         /// <param name="libraryDependency">Package Dependency of the package to be added.</param>
-        public void AddPackageReference(string projectPath, LibraryDependency libraryDependency)
+        /// <param name="excludeVersion">Package Dependency of the package to be added.</param>
+        public void AddPackageReference(string projectPath, LibraryDependency libraryDependency, bool excludeVersion = false)
         {
             var project = GetProject(projectPath);
 
@@ -130,7 +131,34 @@ namespace NuGet.CommandLine.XPlat
             // If the project has a conditional reference, then an unconditional reference is not added.
 
             var existingPackageReferences = GetPackageReferencesForAllFrameworks(project, libraryDependency);
-            AddPackageReference(project, libraryDependency, existingPackageReferences);
+            AddPackageReferenceInternal(project, libraryDependency, existingPackageReferences, framework:null, excludeVersion: excludeVersion);
+            ProjectCollection.GlobalProjectCollection.UnloadProject(project);
+        }
+
+        public string GetCPVMFullPath(string projectPath)
+        {
+            var project = GetProject(projectPath);
+
+            var r = project.AllEvaluatedProperties.Where(p => p.Name == "CentralPackagesFile").FirstOrDefault();
+            ProjectCollection.GlobalProjectCollection.UnloadProject(project);
+            return r.EvaluatedValue;
+        }
+
+        /// <summary>
+        /// Add an unconditional package reference to the project.
+        /// </summary>
+        /// <param name="cpvmFilePath">Path to the csproj file of the project.</param>
+        /// <param name="libraryDependency">Package Dependency of the package to be added.</param>
+        public void AddPackageReferenceToCPVM(string cpvmFilePath, LibraryDependency libraryDependency)
+        {
+            var project = GetProject(cpvmFilePath);
+
+            // Here we get package references for any framework.
+            // If the project has a conditional reference, then an unconditional reference is not added.
+
+            var existingPackageReferences = GetPackageReferencesCPVM(project, libraryDependency);
+            //GetPackageReferencesForAllFrameworks(project, libraryDependency);
+            AddPackageReferenceToCPVMInternal(project, libraryDependency, existingPackageReferences);
             ProjectCollection.GlobalProjectCollection.UnloadProject(project);
         }
 
@@ -149,37 +177,84 @@ namespace NuGet.CommandLine.XPlat
                 { { "TargetFramework", framework } };
                 var project = GetProject(projectPath, globalProperties);
                 var existingPackageReferences = GetPackageReferences(project, libraryDependency);
-                AddPackageReference(project, libraryDependency, existingPackageReferences, framework);
+                AddPackageReferenceInternal(project, libraryDependency, existingPackageReferences, framework);
                 ProjectCollection.GlobalProjectCollection.UnloadProject(project);
             }
         }
 
-        private void AddPackageReference(Project project,
+        /// <summary>
+        /// Add conditional package reference to the project per target framework.
+        /// </summary>
+        /// <param name="projectPath">Path to the csproj file of the project.</param>
+        /// <param name="libraryDependency">Package Dependency of the package to be added.</param>
+        /// <param name="frameworks">Target Frameworks for which the package reference should be added.</param>
+        public void AddPackageReferencePerTFMToCPVM(string projectPath, LibraryDependency libraryDependency,
+            IEnumerable<string> frameworks)
+        {
+            foreach (var framework in frameworks)
+            {
+                var globalProperties = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                { { "TargetFramework", framework } };
+                var project = GetProject(projectPath, globalProperties);
+                var existingPackageReferences = GetPackageReferences(project, libraryDependency);
+                //AddPackageReference(project, libraryDependency, existingPackageReferences, framework, true);
+                ProjectCollection.GlobalProjectCollection.UnloadProject(project);
+            }
+        }
+
+        private void AddPackageReferenceInternal(Project project,
             LibraryDependency libraryDependency,
             IEnumerable<ProjectItem> existingPackageReferences,
-            string framework = null)
+            string framework = null,
+            bool excludeVersion = false)
         {
-            var itemGroups = GetItemGroups(project);
+            var itemGroups = GetItemGroups(project, cpvm: false);
 
             if (existingPackageReferences.Count() == 0)
             {
                 // Add packageReference only if it does not exist.
                 var itemGroup = GetItemGroup(project, itemGroups, PACKAGE_REFERENCE_TYPE_TAG) ?? CreateItemGroup(project, framework);
-                AddPackageReferenceIntoItemGroup(itemGroup, libraryDependency);
+                AddPackageReferenceIntoItemGroup(itemGroup, libraryDependency, excludeVersion);
             }
             else
             {
                 // If the package already has a reference then try to update the reference.
-                UpdatePackageReferenceItems(existingPackageReferences, libraryDependency);
+                UpdatePackageReferenceItems(existingPackageReferences, libraryDependency, removeVersion: excludeVersion);
             }
             project.Save();
         }
 
-        private static IEnumerable<ProjectItemGroupElement> GetItemGroups(Project project)
+        private void AddPackageReferenceToCPVMInternal(Project project,
+            LibraryDependency libraryDependency,
+            IEnumerable<ProjectItemElement> existingPackageReferences,
+            string framework = null)
         {
-            return project
-                .Items
-                .Where(i => !i.IsImported)
+            var itemGroups = GetItemGroups(project, cpvm: true);
+
+            if (existingPackageReferences.Count() == 0)
+            {
+                // Add packageReference only if it does not exist.
+                var itemGroup = GetItemGroup(project, itemGroups, PACKAGE_REFERENCE_TYPE_TAG) ?? CreateItemGroup(project, framework);
+                AddPackageReferenceIntoItemGroupCPVM(itemGroup, libraryDependency);
+            }
+            else
+            {
+                // If the package already has a reference then try to update the reference.
+                UpdatePackageReferenceItemsCPVM(existingPackageReferences, libraryDependency);
+            }
+            project.Save();
+        }
+
+        private static IEnumerable<ProjectItemGroupElement> GetItemGroups(Project project, bool cpvm)
+        {
+            if (cpvm)
+            {
+                return project.Xml.ItemGroups.ToArray();
+            }
+            var items = project
+                .Items.Where(i => !i.IsImported);
+
+            return items
                 .Select(item => item.Xml.Parent as ProjectItemGroupElement)
                 .Distinct();
         }
@@ -213,18 +288,29 @@ namespace NuGet.CommandLine.XPlat
         }
 
         private void UpdatePackageReferenceItems(IEnumerable<ProjectItem> packageReferencesItems,
-            LibraryDependency libraryDependency)
+            LibraryDependency libraryDependency,
+            bool removeVersion)
         {
             // We validate that the operation does not update any imported items
             // If it does then we throw a user friendly exception without making any changes
-            ValidateNoImportedItemsAreUpdated(packageReferencesItems, libraryDependency, UPDATE_OPERATION);
+            if (!removeVersion)
+            {
+                ValidateNoImportedItemsAreUpdated(packageReferencesItems, libraryDependency, UPDATE_OPERATION);
+            }
 
             foreach (var packageReferenceItem in packageReferencesItems)
             {
                 var packageVersion = libraryDependency.LibraryRange.VersionRange.OriginalString ??
                     libraryDependency.LibraryRange.VersionRange.MinVersion.ToString();
 
-                packageReferenceItem.SetMetadataValue(VERSION_TAG, packageVersion);
+                if (!removeVersion)
+                {
+                    packageReferenceItem.SetMetadataValue(VERSION_TAG, packageVersion);
+                }
+                else
+                {
+                    packageReferenceItem.RemoveMetadata(VERSION_TAG);
+                }
 
                 if (libraryDependency.IncludeType != LibraryIncludeFlags.All)
                 {
@@ -246,14 +332,43 @@ namespace NuGet.CommandLine.XPlat
             }
         }
 
-        private void AddPackageReferenceIntoItemGroup(ProjectItemGroupElement itemGroup,
+        private void UpdatePackageReferenceItemsCPVM(IEnumerable<ProjectItemElement> packageReferencesItems,
             LibraryDependency libraryDependency)
+        {           
+            foreach (var packageReferenceItem in packageReferencesItems)
+            {
+                var packageVersion = libraryDependency.LibraryRange.VersionRange.OriginalString ??
+                    libraryDependency.LibraryRange.VersionRange.MinVersion.ToString();
+
+                var version = packageReferenceItem.Metadata.Where(m => m.Name == VERSION_TAG).FirstOrDefault();
+                version.Value = packageVersion;
+
+                Logger.LogInformation(string.Format(CultureInfo.CurrentCulture,
+                    Strings.Info_AddPkgUpdated,
+                    libraryDependency.Name,
+                    packageVersion,
+                    packageReferenceItem.ContainingProject.FullPath));
+                    
+
+                //Logger.LogInformation(string.Format(CultureInfo.CurrentCulture,
+                //    Strings.Info_AddPkgUpdated,
+                //    libraryDependency.Name,
+                //    packageVersion,
+                //    packageReferenceItem.Xml.ContainingProject.FullPath));
+            }
+        }
+
+        private void AddPackageReferenceIntoItemGroup(ProjectItemGroupElement itemGroup,
+            LibraryDependency libraryDependency, bool excludeVersion)
         {
             var packageVersion = libraryDependency.LibraryRange.VersionRange.OriginalString ??
                 libraryDependency.LibraryRange.VersionRange.MinVersion.ToString();
 
             var item = itemGroup.AddItem(PACKAGE_REFERENCE_TYPE_TAG, libraryDependency.Name);
-            item.AddMetadata(VERSION_TAG, packageVersion, expressAsAttribute: true);
+            if (!excludeVersion)
+            {
+                item.AddMetadata(VERSION_TAG, packageVersion, expressAsAttribute: true);
+            }
 
             if (libraryDependency.IncludeType != LibraryIncludeFlags.All)
             {
@@ -272,6 +387,80 @@ namespace NuGet.CommandLine.XPlat
                 libraryDependency.Name,
                 packageVersion,
                 itemGroup.ContainingProject.FullPath));
+        }
+
+        private void AddPackageReferenceIntoItemGroupCPVM(ProjectItemGroupElement itemGroup,
+            LibraryDependency libraryDependency)
+        {
+            var packageVersion = libraryDependency.LibraryRange.VersionRange.OriginalString ??
+                libraryDependency.LibraryRange.VersionRange.MinVersion.ToString();
+
+            var item = AddElement(itemGroup, PACKAGE_REFERENCE_TYPE_TAG, libraryDependency.Name,
+                new List<KeyValuePair<string, string>>() { new KeyValuePair<string, string>(VERSION_TAG, packageVersion) },
+                expressAsAttribute: true);
+
+            Logger.LogInformation(string.Format(CultureInfo.CurrentCulture,
+                Strings.Info_AddPkgAdded,
+                libraryDependency.Name,
+                packageVersion,
+                itemGroup.ContainingProject.FullPath));
+        }
+
+        /// <summary>
+        /// Creates an element and adds it to the itemGroupElement. This method does not use evaluated properties.
+        /// The element is inserted based on the order of the Updated value.
+        /// </summary>
+        /// <param name="itemGroupElement">The itemGroup to insert the new element to.</param>
+        /// <param name="itemType">The itemType</param>
+        /// <param name="updateValue">The value for the Update property.</param>
+        /// <param name="metadata">Metadata.</param>
+        /// <param name="expressAsAttribute">If the metadata will be expressed as attribute or not.</param>
+        /// <returns></returns>
+        private ProjectItemElement AddElement(ProjectItemGroupElement itemGroupElement,
+            string itemType,
+            string updateValue,
+            IEnumerable<KeyValuePair<string, string>> metadata,
+            bool expressAsAttribute)
+        {
+            // Keep the previous child to insert after it.
+            ProjectElement reference = null;
+            var items = itemGroupElement.Children.Where(c => c.ElementName.Equals(itemType, StringComparison.OrdinalIgnoreCase));
+
+            foreach (ProjectItemElement item in items)
+            {
+                // the include sorts after us,
+                if (string.Compare(updateValue, item.Update, StringComparison.OrdinalIgnoreCase) < 0)
+                {
+                    // then insert before it (ie. after the previous sibling)
+                    reference = item.PreviousSibling;
+                    break;
+                }
+
+                // Otherwise go to the next item
+                continue;
+            }
+
+            var element = itemGroupElement.ContainingProject.CreateItemElement(itemType);
+            element.Update = updateValue;
+
+            if (reference != null)
+            {
+                itemGroupElement.InsertAfterChild(element, reference);
+            }
+            else
+            {
+                itemGroupElement.AppendChild(element);
+            }
+
+            if (metadata != null)
+            {
+                foreach (KeyValuePair<string, string> m in metadata)
+                {
+                    element.AddMetadata(m.Key, m.Value, expressAsAttribute: expressAsAttribute);
+                }
+            }
+
+            return element;
         }
 
         private static void ValidateNoImportedItemsAreUpdated(IEnumerable<ProjectItem> packageReferencesItems,
@@ -588,6 +777,24 @@ namespace NuGet.CommandLine.XPlat
                 mergedPackageReferences.AddRange(GetPackageReferencesPerFramework(project, libraryDependency, framework));
             }
             return mergedPackageReferences;
+        }
+
+
+        private static IEnumerable<ProjectItemElement> GetPackageReferencesCPVM(Project project,
+           LibraryDependency libraryDependency)
+        {
+            // get all the packageReferences 
+            var itemGroups = GetItemGroups(project, true);
+
+            var packageReferences = itemGroups.
+                SelectMany(ig => ig.Children.
+                Where(c => c.ElementName == PACKAGE_REFERENCE_TYPE_TAG)).
+                Where(c => ((ProjectItemElement)c).Update == libraryDependency.Name).
+                Select(item=>(ProjectItemElement)item).ToArray();
+
+            return packageReferences;
+
+            //return GetPackageReferences(project, libraryDependency.Name);
         }
 
 

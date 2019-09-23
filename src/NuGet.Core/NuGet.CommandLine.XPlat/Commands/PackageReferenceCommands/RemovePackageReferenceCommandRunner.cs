@@ -11,7 +11,7 @@ namespace NuGet.CommandLine.XPlat
 {
     public class RemovePackageReferenceCommandRunner : IPackageReferenceCommandRunner
     {
-        public Task<int> ExecuteCommand(PackageReferenceArgs packageReferenceArgs, MSBuildAPIUtility msBuild)
+        public Task<int> ExecuteCommand(IPackageReferenceArgs packageReferenceArgs, MSBuildAPIUtility msBuild)
         {
             packageReferenceArgs.Logger.LogInformation(string.Format(CultureInfo.CurrentCulture,
                 Strings.Info_RemovePkgRemovingReference,

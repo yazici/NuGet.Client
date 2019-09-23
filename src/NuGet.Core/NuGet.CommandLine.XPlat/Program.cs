@@ -160,8 +160,10 @@ namespace NuGet.CommandLine.XPlat
             if (app.Name == DotnetPackageAppName)
             {
                 AddPackageReferenceCommand.Register(app, () => log, () => new AddPackageReferenceCommandRunner());
+                AddCPVMPackageReferenceCommand.Register(app, () => log, () => new AddCPVMPackageReferenceCommandRunner());
                 RemovePackageReferenceCommand.Register(app, () => log, () => new RemovePackageReferenceCommandRunner());
                 ListPackageCommand.Register(app, () => log, () => new ListPackageCommandRunner());
+                AddCPVMPackageReferenceCommand.Register(app, () => log, () => new AddCPVMPackageReferenceCommandRunner());
             }
             else
             {
