@@ -52,7 +52,7 @@ namespace Dotnet.Integration.Test
                 packagePath = Path.Combine(Environment.GetEnvironmentVariable("HOME"), ".local", "share", "NuGet", "v3-cache");
             }
 
-            var pathCopyFrom = Path.Combine(packagePath, "system.security.cryptography.pkcs", "4.6.0-preview8.19405.3", "lib", "netstandard2.1");
+            var pathCopyFrom = Path.Combine(packagePath, "system.security.cryptography.pkcs", "5.0.0-alpha1.19473.1", "lib", "netstandard2.1");
             var pathCopyTo = patchDir;
             var dlls = new string[1] { "System.Security.Cryptography.Pkcs.dll" };
             TempCopyNewlyAddedDlls(dlls, pathCopyFrom, pathCopyTo);
