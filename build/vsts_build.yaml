@@ -567,6 +567,7 @@ phases:
     demands: 
         - DotNetFramework
         - msbuild
+        - Agent.Name -equals DDMBLDW193
     matrix:
       IsDesktop:
         SkipCoreAssemblies: "true"
