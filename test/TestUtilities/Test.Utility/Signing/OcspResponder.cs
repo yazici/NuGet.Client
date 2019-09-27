@@ -67,6 +67,7 @@ namespace Test.Utility.Signing
             }
 
             var ocspReq = new OcspReq(bytes);
+            Console.WriteLine(System.Text.Encoding.UTF8.GetString(bytes));
             var respId = new RespID(CertificateAuthority.Certificate.SubjectDN);
             var basicOcspRespGenerator = new BasicOcspRespGenerator(respId);
             var requests = ocspReq.GetRequestList();

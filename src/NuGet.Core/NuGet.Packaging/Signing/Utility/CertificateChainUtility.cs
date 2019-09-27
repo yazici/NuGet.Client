@@ -191,6 +191,8 @@ namespace NuGet.Packaging.Signing
             status = new X509ChainStatus[chain.ChainStatus.Length];
             chain.ChainStatus.CopyTo(status, 0);
 
+
+
             // Check if time is not in the future
             return buildSuccess && !CertificateUtility.IsCertificateValidityPeriodInTheFuture(certificate);
         }

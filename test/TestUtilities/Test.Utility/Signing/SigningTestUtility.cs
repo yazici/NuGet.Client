@@ -489,7 +489,7 @@ namespace Test.Utility.Signing
 
             return cms;
         }
-#if IS_DESKTOP
+#if IS_SIGNING_SUPPORTED
         /// <summary>
         /// Generates a SignedCMS object for some content.
         /// </summary>
@@ -588,7 +588,7 @@ namespace Test.Utility.Signing
                 first.RepositoryCountersignatureVerificationBehavior == second.RepositoryCountersignatureVerificationBehavior;
         }
 
-#if IS_DESKTOP
+#if IS_SIGNING_SUPPORTED
         public static DisposableList<IDisposable> RegisterDefaultResponders(
             this ISigningTestServer testServer,
             TimestampService timestampService)
