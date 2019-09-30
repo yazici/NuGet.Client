@@ -16,16 +16,18 @@ using FluentAssertions;
 using NuGet.Common;
 using NuGet.Packaging.Signing;
 using NuGet.Test.Utility;
+using Org.BouncyCastle.Asn1;
 using Test.Utility.Signing;
 using Xunit;
+using BcAccuracy = Org.BouncyCastle.Asn1.Tsp.Accuracy;
 
 namespace NuGet.Packaging.FuncTest
 {
     [Collection(SigningTestCollection.Name)]
     public class TimestampProviderTests
     {
-        private const string _argumentNullExceptionMessage = "Value cannot be null.\r\nParameter name: {0}";
-        private const string _operationCancelledExceptionMessage = "The operation was canceled.";
+        private const string ArgumentNullExceptionMessage = "Value cannot be null.\r\nParameter name: {0}";
+        private const string OperationCancelledExceptionMessage = "The operation was canceled.";
 
         private SigningTestFixture _testFixture;
         private TrustedTestCert<TestCertificate> _trustedTestCert;
@@ -37,7 +39,7 @@ namespace NuGet.Packaging.FuncTest
         }
 
         [CIOnlyFact]
-        public async Task GetTimestamp_WithValidInput_ReturnsTimestampAsync()
+        public async Task GetTimestamp_WithValidInput_ReturnsTimestamp()
         {
             var logger = new TestLogger();
             var timestampService = await _testFixture.GetDefaultTrustedTimestampServiceAsync();
@@ -70,7 +72,7 @@ namespace NuGet.Packaging.FuncTest
         }
 
         [CIOnlyFact]
-        public async Task GetTimestamp_AssertCompleteChain_SuccessAsync()
+        public async Task GetTimestamp_AssertCompleteChain_Success()
         {
             var timestampService = await _testFixture.GetDefaultTrustedTimestampServiceAsync();
             var timestampProvider = new Rfc3161TimestampProvider(timestampService.Url);
@@ -129,7 +131,7 @@ namespace NuGet.Packaging.FuncTest
         }
 
         [CIOnlyFact]
-        public async Task GetTimestamp_WhenRequestNull_ThrowsAsync()
+        public async Task GetTimestamp_WhenRequestNull_Throws()
         {
             var logger = new TestLogger();
             var timestampService = await _testFixture.GetDefaultTrustedTimestampServiceAsync();
@@ -162,12 +164,12 @@ namespace NuGet.Packaging.FuncTest
 
                 // Assert
                 timestampAction.ShouldThrow<ArgumentNullException>()
-                    .WithMessage(string.Format(_argumentNullExceptionMessage, nameof(request)));
+                    .WithMessage(string.Format(ArgumentNullExceptionMessage, nameof(request)));
             }
         }
 
         [CIOnlyFact]
-        public async Task GetTimestamp_WhenLoggerNull_ThrowsAsync()
+        public async Task GetTimestamp_WhenLoggerNull_Throws()
         {
             var timestampService = await _testFixture.GetDefaultTrustedTimestampServiceAsync();
             var timestampProvider = new Rfc3161TimestampProvider(timestampService.Url);
@@ -193,12 +195,12 @@ namespace NuGet.Packaging.FuncTest
 
                 // Assert
                 timestampAction.ShouldThrow<ArgumentNullException>()
-                    .WithMessage(string.Format(_argumentNullExceptionMessage, "logger"));
+                    .WithMessage(string.Format(ArgumentNullExceptionMessage, "logger"));
             }
         }
 
         [CIOnlyFact]
-        public async Task GetTimestamp_WhenCancelled_ThrowsAsync()
+        public async Task GetTimestamp_WhenCancelled_Throws()
         {
             var logger = new TestLogger();
             var timestampService = await _testFixture.GetDefaultTrustedTimestampServiceAsync();
@@ -225,12 +227,12 @@ namespace NuGet.Packaging.FuncTest
 
                 // Assert
                 timestampAction.ShouldThrow<OperationCanceledException>()
-                    .WithMessage(_operationCancelledExceptionMessage);
+                    .WithMessage(OperationCancelledExceptionMessage);
             }
         }
 
         [CIOnlyFact]
-        public async Task GetTimestamp_WhenRevocationInformationUnavailable_SuccessAsync()
+        public async Task GetTimestamp_WhenRevocationInformationUnavailable_Success()
         {
             var testServer = await _testFixture.GetSigningTestServerAsync();
             var ca = await _testFixture.GetDefaultTrustedCertificateAuthorityAsync();
@@ -260,7 +262,7 @@ namespace NuGet.Packaging.FuncTest
         }
 
         [CIOnlyFact]
-        public async Task GetTimestamp_WhenTimestampSigningCertificateRevoked_ThrowsAsync()
+        public async Task GetTimestamp_WhenTimestampSigningCertificateRevoked_Throws()
         {
             var testServer = await _testFixture.GetSigningTestServerAsync();
             var certificateAuthority = await _testFixture.GetDefaultTrustedCertificateAuthorityAsync();
@@ -284,7 +286,7 @@ namespace NuGet.Packaging.FuncTest
         }
 
         [CIOnlyFact]
-        public async Task GetTimestamp_WithFailureReponse_ThrowsAsync()
+        public async Task GetTimestamp_WithFailureReponse_Throws()
         {
             var testServer = await _testFixture.GetSigningTestServerAsync();
             var certificateAuthority = await _testFixture.GetDefaultTrustedCertificateAuthorityAsync();
@@ -306,7 +308,7 @@ namespace NuGet.Packaging.FuncTest
         }
 
         [CIOnlyFact]
-        public async Task GetTimestamp_WhenSigningCertificateNotReturned_ThrowsAsync()
+        public async Task GetTimestamp_WhenSigningCertificateNotReturned_Throws()
         {
             var testServer = await _testFixture.GetSigningTestServerAsync();
             var certificateAuthority = await _testFixture.GetDefaultTrustedCertificateAuthorityAsync();
@@ -326,7 +328,7 @@ namespace NuGet.Packaging.FuncTest
         }
 
         [CIOnlyFact]
-        public async Task GetTimestamp_WhenSignatureHashAlgorithmIsSha1_ThrowsAsync()
+        public async Task GetTimestamp_WhenSignatureHashAlgorithmIsSha1_Throws()
         {
             var testServer = await _testFixture.GetSigningTestServerAsync();
             var certificateAuthority = await _testFixture.GetDefaultTrustedCertificateAuthorityAsync();
@@ -348,7 +350,7 @@ namespace NuGet.Packaging.FuncTest
         }
 
         [CIOnlyFact]
-        public async Task GetTimestamp_WhenCertificateSignatureAlgorithmIsSha1_ThrowsAsync()
+        public async Task GetTimestamp_WhenCertificateSignatureAlgorithmIsSha1_Throws()
         {
             var testServer = await _testFixture.GetSigningTestServerAsync();
             var certificateAuthority = await _testFixture.GetDefaultTrustedCertificateAuthorityAsync();
@@ -373,9 +375,8 @@ namespace NuGet.Packaging.FuncTest
         }
 
         [CIOnlyFact]
-        public async Task GetTimestamp_TimestampGeneralizedTimeOutsideCertificateValidityPeriod_FailAsync()
+        public async Task GetTimestamp_TimestampGeneralizedTimeOutsideCertificateValidityPeriod_Throws()
         {
-            // Arrange
             var testServer = await _testFixture.GetSigningTestServerAsync();
             var certificateAuthority = await _testFixture.GetDefaultTrustedCertificateAuthorityAsync();
             var options = new TimestampServiceOptions()
@@ -403,7 +404,161 @@ namespace NuGet.Packaging.FuncTest
         }
 
         [CIOnlyFact]
-        public async Task TimestampSignatureAsync_TimestampingPrimarySignature_SuccedsAsync()
+        public async Task GetTimestamp_WhenGeneralizedTimeWithAccuracyIsBeforeCertificateNotBefore_Throws()
+        {
+            var testServer = await _testFixture.GetSigningTestServerAsync();
+            var certificateAuthority = await _testFixture.GetDefaultTrustedCertificateAuthorityAsync();
+            var notBefore = DateTimeOffset.UtcNow.AddHours(-1);
+            var notAfter = notBefore.AddHours(2);
+            var options = new TimestampServiceOptions()
+            {
+                IssuedCertificateNotBefore = notBefore,
+                IssuedCertificateNotAfter = notAfter,
+                GeneralizedTime = notBefore.AddSeconds(1),
+                Accuracy = new BcAccuracy(seconds: new DerInteger(2), micros: null, millis: null)
+            };
+
+            var timestampService = TimestampService.Create(certificateAuthority, options);
+
+            VerifyTimestampData(
+                testServer,
+                timestampService,
+                (timestampProvider, request) =>
+                {
+                    var exception = Assert.Throws<TimestampException>(
+                          () => timestampProvider.GetTimestamp(request, NullLogger.Instance, CancellationToken.None));
+
+                    Assert.Equal(NuGetLogCode.NU3036, exception.Code);
+                    Assert.Contains(
+                        "The timestamp's generalized time is outside the timestamping certificate's validity period.",
+                        exception.Message);
+                });
+        }
+
+        [CIOnlyFact]
+        public async Task GetTimestamp_WhenGeneralizedTimeWithAccuracyIsAfterCertificateNotAfter_Throws()
+        {
+            var testServer = await _testFixture.GetSigningTestServerAsync();
+            var certificateAuthority = await _testFixture.GetDefaultTrustedCertificateAuthorityAsync();
+            var notBefore = DateTimeOffset.UtcNow.AddHours(-1);
+            var notAfter = notBefore.AddHours(2);
+            var options = new TimestampServiceOptions()
+            {
+                IssuedCertificateNotBefore = notBefore,
+                IssuedCertificateNotAfter = notAfter,
+                GeneralizedTime = notAfter.AddSeconds(-1),
+                Accuracy = new BcAccuracy(seconds: new DerInteger(2), micros: null, millis: null)
+            };
+
+            var timestampService = TimestampService.Create(certificateAuthority, options);
+
+            VerifyTimestampData(
+                testServer,
+                timestampService,
+                (timestampProvider, request) =>
+                {
+                    var exception = Assert.Throws<TimestampException>(
+                          () => timestampProvider.GetTimestamp(request, NullLogger.Instance, CancellationToken.None));
+
+                    Assert.Equal(NuGetLogCode.NU3036, exception.Code);
+                    Assert.Contains(
+                        "The timestamp's generalized time is outside the timestamping certificate's validity period.",
+                        exception.Message);
+                });
+        }
+
+        [CIOnlyFact]
+        public async Task GetTimestamp_WhenGeneralizedTimeWithAccuracyIsOnCertificateNotBefore_Succeeds()
+        {
+            var testServer = await _testFixture.GetSigningTestServerAsync();
+            var certificateAuthority = await _testFixture.GetDefaultTrustedCertificateAuthorityAsync();
+            var notBefore = DateTimeOffset.UtcNow.AddHours(-1);
+            var notAfter = notBefore.AddHours(2);
+            var options = new TimestampServiceOptions()
+            {
+                IssuedCertificateNotBefore = notBefore,
+                IssuedCertificateNotAfter = notAfter,
+                GeneralizedTime = notBefore.AddSeconds(1),
+                Accuracy = new BcAccuracy(seconds: new DerInteger(1), micros: null, millis: null)
+            };
+
+            var timestampService = TimestampService.Create(certificateAuthority, options);
+
+            VerifyTimestampData(
+                testServer,
+                timestampService,
+                (timestampProvider, request) =>
+                {
+                    SignedCms timestampCms = timestampProvider.GetTimestamp(request, NullLogger.Instance, CancellationToken.None);
+
+                    Assert.NotNull(timestampCms);
+
+                    timestampCms.CheckSignature(verifySignatureOnly: false);
+                });
+        }
+
+        [CIOnlyFact]
+        public async Task GetTimestamp_WhenGeneralizedTimeWithAccuracyIsOnCertificateNotAfter_Succeeds()
+        {
+            var testServer = await _testFixture.GetSigningTestServerAsync();
+            var certificateAuthority = await _testFixture.GetDefaultTrustedCertificateAuthorityAsync();
+            var notBefore = DateTimeOffset.UtcNow.AddHours(-1);
+            var notAfter = notBefore.AddHours(2);
+            var options = new TimestampServiceOptions()
+            {
+                IssuedCertificateNotBefore = notBefore,
+                IssuedCertificateNotAfter = notAfter,
+                GeneralizedTime = notAfter.AddSeconds(-1),
+                Accuracy = new BcAccuracy(seconds: new DerInteger(1), micros: null, millis: null)
+            };
+
+            var timestampService = TimestampService.Create(certificateAuthority, options);
+
+            VerifyTimestampData(
+                testServer,
+                timestampService,
+                (timestampProvider, request) =>
+                {
+                    SignedCms timestampCms = timestampProvider.GetTimestamp(request, NullLogger.Instance, CancellationToken.None);
+
+                    Assert.NotNull(timestampCms);
+
+                    timestampCms.CheckSignature(verifySignatureOnly: false);
+                });
+        }
+
+        [CIOnlyFact]
+        public async Task GetTimestamp_WhenGeneralizedTimeWithAccuracyIsInsideCertificateValidityPeriod_Succeeds()
+        {
+            var testServer = await _testFixture.GetSigningTestServerAsync();
+            var certificateAuthority = await _testFixture.GetDefaultTrustedCertificateAuthorityAsync();
+            var notBefore = DateTimeOffset.UtcNow.AddHours(-1);
+            var notAfter = notBefore.AddHours(2);
+            var options = new TimestampServiceOptions()
+            {
+                IssuedCertificateNotBefore = notBefore,
+                IssuedCertificateNotAfter = notAfter,
+                GeneralizedTime = notBefore.AddHours(1),
+                Accuracy = new BcAccuracy(seconds: new DerInteger(1), micros: null, millis: null)
+            };
+
+            var timestampService = TimestampService.Create(certificateAuthority, options);
+
+            VerifyTimestampData(
+                testServer,
+                timestampService,
+                (timestampProvider, request) =>
+                {
+                    SignedCms timestampCms = timestampProvider.GetTimestamp(request, NullLogger.Instance, CancellationToken.None);
+
+                    Assert.NotNull(timestampCms);
+
+                    timestampCms.CheckSignature(verifySignatureOnly: false);
+                });
+        }
+
+        [CIOnlyFact]
+        public async Task TimestampSignatureAsync_TimestampingPrimarySignature_Succeeds()
         {
             var logger = new TestLogger();
             var timestampService = await _testFixture.GetDefaultTrustedTimestampServiceAsync();
@@ -451,7 +606,7 @@ namespace NuGet.Packaging.FuncTest
         }
 
         [CIOnlyFact]
-        public async Task TimestampSignatureAsync_TimestampingCountersignature_SucceedsAsync()
+        public async Task TimestampSignatureAsync_TimestampingCountersignature_Succeeds()
         {
             var logger = new TestLogger();
             var timestampService = await _testFixture.GetDefaultTrustedTimestampServiceAsync();

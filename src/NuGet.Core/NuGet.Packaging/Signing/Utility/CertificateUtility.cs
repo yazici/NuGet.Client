@@ -14,7 +14,7 @@ namespace NuGet.Packaging.Signing
 {
     public static class CertificateUtility
     {
-        private const int _limit = 10;
+        private const int CertificateChainLengthLimit = 10;
 
         /// <summary>
         /// Converts a X509Certificate2 to a human friendly string of the following format -
@@ -67,16 +67,16 @@ namespace NuGet.Packaging.Signing
 
             collectionStringBuilder.AppendLine(Strings.CertUtilityMultipleCertificatesHeader);
 
-            for (var i = 0; i < Math.Min(_limit, certCollection.Count); i++)
+            for (var i = 0; i < Math.Min(CertificateChainLengthLimit, certCollection.Count); i++)
             {
                 var cert = certCollection[i];
                 X509Certificate2ToString(cert, collectionStringBuilder, fingerprintAlgorithm, indentation: "  ");
                 collectionStringBuilder.AppendLine();
             }
 
-            if (certCollection.Count > _limit)
+            if (certCollection.Count > CertificateChainLengthLimit)
             {
-                collectionStringBuilder.AppendLine(string.Format(Strings.CertUtilityMultipleCertificatesFooter, certCollection.Count - _limit));
+                collectionStringBuilder.AppendLine(string.Format(Strings.CertUtilityMultipleCertificatesFooter, certCollection.Count - CertificateChainLengthLimit));
             }
 
             return collectionStringBuilder.ToString();
@@ -90,16 +90,16 @@ namespace NuGet.Packaging.Signing
 
             var chainElementsCount = chain.ChainElements.Count;
             // Start in 1 to omit main certificate (only build the chain)
-            for (var i = 1; i < Math.Min(_limit, chainElementsCount); i++)
+            for (var i = 1; i < Math.Min(CertificateChainLengthLimit, chainElementsCount); i++)
             {
                 X509Certificate2ToString(chain.ChainElements[i].Certificate, collectionStringBuilder, fingerprintAlgorithm, indentation);
                 collectionStringBuilder.AppendLine();
                 indentation += indentationLevel;
             }
 
-            if (chainElementsCount > _limit)
+            if (chainElementsCount > CertificateChainLengthLimit)
             {
-                collectionStringBuilder.AppendLine(string.Format(Strings.CertUtilityMultipleCertificatesFooter, chainElementsCount - _limit));
+                collectionStringBuilder.AppendLine(string.Format(Strings.CertUtilityMultipleCertificatesFooter, chainElementsCount - CertificateChainLengthLimit));
             }
 
             return collectionStringBuilder.ToString();
@@ -222,14 +222,6 @@ namespace NuGet.Packaging.Signing
         public static bool IsCertificateValidityPeriodInTheFuture(X509Certificate2 certificate)
         {
             return DateTime.Now < certificate.NotBefore;
-        }
-
-        public static bool IsDateInsideValidityPeriod(X509Certificate2 certificate, DateTimeOffset date)
-        {
-            DateTimeOffset signerCertExpiry = DateTime.SpecifyKind(certificate.NotAfter, DateTimeKind.Local);
-            DateTimeOffset signerCertBegin = DateTime.SpecifyKind(certificate.NotBefore, DateTimeKind.Local);
-
-            return signerCertBegin <= date && date < signerCertExpiry;
         }
 
         /// <summary>

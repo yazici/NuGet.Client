@@ -309,7 +309,7 @@ namespace NuGet.Packaging.Signing
                                 string.Join(", ", chainStatuses.Select(x => x.Status.ToString())))));
                     }
 
-                    var isSignatureTimeValid = Rfc3161TimestampVerificationUtility.ValidateSignerCertificateAgainstTimestamp(certificate, timestamp);
+                    var isSignatureTimeValid = Rfc3161TimestampVerificationUtility.IsTimestampInValidityPeriod(certificate, timestamp);
                     if (isSignatureTimeValid && !chainBuildingHasIssues)
                     {
                         return new SignatureVerificationSummary(Type, SignatureVerificationStatus.Valid, flags, timestamp, issues);

@@ -26,7 +26,7 @@ namespace NuGet.Packaging.Signing
     {
         // Url to an RFC 3161 timestamp server
         private readonly Uri _timestamperUrl;
-        private const int _rfc3161RequestTimeoutSeconds = 10;
+        private const int Rfc3161RequestTimeoutSeconds = 10;
 
         public Rfc3161TimestampProvider(Uri timeStampServerUrl)
         {
@@ -97,7 +97,7 @@ namespace NuGet.Packaging.Signing
             // The response status need not be checked here as lower level api will throw if the response is invalid
             var timestampToken = rfc3161TimestampRequest.SubmitRequest(
                 _timestamperUrl,
-                TimeSpan.FromSeconds(_rfc3161RequestTimeoutSeconds));
+                TimeSpan.FromSeconds(Rfc3161RequestTimeoutSeconds));
 
             // quick check for response validity
             ValidateTimestampResponse(nonce, request.HashedMessage, timestampToken);
@@ -197,7 +197,7 @@ namespace NuGet.Packaging.Signing
                 throw new TimestampException(NuGetLogCode.NU3025, Strings.SignError_TimestampNotYetValid);
             }
 
-            if (!CertificateUtility.IsDateInsideValidityPeriod(signerInfo.Certificate, timestampToken.TokenInfo.Timestamp))
+            if (!Rfc3161TimestampVerificationUtility.IsTimestampInValidityPeriod(signerInfo.Certificate, timestampToken.TokenInfo))
             {
                 throw new TimestampException(NuGetLogCode.NU3036, Strings.SignError_TimestampGeneralizedTimeInvalid);
             }

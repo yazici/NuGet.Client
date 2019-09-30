@@ -12,6 +12,7 @@ namespace Test.Utility.Signing
     public sealed class TimestampServiceOptions
     {
         public BcAccuracy Accuracy { get; set; }
+        public bool EnsureAccuracyWithinValidityPeriod { get; set; }
         public Oid Policy { get; set; }
         public bool ReturnFailure { get; set; }
         public bool ReturnSigningCertificate { get; set; }

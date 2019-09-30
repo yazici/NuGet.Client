@@ -156,7 +156,7 @@ namespace NuGet.Packaging.Signing
                         {
                             if (IsSignatureExpired(primarySummary) &&
                                 countersignatureSummary.Timestamp != null &&
-                                Rfc3161TimestampVerificationUtility.ValidateSignerCertificateAgainstTimestamp(signature.SignerInfo.Certificate, countersignatureSummary.Timestamp))
+                                Rfc3161TimestampVerificationUtility.IsTimestampInValidityPeriod(signature.SignerInfo.Certificate, countersignatureSummary.Timestamp))
                             {
                                 // Exclude the issue of the primary signature being expired since the repository countersignature fulfills the role of a trusted timestamp.
                                 issues = issues.Where(log => log.Code != NuGetLogCode.NU3037);

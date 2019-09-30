@@ -13,23 +13,38 @@ using System.Security.Cryptography.X509Certificates;
 namespace NuGet.Packaging.Signing
 {
     /// <summary>
-    /// Provides convinience method for verification of a RFC 3161 Timestamp.
+    /// Provides convenience methods for verification of a RFC 3161 timestamp.
     /// </summary>
     internal static class Rfc3161TimestampVerificationUtility
     {
-        private const double _millisecondsPerMicrosecond = 0.001;
+        private const double MillisecondsPerMicrosecond = 0.001;
 
 #if IS_DESKTOP
 
-        internal static bool ValidateSignerCertificateAgainstTimestamp(
-            X509Certificate2 signerCertificate,
-            Timestamp timestamp)
+        internal static bool IsTimestampInValidityPeriod(X509Certificate2 certificate, Timestamp timestamp)
         {
-            DateTimeOffset signerCertExpiry = DateTime.SpecifyKind(signerCertificate.NotAfter, DateTimeKind.Local);
-            DateTimeOffset signerCertBegin = DateTime.SpecifyKind(signerCertificate.NotBefore, DateTimeKind.Local);
+            return IsTimestampInValidityPeriod(certificate, timestamp.LowerLimit, timestamp.UpperLimit);
+        }
 
-            return timestamp.UpperLimit < signerCertExpiry &&
-                timestamp.LowerLimit > signerCertBegin;
+        internal static bool IsTimestampInValidityPeriod(X509Certificate2 certificate, Rfc3161TimestampTokenInfo tstInfo)
+        {
+            double accuracyInMilliseconds = GetAccuracyInMilliseconds(tstInfo);
+
+            var lowerLimit = tstInfo.Timestamp.AddMilliseconds(-accuracyInMilliseconds);
+            var upperLimit = tstInfo.Timestamp.AddMilliseconds(accuracyInMilliseconds);
+
+            return IsTimestampInValidityPeriod(certificate, lowerLimit, upperLimit);
+        }
+
+        internal static bool IsTimestampInValidityPeriod(
+            X509Certificate2 certificate,
+            DateTimeOffset lowerLimit,
+            DateTimeOffset upperLimit)
+        {
+            DateTimeOffset notAfter = DateTime.SpecifyKind(certificate.NotAfter, DateTimeKind.Local);
+            DateTimeOffset notBefore = DateTime.SpecifyKind(certificate.NotBefore, DateTimeKind.Local);
+
+            return upperLimit <= notAfter && lowerLimit >= notBefore;
         }
 
         internal static bool TryReadTSTInfoFromSignedCms(
@@ -63,7 +78,7 @@ namespace NuGet.Packaging.Signing
             }
             else
             {
-                accuracyInMilliseconds = tstInfo.AccuracyInMicroseconds.Value * _millisecondsPerMicrosecond;
+                accuracyInMilliseconds = tstInfo.AccuracyInMicroseconds.Value * MillisecondsPerMicrosecond;
             }
 
             if (accuracyInMilliseconds < 0)

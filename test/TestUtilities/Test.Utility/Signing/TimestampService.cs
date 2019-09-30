@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Net;
 using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.Asn1.Cmp;
+using Org.BouncyCastle.Asn1.Tsp;
 using Org.BouncyCastle.Asn1.X509;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Math;
@@ -68,7 +69,10 @@ namespace Test.Utility.Signing
                 throw new ArgumentNullException(nameof(certificateAuthority));
             }
 
-            serviceOptions = serviceOptions ?? new TimestampServiceOptions();
+            serviceOptions = serviceOptions ?? new TimestampServiceOptions()
+            {
+                EnsureAccuracyWithinValidityPeriod = true
+            };
 
             if (issueCertificateOptions == null)
             {
@@ -193,23 +197,87 @@ namespace Test.Utility.Signing
 
         private void SetAccuracy(TimeStampTokenGenerator tokenGenerator)
         {
-            if (_options.Accuracy != null)
+            Accuracy accuracy = GetAccuracy();
+
+            if (accuracy != null)
             {
-                if (_options.Accuracy.Seconds != null)
+                if (accuracy.Seconds != null)
                 {
-                    tokenGenerator.SetAccuracySeconds(_options.Accuracy.Seconds.Value.IntValue);
+                    tokenGenerator.SetAccuracySeconds(accuracy.Seconds.Value.IntValue);
                 }
 
-                if (_options.Accuracy.Millis != null)
+                if (accuracy.Millis != null)
                 {
-                    tokenGenerator.SetAccuracyMillis(_options.Accuracy.Millis.Value.IntValue);
+                    tokenGenerator.SetAccuracyMillis(accuracy.Millis.Value.IntValue);
                 }
 
-                if (_options.Accuracy.Micros != null)
+                if (accuracy.Micros != null)
                 {
-                    tokenGenerator.SetAccuracyMicros(_options.Accuracy.Micros.Value.IntValue);
+                    tokenGenerator.SetAccuracyMicros(accuracy.Micros.Value.IntValue);
                 }
             }
+        }
+
+        private Accuracy GetAccuracy()
+        {
+            if (_options.Accuracy == null)
+            {
+                return null;
+            }
+
+            if (!_options.EnsureAccuracyWithinValidityPeriod)
+            {
+                return _options.Accuracy;
+            }
+
+            // It is possible that in the default test timestamping scenario where the accuracy is 1-second and the
+            // test's goal is not to test accuracy's impact on generalized time's relation to a certificate's
+            // NotBefore and NotAfter boundaries that the timestamping service issues a timestamp in less than 1 second
+            // after the timestamp service's NotBefore time.  This would mean that a timestamp could have been issued
+            // before the certificate was valid and unexpectedly fail a test.
+            // To fix this race condition, we'll improve the accuracy --- make the value smaller --- to ensure that the
+            // timestamp is valid.
+
+            int desiredSeconds = 0;
+            int desiredMillis = 0;
+
+            if (_options.Accuracy.Seconds != null)
+            {
+                desiredSeconds = _options.Accuracy.Seconds.Value.IntValue;
+            }
+
+            if (_options.Accuracy.Millis != null)
+            {
+                desiredMillis = _options.Accuracy.Millis.Value.IntValue;
+            }
+
+            if (_options.Accuracy.Micros != null && _options.Accuracy.Micros.Value.IntValue > 0)
+            {
+                // Since microsecond support is not guaranteed cross-platform,
+                // simplify by rounding up to the nearest millisecond.
+                if (desiredMillis == 999)
+                {
+                    desiredMillis = 0;
+                    ++desiredSeconds;
+                }
+                else
+                {
+                    ++desiredMillis;
+                }
+            }
+
+            double desiredAccuracy = desiredSeconds + desiredMillis / 1000d;
+            TimeSpan sinceNotBefore = DateTime.UtcNow - Certificate.NotBefore;
+
+            if (sinceNotBefore.TotalSeconds < desiredAccuracy)
+            {
+                var seconds = new DerInteger(sinceNotBefore.Seconds);
+                DerInteger milliseconds = sinceNotBefore.Milliseconds == 0 ? null : new DerInteger(sinceNotBefore.Milliseconds);
+
+                return new Accuracy(seconds, milliseconds, micros: null);
+            }
+
+            return _options.Accuracy;
         }
 #endif
     }

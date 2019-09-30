@@ -173,7 +173,7 @@ namespace NuGet.Packaging.Signing
                     validationFlags |= SignatureVerificationStatusFlags.CertificateValidityInTheFuture;
                 }
 
-                if (!CertificateUtility.IsDateInsideValidityPeriod(signerInfo.Certificate, timestamp.GeneralizedTime))
+                if (!Rfc3161TimestampVerificationUtility.IsTimestampInValidityPeriod(signerInfo.Certificate, timestamp))
                 {
                     issues.Add(SignatureLog.Issue(treatIssuesAsErrors, NuGetLogCode.NU3036, string.Format(CultureInfo.CurrentCulture, Strings.VerifyError_TimestampGeneralizedTimeInvalid, signature.FriendlyName)));
                     validationFlags |= SignatureVerificationStatusFlags.GeneralizedTimeOutsideValidity;
