@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
@@ -190,6 +191,44 @@ namespace NuGet.Packaging.Signing
             var buildSuccess = chain.Build(certificate);
             status = new X509ChainStatus[chain.ChainStatus.Length];
             chain.ChainStatus.CopyTo(status, 0);
+
+            var elements = new StringBuilder();
+            elements.AppendLine("   ");
+            elements.AppendLine("   ");
+            elements.AppendLine($"Revocation flag:  {chain.ChainPolicy.RevocationFlag}");
+            elements.AppendLine("chain building results are as following: ");
+            elements.AppendLine("certificate.Subject is : " + certificate.Subject);
+            elements.AppendLine("certificate.FriendlyName is : " + certificate.FriendlyName);
+            int i = 0;
+            foreach (var chainElement in chain.ChainElements)
+            {
+
+                var filePath = Path.GetFullPath(Path.Combine(".", $"{i}.cer"));
+                var file = new FileInfo(filePath);
+
+                File.WriteAllBytes(file.FullName, chainElement.Certificate.RawData);
+
+                elements.AppendLine($"=================   The ({i}) th certificate is   :=================");
+                elements.AppendLine($"File path:  {file.FullName}");
+                elements.AppendLine($"chainElement.Certificate.Subject : ({chainElement.Certificate.Subject})");
+                elements.AppendLine($"chainElement.Certificate.Thumbprint : ({chainElement.Certificate.Thumbprint})");
+                elements.AppendLine($"chainElement.Certificate.isvalid : ({chainElement.Certificate.Verify()})");
+                elements.AppendLine($"    --------   The chainElementStatus are : -------");
+                foreach (var chainElementStatus in chainElement.ChainElementStatus)
+                {
+                    elements.AppendLine($"  status : ({chainElementStatus.Status.ToString()})");
+                    elements.AppendLine($"  info: ({chainElementStatus.StatusInformation})");
+                }
+                i++;
+            }
+            Console.WriteLine(elements.ToString());
+            Console.WriteLine("The CA servers are running, you may start another session to test ..");
+            Console.ReadLine();
+            //if (!buildSuccess)
+            //{
+            //    throw new Exception(elements.ToString());
+            //}
+
 
 
 

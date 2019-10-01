@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp3.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\NuGet.Core\NuGet.Common\NuGet.Common.csproj" />
+    <ProjectReference Include="..\..\..\src\NuGet.Core\NuGet.Packaging\NuGet.Packaging.csproj" />
+    <ProjectReference Include="..\..\TestUtilities\Test.Utility\Test.Utility.csproj" />
+    <ProjectReference Include="..\NuGet.Packaging.FuncTest\NuGet.Packaging.FuncTest.csproj" />
+  </ItemGroup>
+  <!--
+    ==========================================================================================
+    Temporary Workaround Target related to issue https://github.com/dotnet/cli/issues/11378
+    ==========================================================================================
+  -->
+  <Target Name="WorkaroundNetStandard" AfterTargets="ResolvePackageAssets" Condition=" '$(TargetFramework)' == 'netcoreapp3.0' ">
+    <ItemGroup>
+      <TransitiveFrameworkReference Remove="NETStandard.Library" />
+    </ItemGroup>
+  </Target>
+
+</Project>

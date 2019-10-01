@@ -123,6 +123,14 @@ namespace Test.Utility.Signing
                         X509Extensions.BasicConstraints,
                         critical: true,
                         extensionValue: new BasicConstraints(cA: true));
+
+                    // dtivel:  we should probably add this
+                    /*
+                    generator.AddExtension(
+                        X509Extensions.KeyUsage,
+                        critical: true,
+                        extensionValue: new KeyUsage(KeyUsage.DigitalSignature | KeyUsage.KeyCertSign | KeyUsage.CrlSign));
+                        */
                 };
 
             var certificate = IssueCertificate(options, customizeCertificate);
@@ -231,6 +239,7 @@ namespace Test.Utility.Signing
 
                 if (!_revokedCertificates.TryGetValue(certificateId.SerialNumber, out revocationInfo))
                 {
+                    Console.WriteLine($"   certificateStatus : Good");
                     return CertificateStatus.Good;
                 }
 
@@ -241,10 +250,10 @@ namespace Test.Utility.Signing
                 var revocationDate = new DerGeneralizedTime(datetimeString);
                 var reason = new CrlReason((int)revocationInfo.Reason);
                 var revokedInfo = new RevokedInfo(revocationDate, reason);
-
+                Console.WriteLine($"   certificateStatus : Revoked");
                 return new RevokedStatus(revokedInfo);
             }
-
+            Console.WriteLine($"   certificateStatus : unknown");
             return new UnknownStatus();
         }
 

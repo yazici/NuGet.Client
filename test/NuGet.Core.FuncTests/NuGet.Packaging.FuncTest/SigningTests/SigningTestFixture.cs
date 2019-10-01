@@ -200,16 +200,7 @@ namespace NuGet.Packaging.FuncTest
             var rootCa = CertificateAuthority.Create(testServer.Url);
             var intermediateCa = rootCa.CreateIntermediateCertificateAuthority();
             var rootCertificate = new X509Certificate2(rootCa.Certificate.GetEncoded());
-
-            var file1 = new FileInfo(Path.Combine(".", "defaultTrustedRoot.cer"));
-            File.WriteAllBytes(file1.FullName, rootCertificate.RawData);
-
-            var file2 = new FileInfo(Path.Combine(".", "intermediate.cer"));
-            var intermediateCer = new X509Certificate2(intermediateCa.Certificate.GetEncoded());
-            File.WriteAllBytes(file2.FullName, intermediateCer.RawData);
-            certFoldername = file1.FullName;
-
-
+                       
             //TODO: how about other runtime environment?
             _trustedServerRoot = TrustedTestCert.Create(
                 rootCertificate,

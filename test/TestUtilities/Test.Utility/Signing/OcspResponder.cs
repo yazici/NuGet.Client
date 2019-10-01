@@ -59,6 +59,7 @@ namespace Test.Utility.Signing
 
             var bytes = GetOcspRequest(context);
 
+                      
             if (bytes == null)
             {
                 context.Response.StatusCode = 400;
@@ -67,11 +68,17 @@ namespace Test.Utility.Signing
             }
 
             var ocspReq = new OcspReq(bytes);
-            Console.WriteLine(System.Text.Encoding.UTF8.GetString(bytes));
+
+            Console.WriteLine("   ");
+            Console.WriteLine("CertificateAuthority is : " + CertificateAuthority.Certificate.SubjectDN);
+            //Console.WriteLine(System.Text.Encoding.UTF8.GetString(bytes));
+
             var respId = new RespID(CertificateAuthority.Certificate.SubjectDN);
             var basicOcspRespGenerator = new BasicOcspRespGenerator(respId);
             var requests = ocspReq.GetRequestList();
+            Console.WriteLine(requests.Length + " OCSP respond(s) is sent.. " );
             var nonce = ocspReq.GetExtensionValue(OcspObjectIdentifiers.PkixOcspNonce);
+
 
             if (nonce != null)
             {
@@ -81,37 +88,59 @@ namespace Test.Utility.Signing
                 });
 
                 basicOcspRespGenerator.SetResponseExtensions(extensions);
+                Console.WriteLine($"   nonce is {nonce.ToString()}");
+            }
+            else
+            {
+                Console.WriteLine($"   nonce is null ");
             }
 
             var now = DateTimeOffset.UtcNow;
-
+            
             foreach (var request in requests)
             {
                 var certificateId = request.GetCertID();
-                var certificateStatus = CertificateAuthority.GetStatus(certificateId);
-                var thisUpdate = _options.ThisUpdate ?? now;
-                var nextUpdate = _options.NextUpdate ?? now.AddSeconds(1);
-
-                _responses.AddOrUpdate(certificateId.SerialNumber.ToString(), nextUpdate, (key, currentNextUpdate) =>
+            
+                try
                 {
-                    if (nextUpdate > currentNextUpdate)
+                    if (CertificateAuthority != null)
                     {
-                        return nextUpdate;
+                        var certificateStatus = CertificateAuthority.GetStatus(certificateId);
+
+                        var thisUpdate = _options.ThisUpdate ?? now;
+                        var nextUpdate = _options.NextUpdate ?? now.AddSeconds(1);
+
+                        _responses.AddOrUpdate(certificateId.SerialNumber.ToString(), nextUpdate, (key, currentNextUpdate) =>
+                        {
+                            if (nextUpdate > currentNextUpdate)
+                            {
+                                return nextUpdate;
+                            }
+
+                            return currentNextUpdate;
+                        });
+                        Console.WriteLine($"   certificateId is : {certificateId.ToString()} ");
+                        Console.WriteLine($"   this Update is : {thisUpdate.UtcDateTime.ToString()} ");
+                        Console.WriteLine($"   next Update is : {nextUpdate.UtcDateTime.ToString()} ");
+                        basicOcspRespGenerator.AddResponse(certificateId, certificateStatus, thisUpdate.UtcDateTime, nextUpdate.UtcDateTime, singleExtensions: null);
                     }
-
-                    return currentNextUpdate;
-                });
-
-                basicOcspRespGenerator.AddResponse(certificateId, certificateStatus, thisUpdate.UtcDateTime, nextUpdate.UtcDateTime, singleExtensions: null);
+                    
+                }
+                catch (Exception e)
+                {
+                    throw new Exception(e.Message + " @@ throw exception start from CertificateAuthority.GetStatus");
+                }  
+                
             }
 
             var certificateChain = GetCertificateChain();
+            
             var basicOcspResp = basicOcspRespGenerator.Generate("SHA256WITHRSA", CertificateAuthority.KeyPair.Private, certificateChain, now.UtcDateTime);
             var ocspRespGenerator = new OCSPRespGenerator();
             var ocspResp = ocspRespGenerator.Generate(OCSPRespGenerator.Successful, basicOcspResp);
 
             bytes = ocspResp.GetEncoded();
-
+         
             context.Response.ContentType = ResponseContentType;
 
             WriteResponseBody(context.Response, bytes);
