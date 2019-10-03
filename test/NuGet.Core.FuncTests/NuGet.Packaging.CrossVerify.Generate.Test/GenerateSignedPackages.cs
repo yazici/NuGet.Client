@@ -80,9 +80,6 @@ namespace NuGet.Packaging.CrossVerify.Generate.Test
                 var CertFile = new FileInfo(Path.Combine(certFolder, "A.cer"));
                 var bytes = primaryCertificate.RawData;
                 File.WriteAllBytes(CertFile.FullName, bytes);
-
-                Assert.Equal(Directory.GetFiles(certFolder).Length, 1);
-                Assert.Equal(Directory.GetFiles(packagePath).Length, 1);
             }
         }
 
@@ -113,9 +110,6 @@ namespace NuGet.Packaging.CrossVerify.Generate.Test
                 var CertFile = new FileInfo(Path.Combine(certFolder, "A.cer"));
                 var bytes = primaryCertificate.RawData;
                 File.WriteAllBytes(CertFile.FullName, bytes);
-
-                Assert.Equal(Directory.GetFiles(certFolder).Length, 1);
-                Assert.Equal(Directory.GetFiles(packagePath).Length, 1);
             }
         }
 
@@ -144,9 +138,6 @@ namespace NuGet.Packaging.CrossVerify.Generate.Test
                 var CertFile = new FileInfo(Path.Combine(certFolder, "A.cer"));
                 var bytes = primaryCertificate.RawData;
                 File.WriteAllBytes(CertFile.FullName, bytes);
-
-                Assert.Equal(Directory.GetFiles(certFolder).Length, 1);
-                Assert.Equal(Directory.GetFiles(packagePath).Length, 1);
             }
         }
 
@@ -178,9 +169,6 @@ namespace NuGet.Packaging.CrossVerify.Generate.Test
                 var CertFile = new FileInfo(Path.Combine(certFolder, "A.cer"));
                 var bytes = testCertificate.RawData;
                 File.WriteAllBytes(CertFile.FullName, bytes);
-
-                Assert.Equal(Directory.GetFiles(certFolder).Length, 1);
-                Assert.Equal(Directory.GetFiles(packagePath).Length, 1);
             }
         }
 
@@ -219,22 +207,6 @@ namespace NuGet.Packaging.CrossVerify.Generate.Test
                 var CertFile2 = new FileInfo(Path.Combine(certFolder, "R.cer"));
                 var bytes2 = counterCertificate.RawData;
                 File.WriteAllBytes(CertFile2.FullName, bytes2);
-
-                var sb = new StringBuilder();
-                sb.AppendLine("The cert foler contains following cert files : ");
-                foreach (string cert in Directory.GetFiles(certFolder))
-                {
-                    sb.AppendLine(cert);
-                }
-                try
-                {
-                    Assert.Equal(Directory.GetFiles(certFolder, "*.*", SearchOption.AllDirectories).Length, 2);
-                    Assert.Equal(Directory.GetFiles(packagePath).Length, 1);
-                }
-                catch (Exception e)
-                {
-                    throw new Exception(e.Message + "\n" + sb.ToString());
-                }
             }
         }
    
@@ -278,22 +250,6 @@ namespace NuGet.Packaging.CrossVerify.Generate.Test
                 var CertFile2 = new FileInfo(Path.Combine(certFolder, "R.cer"));
                 var bytes2 = counterCertificate.RawData;
                 File.WriteAllBytes(CertFile2.FullName, bytes2);
-
-                var sb = new StringBuilder();
-                sb.AppendLine("The cert foler contains following cert files : ");
-                foreach (string cert in Directory.GetFiles(certFolder))
-                {
-                    sb.AppendLine(cert);
-                }
-                try
-                {
-                    Assert.Equal(Directory.GetFiles(certFolder, "*.*", SearchOption.AllDirectories).Length, 2);
-                    Assert.Equal(Directory.GetFiles(packagePath).Length, 1);
-                }
-                catch (Exception e)
-                {
-                    throw new Exception(e.Message + "\n" + sb.ToString());
-                }
             }
         }
 
@@ -335,23 +291,6 @@ namespace NuGet.Packaging.CrossVerify.Generate.Test
                 var CertFile2 = new FileInfo(Path.Combine(certFolder, "R.cer"));
                 var bytes2 = counterCertificate.RawData;
                 File.WriteAllBytes(CertFile2.FullName, bytes2);
-
-                var sb = new StringBuilder();
-                sb.AppendLine("The cert foler contains following cert files : ");
-                foreach (string cert in Directory.GetFiles(certFolder))
-                {
-                    sb.AppendLine(cert);
-                }
-                try
-                {
-                    Assert.Equal(Directory.GetFiles(certFolder, "*.*", SearchOption.AllDirectories).Length, 2);
-                    Assert.Equal(Directory.GetFiles(packagePath).Length, 1);
-                }
-                catch (Exception e)
-                {
-                    throw new Exception(e.Message + "\n" + sb.ToString());
-                }
-                
             }
         }
 
@@ -394,22 +333,6 @@ namespace NuGet.Packaging.CrossVerify.Generate.Test
                 var CertFile2 = new FileInfo(Path.Combine(certFolder, "R.cer"));
                 var bytes2 = counterCertificate.RawData;
                 File.WriteAllBytes(CertFile2.FullName, bytes2);
-
-                var sb = new StringBuilder();
-                sb.AppendLine("The cert foler contains following cert files : ");
-                foreach (string cert in Directory.GetFiles(certFolder))
-                {
-                    sb.AppendLine(cert);
-                }
-                try
-                {
-                    Assert.Equal(Directory.GetFiles(certFolder, "*.*", SearchOption.AllDirectories).Length, 2);
-                    Assert.Equal(Directory.GetFiles(packagePath).Length, 1);
-                }
-                catch (Exception e)
-                {
-                    throw new Exception(e.Message + "\n" + sb.ToString());
-                }
             }
         }
 
