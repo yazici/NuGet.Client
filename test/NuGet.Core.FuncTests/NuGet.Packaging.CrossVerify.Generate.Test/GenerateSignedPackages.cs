@@ -19,6 +19,8 @@ using Test.Utility.Signing;
 using Xunit;
 using BcAccuracy = Org.BouncyCastle.Asn1.Tsp.Accuracy;
 using DotNetUtilities = Org.BouncyCastle.Security.DotNetUtilities;
+using System.Text;
+
 namespace NuGet.Packaging.CrossVerify.Generate.Test
 {
     [Collection(SigningTestCollection.Name)]
@@ -218,8 +220,21 @@ namespace NuGet.Packaging.CrossVerify.Generate.Test
                 var bytes2 = counterCertificate.RawData;
                 File.WriteAllBytes(CertFile2.FullName, bytes2);
 
-                Assert.Equal(Directory.GetFiles(certFolder).Length, 2);
-                Assert.Equal(Directory.GetFiles(packagePath).Length, 1);
+                var sb = new StringBuilder();
+                sb.AppendLine("The cert foler contains following cert files : ");
+                foreach (string cert in Directory.GetFiles(certFolder))
+                {
+                    sb.AppendLine(cert);
+                }
+                try
+                {
+                    Assert.Equal(Directory.GetFiles(certFolder).Length, 2);
+                    Assert.Equal(Directory.GetFiles(packagePath).Length, 1);
+                }
+                catch (Exception e)
+                {
+                    throw new Exception(e.Message + "\n" + sb.ToString());
+                }
             }
         }
    
@@ -264,8 +279,21 @@ namespace NuGet.Packaging.CrossVerify.Generate.Test
                 var bytes2 = counterCertificate.RawData;
                 File.WriteAllBytes(CertFile2.FullName, bytes2);
 
-                Assert.Equal(Directory.GetFiles(certFolder).Length, 2);
-                Assert.Equal(Directory.GetFiles(packagePath).Length, 1);
+                var sb = new StringBuilder();
+                sb.AppendLine("The cert foler contains following cert files : ");
+                foreach (string cert in Directory.GetFiles(certFolder))
+                {
+                    sb.AppendLine(cert);
+                }
+                try
+                {
+                    Assert.Equal(Directory.GetFiles(certFolder).Length, 2);
+                    Assert.Equal(Directory.GetFiles(packagePath).Length, 1);
+                }
+                catch (Exception e)
+                {
+                    throw new Exception(e.Message + "\n" + sb.ToString());
+                }
             }
         }
 
@@ -308,8 +336,22 @@ namespace NuGet.Packaging.CrossVerify.Generate.Test
                 var bytes2 = counterCertificate.RawData;
                 File.WriteAllBytes(CertFile2.FullName, bytes2);
 
-                Assert.Equal(Directory.GetFiles(certFolder).Length, 2);
-                Assert.Equal(Directory.GetFiles(packagePath).Length, 1);
+                var sb = new StringBuilder();
+                sb.AppendLine("The cert foler contains following cert files : ");
+                foreach (string cert in Directory.GetFiles(certFolder))
+                {
+                    sb.AppendLine(cert);
+                }
+                try
+                {
+                    Assert.Equal(Directory.GetFiles(certFolder).Length, 2);
+                    Assert.Equal(Directory.GetFiles(packagePath).Length, 1);
+                }
+                catch (Exception e)
+                {
+                    throw new Exception(e.Message + "\n" + sb.ToString());
+                }
+                
             }
         }
 
@@ -353,8 +395,21 @@ namespace NuGet.Packaging.CrossVerify.Generate.Test
                 var bytes2 = counterCertificate.RawData;
                 File.WriteAllBytes(CertFile2.FullName, bytes2);
 
-                Assert.Equal(Directory.GetFiles(certFolder).Length, 2);
-                Assert.Equal(Directory.GetFiles(packagePath).Length, 1);
+                var sb = new StringBuilder();
+                sb.AppendLine("The cert foler contains following cert files : ");
+                foreach (string cert in Directory.GetFiles(certFolder))
+                {
+                    sb.AppendLine(cert);
+                }
+                try
+                {
+                    Assert.Equal(Directory.GetFiles(certFolder).Length, 2);
+                    Assert.Equal(Directory.GetFiles(packagePath).Length, 1);
+                }
+                catch (Exception e)
+                {
+                    throw new Exception(e.Message + "\n" + sb.ToString());
+                }
             }
         }
 
