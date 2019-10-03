@@ -20,6 +20,7 @@ using Xunit;
 using BcAccuracy = Org.BouncyCastle.Asn1.Tsp.Accuracy;
 using DotNetUtilities = Org.BouncyCastle.Security.DotNetUtilities;
 using System.Text;
+using Xunit.Abstractions;
 
 namespace NuGet.Packaging.CrossVerify.Generate.Test
 {
@@ -28,25 +29,20 @@ namespace NuGet.Packaging.CrossVerify.Generate.Test
     {
         private const string _untrustedChainCertError = "A certificate chain processed, but terminated in a root certificate which is not trusted by the trust provider.";
         private const string _preGeneratePackageFolderName = "PreGenPackages";
-        private readonly SignedPackageVerifierSettings _verifyCommandSettings = SignedPackageVerifierSettings.GetVerifyCommandDefaultPolicy(TestEnvironmentVariableReader.EmptyInstance);
-        private readonly SignedPackageVerifierSettings _defaultSettings = SignedPackageVerifierSettings.GetDefault(TestEnvironmentVariableReader.EmptyInstance);
+        
         private readonly SigningTestFixture _testFixture;
         private readonly TrustedTestCert<TestCertificate> _trustedTestCert;
-        private readonly IList<ISignatureVerificationProvider> _trustProviders;
         private readonly X509Certificate2 _trustedRootCertForTSA;
         private readonly TrustedTestCert<TestCertificate> _trustedRepoTestCert;
         private string _dir;
+        private readonly ITestOutputHelper output;
 
-        public GenerateSignedPackages()
+        public GenerateSignedPackages(ITestOutputHelper output)
         {
+            this.output = output;
             _testFixture = new SigningTestFixture();
             _trustedTestCert = _testFixture.TrustedTestCertificate;
             _trustedRepoTestCert = SigningTestUtility.GenerateTrustedTestCertificate();
-            _trustProviders = new List<ISignatureVerificationProvider>()
-            {
-                new IntegrityVerificationProvider(),
-                new SignatureTrustAndValidityVerificationProvider()
-            };
             _dir = CreatePreGenPackageForEachPlatform();
 
             //generate TSA root cert file under each platform 
@@ -80,6 +76,11 @@ namespace NuGet.Packaging.CrossVerify.Generate.Test
                 var CertFile = new FileInfo(Path.Combine(certFolder, "A.cer"));
                 var bytes = primaryCertificate.RawData;
                 File.WriteAllBytes(CertFile.FullName, bytes);
+
+                var filelist = GetFileList(certFolder, packagePath);
+                output.WriteLine(caseName);
+                output.WriteLine(filelist);
+                
             }
         }
 
@@ -110,6 +111,10 @@ namespace NuGet.Packaging.CrossVerify.Generate.Test
                 var CertFile = new FileInfo(Path.Combine(certFolder, "A.cer"));
                 var bytes = primaryCertificate.RawData;
                 File.WriteAllBytes(CertFile.FullName, bytes);
+
+                var filelist = GetFileList(certFolder, packagePath);
+                output.WriteLine(caseName);
+                output.WriteLine(filelist);
             }
         }
 
@@ -138,6 +143,10 @@ namespace NuGet.Packaging.CrossVerify.Generate.Test
                 var CertFile = new FileInfo(Path.Combine(certFolder, "A.cer"));
                 var bytes = primaryCertificate.RawData;
                 File.WriteAllBytes(CertFile.FullName, bytes);
+
+                var filelist = GetFileList(certFolder, packagePath);
+                output.WriteLine(caseName);
+                output.WriteLine(filelist);
             }
         }
 
@@ -169,6 +178,10 @@ namespace NuGet.Packaging.CrossVerify.Generate.Test
                 var CertFile = new FileInfo(Path.Combine(certFolder, "A.cer"));
                 var bytes = testCertificate.RawData;
                 File.WriteAllBytes(CertFile.FullName, bytes);
+
+                var filelist = GetFileList(certFolder, packagePath);
+                output.WriteLine(caseName);
+                output.WriteLine(filelist);
             }
         }
 
@@ -207,6 +220,10 @@ namespace NuGet.Packaging.CrossVerify.Generate.Test
                 var CertFile2 = new FileInfo(Path.Combine(certFolder, "R.cer"));
                 var bytes2 = counterCertificate.RawData;
                 File.WriteAllBytes(CertFile2.FullName, bytes2);
+
+                var filelist = GetFileList(certFolder, packagePath);
+                output.WriteLine(caseName);
+                output.WriteLine(filelist);
             }
         }
    
@@ -250,6 +267,10 @@ namespace NuGet.Packaging.CrossVerify.Generate.Test
                 var CertFile2 = new FileInfo(Path.Combine(certFolder, "R.cer"));
                 var bytes2 = counterCertificate.RawData;
                 File.WriteAllBytes(CertFile2.FullName, bytes2);
+
+                var filelist = GetFileList(certFolder, packagePath);
+                output.WriteLine(caseName);
+                output.WriteLine(filelist);
             }
         }
 
@@ -291,6 +312,10 @@ namespace NuGet.Packaging.CrossVerify.Generate.Test
                 var CertFile2 = new FileInfo(Path.Combine(certFolder, "R.cer"));
                 var bytes2 = counterCertificate.RawData;
                 File.WriteAllBytes(CertFile2.FullName, bytes2);
+
+                var filelist = GetFileList(certFolder, packagePath);
+                output.WriteLine(caseName);
+                output.WriteLine(filelist);
             }
         }
 
@@ -333,7 +358,24 @@ namespace NuGet.Packaging.CrossVerify.Generate.Test
                 var CertFile2 = new FileInfo(Path.Combine(certFolder, "R.cer"));
                 var bytes2 = counterCertificate.RawData;
                 File.WriteAllBytes(CertFile2.FullName, bytes2);
+
+                var filelist = GetFileList(certFolder, packagePath);
+                output.WriteLine(caseName);
+                output.WriteLine(filelist);
             }
+        }
+        private string GetFileList(string certfolder, string pkgfolder)
+        {
+            var sb = new StringBuilder();
+            foreach (string cert in Directory.GetFiles(certfolder))
+            {
+                sb.AppendLine(cert);
+            }
+            foreach (string pkg in Directory.GetFiles(pkgfolder))
+            {
+                sb.AppendLine(pkg);
+            }
+            return sb.ToString();
         }
 
         private static string CreatePreGenPackageForEachPlatform()
