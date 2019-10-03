@@ -228,7 +228,7 @@ namespace NuGet.Packaging.CrossVerify.Generate.Test
                 }
                 try
                 {
-                    Assert.Equal(Directory.GetFiles(certFolder).Length, 2);
+                    Assert.Equal(Directory.GetFiles(certFolder, "*.*", SearchOption.AllDirectories).Length, 2);
                     Assert.Equal(Directory.GetFiles(packagePath).Length, 1);
                 }
                 catch (Exception e)
@@ -287,7 +287,7 @@ namespace NuGet.Packaging.CrossVerify.Generate.Test
                 }
                 try
                 {
-                    Assert.Equal(Directory.GetFiles(certFolder).Length, 2);
+                    Assert.Equal(Directory.GetFiles(certFolder, "*.*", SearchOption.AllDirectories).Length, 2);
                     Assert.Equal(Directory.GetFiles(packagePath).Length, 1);
                 }
                 catch (Exception e)
@@ -344,7 +344,7 @@ namespace NuGet.Packaging.CrossVerify.Generate.Test
                 }
                 try
                 {
-                    Assert.Equal(Directory.GetFiles(certFolder).Length, 2);
+                    Assert.Equal(Directory.GetFiles(certFolder, "*.*", SearchOption.AllDirectories).Length, 2);
                     Assert.Equal(Directory.GetFiles(packagePath).Length, 1);
                 }
                 catch (Exception e)
@@ -403,7 +403,7 @@ namespace NuGet.Packaging.CrossVerify.Generate.Test
                 }
                 try
                 {
-                    Assert.Equal(Directory.GetFiles(certFolder).Length, 2);
+                    Assert.Equal(Directory.GetFiles(certFolder, "*.*", SearchOption.AllDirectories).Length, 2);
                     Assert.Equal(Directory.GetFiles(packagePath).Length, 1);
                 }
                 catch (Exception e)
