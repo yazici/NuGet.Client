@@ -2,7 +2,11 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
+using System.Diagnostics;
+using System.IO;
+using System.Runtime.CompilerServices;
 using System.Security.Cryptography.X509Certificates;
+using NuGet.Common;
 
 namespace Test.Utility.Signing
 {
@@ -68,9 +72,57 @@ namespace Test.Utility.Signing
 
         private void AddCertificateToStore()
         {
-            _store = new X509Store(StoreName, StoreLocation);
-            _store.Open(OpenFlags.ReadWrite);
-            _store.Add(TrustedCert);
+            if (RuntimeEnvironmentHelper.IsMacOSX)
+            {
+                var certFile = new FileInfo(Path.Combine("/tmp", $"{TrustedCert.SerialNumber}.cer"));
+
+                File.WriteAllBytes(certFile.FullName, TrustedCert.RawData);
+
+                string addToKeyChainCmd = $"sudo security add-trusted-cert -d -r trustRoot" +
+                                          $"-k \"/Library/Keychains/System.keychain\"" +
+                                          $"\"{certFile.FullName}\"";
+"
+                var isAddedToKeyChain = RunMacCommand(addToKeyChainCmd);
+            }
+            else
+            {
+                _store = new X509Store(StoreName, StoreLocation);
+                _store.Open(OpenFlags.ReadWrite);
+                _store.Add(TrustedCert);
+            }
+              
+        }
+
+        private static bool RunMacCommand(string cmd)
+        {
+            try
+            {
+                string output;
+                using (var process = new Process())
+                {
+                    process.StartInfo.FileName = "/bin/bash";
+                    process.StartInfo.Arguments = "-c\"" + cmd + "\"";
+                    process.StartInfo.UseShellExecute = false;
+                    process.StartInfo.RedirectStandardOutput = true;
+
+                    process.Start();
+                    /*
+                    if (!process.WaitForExit(1000) || process.ExitCode != 0)
+                    {
+                        return false;
+                    }
+                    */
+                    output = process.StandardOutput.ReadToEnd();
+
+                    Console.WriteLine(output);
+
+                }
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         private void ExportCrl()

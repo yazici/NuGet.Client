@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using NuGet.Packaging.FuncTest;
 
 namespace ConsoleApp1
@@ -13,6 +14,11 @@ namespace ConsoleApp1
 
             var defaultTrustedRootCert = fixture.TrustedTestCertificate;
 
+            var file = new FileInfo(Path.Combine(".", "defaultTrusted.cer"));
+
+            File.WriteAllBytes(file.FullName, defaultTrustedRootCert.TrustedCert.RawData);
+
+            Console.WriteLine("cert path is :" + file.FullName);
         }
     }
 }
