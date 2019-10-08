@@ -16,6 +16,11 @@ SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 DIR=$SCRIPTDIR/../../
 pushd $DIR
 
+#Get Openssl version
+echo "Checking Openssl version..."
+openssl version -a
+echo "Checking Openssl version is done"
+
 NuGetExe="$DIR/.nuget/nuget.exe"
 #Get NuGet.exe
 curl -o $NuGetExe https://dist.nuget.org/win-x86-commandline/latest/nuget.exe

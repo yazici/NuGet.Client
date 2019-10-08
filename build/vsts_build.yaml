@@ -1219,6 +1219,14 @@ phases:
       scriptPath: "scripts/funcTests/runGenSignedPackages.sh"
       disableAutoCwd: "true"
       cwd: "$(Build.Repository.LocalPath)"
+
+  - task: ShellScript@2
+    displayName: "Generate Signed Packages"
+    continueOnError: "true"
+    inputs:
+      scriptPath: "scripts/funcTests/runGenSignedPackages.sh"
+      disableAutoCwd: "true"
+      cwd: "$(Build.Repository.LocalPath)"
   
   - task: PublishTestResults@2
     displayName: "Publish Test Results"
