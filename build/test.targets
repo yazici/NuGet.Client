@@ -2,7 +2,7 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <!-- Shared test project template -->
   <PropertyGroup>
-    <RuntimeIdentifier Condition=" '$(IsXPlat)' != 'true' ">win7-x64</RuntimeIdentifier>
+    <RuntimeIdentifiers Condition=" '$(IsXPlat)' != 'true' ">win7-x64;linux-x64</RuntimeIdentifiers>
   </PropertyGroup>
 
   <PropertyGroup>
