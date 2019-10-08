@@ -10,7 +10,7 @@ namespace ConsoleApp1
         {
             Console.WriteLine("Start testing on MAC !");
 
-            SigningTestFixture fixture = new SigningTestFixture();
+            var fixture = new SigningTestFixture();
 
             var defaultTrustedRootCert = fixture.TrustedTestCertificate;
 

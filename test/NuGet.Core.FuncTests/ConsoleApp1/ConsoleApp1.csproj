@@ -5,4 +5,8 @@
     <TargetFramework>netcoreapp3.0</TargetFramework>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\NuGet.Packaging.FuncTest\NuGet.Packaging.FuncTest.csproj" />
+  </ItemGroup>
+
 </Project>

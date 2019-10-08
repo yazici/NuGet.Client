@@ -81,7 +81,7 @@ namespace Test.Utility.Signing
                 string addToKeyChainCmd = $"sudo security add-trusted-cert -d -r trustRoot" +
                                           $"-k \"/Library/Keychains/System.keychain\"" +
                                           $"\"{certFile.FullName}\"";
-"
+                
                 var isAddedToKeyChain = RunMacCommand(addToKeyChainCmd);
             }
             else
