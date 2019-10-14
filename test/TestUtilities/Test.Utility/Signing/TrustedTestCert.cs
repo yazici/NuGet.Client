@@ -2,7 +2,9 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
+using System.IO;
 using System.Security.Cryptography.X509Certificates;
+using NuGet.Common;
 
 namespace Test.Utility.Signing
 {
@@ -60,10 +62,18 @@ namespace Test.Utility.Signing
                 throw new InvalidOperationException($"The certificate used is valid for more than {maximumValidityPeriod}.");
             }
 #endif
-            StoreName = storeName;
-            StoreLocation = storeLocation;
-            AddCertificateToStore();
+            if (RuntimeEnvironmentHelper.IsMacOSX)
+            {
+                AddTrustedCert();
+            }
+            else
+            {
+                StoreName = storeName;
+                StoreLocation = storeLocation;
+                AddCertificateToStore();  
+            }
             ExportCrl();
+
         }
 
         private void AddCertificateToStore()
@@ -71,6 +81,57 @@ namespace Test.Utility.Signing
             _store = new X509Store(StoreName, StoreLocation);
             _store.Open(OpenFlags.ReadWrite);
             _store.Add(TrustedCert);
+        }
+
+        //According to https://github.com/dotnet/corefx/blob/master/Documentation/architecture/cross-platform-cryptography.md#x509store,
+        //on macOS the X509Store class is a projection of system trust decisions (read-only), user trust decisions (read-only), and user key storage (read-write).
+        //So we have to run command to add certificate to System.keychain to make it trusted.
+        private void AddTrustedCert()
+        {
+            var certFile = new System.IO.FileInfo(System.IO.Path.Combine("/tmp", $"{TrustedCert.Thumbprint}.cer"));
+            System.IO.File.WriteAllBytes(certFile.FullName, TrustedCert.RawData);
+            string addToKeyChainCmd = $"sudo security add-trusted-cert -d -r trustRoot " +
+                                      $"-k \"/Library/Keychains/System.keychain\" " +
+                                      $"\"{certFile.FullName}\"";
+            RunMacCommand(addToKeyChainCmd);
+
+        }
+
+        //According to https://github.com/dotnet/corefx/blob/master/Documentation/architecture/cross-platform-cryptography.md#x509store,
+        //on macOS the X509Store class is a projection of system trust decisions (read-only), user trust decisions (read-only), and user key storage (read-write).
+        //So we have to run command to remove certificate from System.keychain to make it untrusted.
+        private void RemoveTrusedCert()
+        {
+            var certFile = new System.IO.FileInfo(System.IO.Path.Combine("/tmp", $"{TrustedCert.Thumbprint}.cer"));
+           
+            string removeFromKeyChainCmd = $"sudo security remove-trusted-cert -d {certFile.FullName}";
+            RunMacCommand(removeFromKeyChainCmd);
+            File.Delete(certFile.FullName);
+        }
+
+        private static bool RunMacCommand(string cmd)
+        {
+            string output = "";
+            try
+            {
+                using (var process = new System.Diagnostics.Process())
+                {
+                    process.StartInfo.FileName = "/bin/bash";
+                    process.StartInfo.Arguments = "-c \"" + cmd + "\"";
+                    process.StartInfo.UseShellExecute = false;
+                    process.StartInfo.RedirectStandardOutput = true;
+
+                    process.Start();
+                    output = process.StandardOutput.ReadToEnd();
+                }
+            }
+            catch (Exception e)
+            {
+                throw new Exception(e.Message + "\n" +
+                                    $"Run Command: ({cmd}) has the following output : " + "\n" +
+                                    output);
+            }
+            return true;
         }
 
         private void ExportCrl()
@@ -97,11 +158,18 @@ namespace Test.Utility.Signing
         {
             if (!_isDisposed)
             {
-                using (_store)
+                if (RuntimeEnvironmentHelper.IsMacOSX)
                 {
-                    _store.Remove(TrustedCert);
+                    RemoveTrusedCert();
                 }
-
+                else
+                {
+                    using (_store)
+                    {
+                        _store.Remove(TrustedCert);
+                    }
+                }
+                
                 DisposeCrl();
 
                 TrustedCert.Dispose();
