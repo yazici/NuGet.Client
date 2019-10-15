@@ -89,10 +89,13 @@ namespace Test.Utility.Signing
         private void AddTrustedCert()
         {
             var certFile = new System.IO.FileInfo(System.IO.Path.Combine("/tmp", $"{TrustedCert.Thumbprint}.cer"));
+
             System.IO.File.WriteAllBytes(certFile.FullName, TrustedCert.RawData);
+
             string addToKeyChainCmd = $"sudo security add-trusted-cert -d -r trustRoot " +
                                       $"-k \"/Library/Keychains/System.keychain\" " +
                                       $"\"{certFile.FullName}\"";
+
             RunMacCommand(addToKeyChainCmd);
 
         }
@@ -100,12 +103,14 @@ namespace Test.Utility.Signing
         //According to https://github.com/dotnet/corefx/blob/master/Documentation/architecture/cross-platform-cryptography.md#x509store,
         //on macOS the X509Store class is a projection of system trust decisions (read-only), user trust decisions (read-only), and user key storage (read-write).
         //So we have to run command to remove certificate from System.keychain to make it untrusted.
-        private void RemoveTrusedCert()
+        private void RemoveTrustedCert()
         {
             var certFile = new System.IO.FileInfo(System.IO.Path.Combine("/tmp", $"{TrustedCert.Thumbprint}.cer"));
-           
-            string removeFromKeyChainCmd = $"sudo security remove-trusted-cert -d {certFile.FullName}";
+
+            string removeFromKeyChainCmd = $"sudo security delete-certificate -Z {TrustedCert.Thumbprint} /Library/Keychains/System.keychain";
+
             RunMacCommand(removeFromKeyChainCmd);
+
             File.Delete(certFile.FullName);
         }
 
@@ -160,7 +165,7 @@ namespace Test.Utility.Signing
             {
                 if (RuntimeEnvironmentHelper.IsMacOSX)
                 {
-                    RemoveTrusedCert();
+                    RemoveTrustedCert();
                 }
                 else
                 {
