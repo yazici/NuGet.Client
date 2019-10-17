@@ -95,11 +95,34 @@ namespace NuGet.Packaging.Signing
                     }
                 }
 
+                var elements = new StringBuilder();
+                elements.AppendLine("@@ chain building failed at: ");
+                elements.AppendLine("certificate.Subject is : " + certificate.Subject);
+                elements.AppendLine("certificate.FriendlyName is : " + certificate.FriendlyName);
+                int i = 0;
+                foreach (var chainElement in chain.ChainElements)
+                {
+                    elements.AppendLine($"=================   The ({i}) th certificate is   :=================");
+                    elements.AppendLine($"chainElement.Certificate.Subject : ({chainElement.Certificate.Subject})");
+                    elements.AppendLine($"chainElement.Certificate.Thumbprint : ({chainElement.Certificate.Thumbprint})");
+                    elements.AppendLine($"chainElement.Certificate.isvalid : ({chainElement.Certificate.Verify()})");
+                    elements.AppendLine($"    --------   The chainElementStatus are : -------");
+                    foreach (var chainElementStatus in chainElement.ChainElementStatus)
+                    {
+                        elements.AppendLine($"  status : ({chainElementStatus.Status.ToString()})");
+                        elements.AppendLine($"  info: ({chainElementStatus.StatusInformation})");
+                    }
+                    i++;
+                }
+
+
                 if (fatalStatuses.Any())
                 {
                     if (certificateType == CertificateType.Timestamp)
                     {
-                        throw new TimestampException(logCode, Strings.CertificateChainValidationFailed);
+                        throw new TimestampException(logCode, Strings.CertificateChainValidationFailed + "\n" +
+                                                     status.ToString() + "\n" +
+                                                     elements.ToString());
                     }
                     throw new SignatureException(logCode, Strings.CertificateChainValidationFailed);
                 }
