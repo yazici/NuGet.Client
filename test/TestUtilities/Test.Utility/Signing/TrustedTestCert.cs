@@ -5,6 +5,7 @@ using System;
 using System.IO;
 using System.Security.Cryptography.X509Certificates;
 using NuGet.Common;
+using NuGet.Test.Utility;
 
 namespace Test.Utility.Signing
 {
@@ -114,29 +115,24 @@ namespace Test.Utility.Signing
             File.Delete(certFile.FullName);
         }
 
-        private static bool RunMacCommand(string cmd)
+        private void RunMacCommand(string cmd)
         {
-            string output = "";
-            try
-            {
-                using (var process = new System.Diagnostics.Process())
-                {
-                    process.StartInfo.FileName = "/bin/bash";
-                    process.StartInfo.Arguments = "-c \"" + cmd + "\"";
-                    process.StartInfo.UseShellExecute = false;
-                    process.StartInfo.RedirectStandardOutput = true;
+            string workingDirectory = "/bin";
+            string args = "-c \"" + cmd + "\"";
 
-                    process.Start();
-                    output = process.StandardOutput.ReadToEnd();
-                }
-            }
-            catch (Exception e)
+            var result = CommandRunner.Run("/bin/bash",
+                workingDirectory,
+                args,
+                waitForExit: true,
+                timeOutInMilliseconds: 60000);
+
+            if (result.Item1 != 0)
             {
-                throw new Exception(e.Message + "\n" +
-                                    $"Run Command: ({cmd}) has the following output : " + "\n" +
-                                    output);
-            }
-            return true;
+                throw new Exception($"Run security command failed with following log information :\n {result.AllOutput} \n" +
+                                    $"exit code =   {result.Item1} \n" +
+                                    $"exit output = {result.Item2} \n" +
+                                    $"exit error =  {result.Item3} \n");
+            }            
         }
 
         private void ExportCrl()
