@@ -1,4 +1,4 @@
-﻿// Copyright (c) .NET Foundation. All rights reserved.
+// Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
@@ -99,7 +99,7 @@ namespace NuGet.CommandLine
             manifest.Metadata.LicenseMetadata = new LicenseMetadata(LicenseType.Expression, "MIT", NuGetLicenseExpression.Parse("MIT"), new string[] {}, LicenseMetadata.CurrentVersion);
             manifest.Metadata.SetIconUrl(sampleIconUrl);
             manifest.Metadata.Tags = sampleTags;
-            manifest.Metadata.Copyright = "Copyright " + DateTime.Now.Year;
+            manifest.Metadata.Copyright = "$copyright$";
             manifest.Metadata.ReleaseNotes = sampleReleaseNotes;
             string nuspecFile = fileName + PackagingConstants.ManifestExtension;
 
