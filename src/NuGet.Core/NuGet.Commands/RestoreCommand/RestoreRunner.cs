@@ -333,7 +333,7 @@ namespace NuGet.Commands
             return results;
         }
 
-        private static async Task<IReadOnlyList<RestoreSummaryRequest>> CreateRequests(
+        private static async Task<IReadOnlyCollection<RestoreSummaryRequest>> CreateRequests(
             string input,
             RestoreArgs restoreContext)
         {
