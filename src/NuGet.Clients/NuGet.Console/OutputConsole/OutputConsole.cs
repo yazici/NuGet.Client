@@ -6,9 +6,12 @@ using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Windows.Media;
 using Microsoft.VisualStudio;
+using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Threading;
 using NuGet.VisualStudio;
+using Microsoft.VisualStudio.Workspace.VSIntegration.Contracts;
+using Microsoft.ServiceHub.Framework;
 
 namespace NuGetConsole
 {
@@ -82,7 +85,7 @@ namespace NuGetConsole
             {
                 return;
             }
-
+            text = string.Concat("DONNIETEST", text);
             Start();
 
             NuGetUIThreadHelper.JoinableTaskFactory.Run(async () =>
@@ -95,6 +98,8 @@ namespace NuGetConsole
 
         public void Write(string text, Color? foreground, Color? background)
         {
+            OutputService serviceOutputWindow = new OutputService();
+            serviceOutputWindow.Write("WE ARE IN THE OUTPUT CHANNEL!!!!");
             // the Output window doesn't allow setting text color
             Write(text);
         }

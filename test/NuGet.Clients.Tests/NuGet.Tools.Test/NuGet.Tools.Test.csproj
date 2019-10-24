@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="$(NewtonsoftJsonVersionCore)" NoWarn="NU1605" />
+    <PackageReference Include="Microsoft.Internal.VisualStudio.Shell.Embeddable" Version="16.4.29324.65-pre" />
   </ItemGroup>
 
   <Import Project="$(BuildCommonDirectory)common.targets"/>
