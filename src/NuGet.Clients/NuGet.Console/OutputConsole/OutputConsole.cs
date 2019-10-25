@@ -10,8 +10,8 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Threading;
 using NuGet.VisualStudio;
-using Microsoft.VisualStudio.Workspace.VSIntegration.Contracts;
-using Microsoft.ServiceHub.Framework;
+//using Microsoft.VisualStudio.Workspace.VSIntegration.Contracts;
+//using Microsoft.ServiceHub.Framework;
 
 namespace NuGetConsole
 {
