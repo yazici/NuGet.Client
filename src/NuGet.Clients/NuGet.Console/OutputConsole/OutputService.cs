@@ -34,7 +34,7 @@ namespace NuGetConsole
             Assumes.Present(serviceProvider);
 
             await NuGetUIThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-
+            
             IBrokeredServiceContainer serviceContainer = (IBrokeredServiceContainer)serviceProvider.GetService(typeof(SVsBrokeredServiceContainer));
             Assumes.Present(serviceContainer);
 
