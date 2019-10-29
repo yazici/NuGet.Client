@@ -224,6 +224,7 @@ Copyright (c) .NET Foundation. All rights reserved.
       Generate an error if any explicit PackageReference has a version specified in a project.  Users must specify a version in
       the central pacakge management file or use VersionOverride.
     -->
+
     <Error
       Text="The package reference '%(_PackageReferenceWithVersion.Identity)' should not specify a version.  Please specify the version in '$(CentralPackagesFile)' or set VersionOverride to override the centrally defined version."
       Condition=" @(_PackageReferenceWithVersion->Count()) > 0 And '%(_PackageReferenceWithVersion.IsImplicitlyDefined)' != 'true' And '$(EnablePackageVersionOverride)' != 'false' "
@@ -260,6 +261,7 @@ Copyright (c) .NET Foundation. All rights reserved.
   <UsingTask TaskName="NuGet.Build.Tasks.WarnForInvalidProjectsTask" AssemblyFile="$(RestoreTaskAssemblyFile)" />
   <UsingTask TaskName="NuGet.Build.Tasks.GetReferenceNearestTargetFrameworkTask" AssemblyFile="$(RestoreTaskAssemblyFile)" />
   <UsingTask TaskName="NuGet.Build.Tasks.GetGlobalPackageReferenceTask" AssemblyFile="$(RestoreTaskAssemblyFile)" />
+  <UsingTask TaskName="NuGet.Build.Tasks.RestoreDGSpecTask" AssemblyFile="$(RestoreTaskAssemblyFile)" />
 
   <!--
     ============================================================
@@ -269,6 +271,7 @@ Copyright (c) .NET Foundation. All rights reserved.
   -->
   <Target Name="Restore" DependsOnTargets="_GenerateRestoreGraph">
 
+    <Message Text="_RestoreGraphEntry2 is '@(_RestoreGraphEntry)'" Importance="high" />
     <!-- Drop any duplicate items -->
     <RemoveDuplicates
       Inputs="@(_RestoreGraphEntry)">
@@ -276,6 +279,8 @@ Copyright (c) .NET Foundation. All rights reserved.
           TaskParameter="Filtered"
           ItemName="_RestoreGraphEntryFiltered" />
     </RemoveDuplicates>
+
+    <Message Text="_RestoreGraphEntry2 after removing duplicates is '@(_RestoreGraphEntry)'" Importance="high" />
 
     <!-- Call restore -->
     <RestoreTask
@@ -395,7 +400,6 @@ Copyright (c) .NET Foundation. All rights reserved.
                    '%(RestoreGraphProjectInputItems.Extension)' == '.vbproj' Or
                    '%(RestoreGraphProjectInputItems.Extension)' == '.fsproj' Or
                    '%(RestoreGraphProjectInputItems.Extension)' == '.nuproj' Or
-                    %(RestoreGraphProjectInputItems.Extension)' == '.proj' Or
                    '%(RestoreGraphProjectInputItems.Extension)' == '.msbuildproj' Or
                    '%(RestoreGraphProjectInputItems.Extension)' == '.vcxproj' " />
     </ItemGroup>
@@ -469,6 +473,9 @@ Copyright (c) .NET Foundation. All rights reserved.
         Returns="@(_RestoreGraphEntry)">
     <Message Text="Generating dg file" Importance="low" />
     <Message Text="%(_RestoreProjectPathItems.Identity)" Importance="low" />
+    <Message Text="_GenerateRestoreGraphProjectEntryInput  is @(_GenerateRestoreGraphProjectEntryInput)" Importance="low" />
+
+
 
     <!-- Use all projects if RestoreRecursive is true. Otherwise use only the top level projects. -->
     <ItemGroup>
@@ -488,17 +495,37 @@ Copyright (c) .NET Foundation. All rights reserved.
           ItemName="_RestoreGraphEntry" />
     </MsBuild>
 
+    <Message Text="_RestoreGraphEntry1 is '@(_RestoreGraphEntry)'" Importance="high" />
+
     <!-- Generate a spec for every project including dependencies. -->
-    <MsBuild
+    <!-- _GenerateProjectRestoreGraph_1 and _GenerateProjectRestoreGraph_2 were used for the scenario where I tried to use the PackRef Update to get the transitive dep work The _GenerateProjectRestoreGraph_1 has may new task . Do not want that so use only the _GenerateProjectRestoreGraph_2-->
+    <Message Text="PackRefs before _GenerateProjectRestoreGraph_1 is '@(PackageReference)'" Importance="high" />
+    <!--<MsBuild
         BuildInParallel="$(RestoreBuildInParallel)"
         Projects="@(_RestoreProjectPathItems)"
-        Targets="_GenerateProjectRestoreGraph"
+        Targets="_GenerateProjectRestoreGraph_1"
         Properties="$(_GenerateRestoreGraphProjectEntryInputProperties)">
 
       <Output
           TaskParameter="TargetOutputs"
           ItemName="_RestoreGraphEntry" />
     </MsBuild>
+  
+    <Message Text="PackRefs before _GenerateProjectRestoreGraph_2 is '@(PackageReference)'" Importance="high" />-->
+
+    <!-- do it again if more references have been added -->
+    <MsBuild
+          BuildInParallel="$(RestoreBuildInParallel)"
+          Projects="@(_RestoreProjectPathItems)"
+          Targets="_GenerateProjectRestoreGraph_2"
+          Properties="$(_GenerateRestoreGraphProjectEntryInputProperties)">
+
+      <Output
+          TaskParameter="TargetOutputs"
+          ItemName="_RestoreGraphEntry" />
+    </MsBuild>
+
+    <Message Text="PackRefs after _GenerateProjectRestoreGraph_2 is '@(PackageReference)'" Importance="high" />
   </Target>
 
   <!--
@@ -597,8 +624,6 @@ Copyright (c) .NET Foundation. All rights reserved.
       <RestoreProjectStyle Condition=" '$(RestoreProjectStyle)' == '' AND @(PackageReference) != '' ">PackageReference</RestoreProjectStyle>
       <!-- If this is not a PackageReference project check if project.json or projectName.project.json exists. -->
       <RestoreProjectStyle Condition=" '$(RestoreProjectStyle)' == '' AND '$(_CurrentProjectJsonPath)' != '' ">ProjectJson</RestoreProjectStyle>
-      <!-- If this is not a PackageReference or ProjectJson project check if packages.config or packages.ProjectName.config exists -->
-      <RestoreProjectStyle Condition=" '$(RestoreProjectStyle)' == '' AND (Exists('$(MSBuildProjectDirectory)\packages.config') Or Exists('$(MSBuildProjectDirectory)\packages.$(MSBuildProjectName).config'))">PackagesConfig</RestoreProjectStyle>
       <!-- This project is either a packages.config project or one that does not use NuGet at all. -->
       <RestoreProjectStyle Condition=" '$(RestoreProjectStyle)' == '' ">Unknown</RestoreProjectStyle>
     </PropertyGroup>
@@ -871,22 +896,7 @@ Copyright (c) .NET Foundation. All rights reserved.
         <ConfigFilePaths>$(_OutputConfigFilePaths)</ConfigFilePaths>
       </_RestoreGraphEntry>
     </ItemGroup>
-    <!-- Use packages.config -->
-    <ItemGroup Condition=" '$(RestoreProjectStyle)' == 'PackagesConfig' ">
-      <_RestoreGraphEntry Include="$([System.Guid]::NewGuid())">
-        <Type>ProjectSpec</Type>
-        <ProjectUniqueName>$(MSBuildProjectFullPath)</ProjectUniqueName>
-        <ProjectPath>$(MSBuildProjectFullPath)</ProjectPath>
-        <ProjectName>$(_RestoreProjectName)</ProjectName>
-        <ProjectStyle>$(RestoreProjectStyle)</ProjectStyle>
-        <TargetFrameworks>@(_RestoreTargetFrameworksOutputFiltered)</TargetFrameworks>
-        <PackagesConfigPath Condition="Exists('$(MSBuildProjectDirectory)\packages.$(MSBuildProjectName).config')">$(MSBuildProjectDirectory)\packages.$(MSBuildProjectName).config</PackagesConfigPath>
-        <PackagesConfigPath Condition="Exists('$(MSBuildProjectDirectory)\packages.config')">$(MSBuildProjectDirectory)\packages.config</PackagesConfigPath>
-        <RestorePackagesWithLockFile>$(RestorePackagesWithLockFile)</RestorePackagesWithLockFile>
-        <NuGetLockFilePath>$(NuGetLockFilePath)</NuGetLockFilePath>
-        <RestoreLockedMode>$(RestoreLockedMode)</RestoreLockedMode>
-      </_RestoreGraphEntry>
-    </ItemGroup>
+
     <!-- Non-NuGet type -->
     <ItemGroup Condition=" '$(RestoreProjectStyle)' == 'Unknown' ">
       <_RestoreGraphEntry Include="$([System.Guid]::NewGuid())">
@@ -906,7 +916,19 @@ Copyright (c) .NET Foundation. All rights reserved.
     Recursively walk project to project references.
     ============================================================
   -->
-  <Target Name="_GenerateProjectRestoreGraph"
+  <Target Name="_GenerateProjectRestoreGraph_1"
+      DependsOnTargets="
+      _GetRestoreProjectStyle;
+      _GetRestoreTargetFrameworksOutput;
+      _GenerateRestoreProjectSpec;
+      _GenerateRestoreDependencies;
+      _RestoreDGSpec"
+      Returns="@(_RestoreGraphEntry)">
+
+    <!-- Output from dependency targets -->
+  </Target>
+
+  <Target Name="_GenerateProjectRestoreGraph_2"
       DependsOnTargets="
       _GetRestoreProjectStyle;
       _GetRestoreTargetFrameworksOutput;
@@ -926,6 +948,8 @@ Copyright (c) .NET Foundation. All rights reserved.
   <Target Name="_GenerateRestoreDependencies"
     DependsOnTargets="_GenerateProjectRestoreGraphAllFrameworks;_GenerateProjectRestoreGraphCurrentProject"
     Returns="@(_RestoreGraphEntry)">
+
+
   </Target>
 
   <!--
@@ -976,6 +1000,8 @@ Copyright (c) .NET Foundation. All rights reserved.
     DependsOnTargets="_GetRestoreProjectStyle;CollectPackageReferences;CollectGlobalPackageReference;CollectPackageDownloads;CollectFrameworkReferences"
     Returns="@(_RestoreGraphEntry)">
 
+    <Message Text="In target _GenerateProjectRestoreGraphPerFramework ProjectReferences0 are '@(ProjectReference)'" Importance="high" />
+    <Message Text="In target _GenerateProjectRestoreGraphPerFramework TargetFrameworks are '$(TargetFramework)'" Importance="high" />
     <!-- Write out project references -->
     <GetRestoreProjectReferencesTask
       ProjectUniqueName="$(MSBuildProjectFullPath)"
@@ -988,8 +1014,24 @@ Copyright (c) .NET Foundation. All rights reserved.
         ItemName="_RestoreGraphEntry" />
     </GetRestoreProjectReferencesTask>
 
+
     <!-- Write out package references-->
-    <GetRestorePackageReferencesTask
+
+    <!--<GetRestorePackageReferencesTask
+      Condition=" '$(PackageReferenceCompatibleProjectStyle)' == 'true' "
+      ProjectUniqueName="$(MSBuildProjectFullPath)"
+      PackageReferences="@(PackageReference)"
+      TargetFrameworks="$(TargetFramework)"
+      >
+
+      <Output
+        TaskParameter="RestoreGraphItems"
+        ItemName="_RestoreGraphEntry" />
+    </GetRestorePackageReferencesTask>-->
+
+
+
+    <!--<GetRestorePackageReferencesTask
       Condition=" '$(PackageReferenceCompatibleProjectStyle)' == 'true' and '$(EnableCentralPackageVersions)' == 'false'"
       ProjectUniqueName="$(MSBuildProjectFullPath)"
       PackageReferences="@(PackageReference)"
@@ -999,7 +1041,13 @@ Copyright (c) .NET Foundation. All rights reserved.
       <Output
         TaskParameter="RestoreGraphItems"
         ItemName="_RestoreGraphEntry" />
-    </GetRestorePackageReferencesTask>
+    </GetRestorePackageReferencesTask>-->
+
+    <!-- Pass the global package references to the project to participate in the restore graph-->
+    <Message Text="In target _GenerateProjectRestoreGraphPerFramework CPVMF is '$(CentralPackagesFile)'" Importance="high" />
+    <Message Text="In target _GenerateProjectRestoreGraphPerFramework EnableCentralPackageVersions is '$(EnableCentralPackageVersions)'" Importance="high" />
+    <Message Text="In target _GenerateProjectRestoreGraphPerFramework GlobalPackageReference are '@(GlobalPackageReference)'" Importance="high" />
+    <Message Text="In target _GenerateProjectRestoreGraphPerFramework PackageReference are '@(PackageReference)'" Importance="high" />
 
     <GetGlobalPackageReferenceTask
       Condition=" '$(PackageReferenceCompatibleProjectStyle)' == 'true' and '$(EnableCentralPackageVersions)' != 'false'"
@@ -1009,11 +1057,11 @@ Copyright (c) .NET Foundation. All rights reserved.
       CPVMF ="$(CentralPackagesFile)"
       TargetFrameworks="$(TargetFramework)"
       >
-
       <Output
         TaskParameter="RestoreGraphItems"
         ItemName="_RestoreGraphEntry" />
     </GetGlobalPackageReferenceTask>
+
 
     <!-- Write out package downloads -->
     <GetRestorePackageDownloadsTask
@@ -1028,9 +1076,6 @@ Copyright (c) .NET Foundation. All rights reserved.
         ItemName="_RestoreGraphEntry" />
     </GetRestorePackageDownloadsTask>
 
-
-
-
     <!-- Write out Framework References-->
     <GetRestoreFrameworkReferencesTask
       Condition=" '$(PackageReferenceCompatibleProjectStyle)' == 'true' "
@@ -1043,6 +1088,9 @@ Copyright (c) .NET Foundation. All rights reserved.
         TaskParameter="RestoreGraphItems"
         ItemName="_RestoreGraphEntry" />
     </GetRestoreFrameworkReferencesTask>
+
+    <Message Text="In target _GenerateProjectRestoreGraphPerFramework PackgesReferences2 are @(PackageReference) FrameworkReferences are '@(FrameworkReference)'" Importance="high" />
+
 
     <!-- Write out the TargetFramework specific properties -->
     <ItemGroup Condition="  '$(PackageReferenceCompatibleProjectStyle)' == 'true' AND '$(RuntimeIdentifierGraphPath)' != '' ">
@@ -1068,6 +1116,34 @@ Copyright (c) .NET Foundation. All rights reserved.
         <TargetFramework>$(TargetFramework)</TargetFramework>
       </_RestoreGraphEntry>
     </ItemGroup>
+
+
+  </Target>
+
+  <Target Name="_RestoreDGSpec" >
+
+    <!--DependsOnTargets="_GenerateRestoreDependencies"-->
+    <Message Text="In target _GenerateProjectRestoreGraphPerFramework PackgesReferences1 are @(PackageReference) EnableCentralPackageVersions is $(EnableCentralPackageVersions)" Importance="high" />
+    <!--<Message Text="In target _GenerateProjectRestoreGraphPerFramework _RestoreGraphEntryMetadata is '@(_RestoreGraphEntry->GetMetadata('ProjectPath'))'" Importance="high" />-->
+    <Message Text="***** In target _GenerateProjectRestoreGraphPerFramework _RestoreGraphEntry are '@(_RestoreGraphEntry)'" Importance="high" />
+
+    <!-- Try to inject new direct depenedencies -->
+    <RestoreDGSpecTask
+     RestoreGraphItems="@(_RestoreGraphEntry)"
+       >
+
+      <Output
+        TaskParameter="RestoreTransitiveDependencies"
+        ItemName="_RestoreTransitiveDependencies" />
+    </RestoreDGSpecTask>
+
+    <Message Text="In target _GenerateProjectRestoreGraphPerFramework _RestoreTransitiveDependencies  are '@(_RestoreTransitiveDependencies)'" Importance="high" />
+
+    <ItemGroup>
+      <!--<PackageReference Include="@(_RestoreTransitiveDependencies)"></PackageReference>-->
+      <PackageReference Include="%(_RestoreTransitiveDependencies)"></PackageReference>
+    </ItemGroup>
+
   </Target>
 
   <!--

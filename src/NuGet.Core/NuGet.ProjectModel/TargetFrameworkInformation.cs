@@ -17,6 +17,8 @@ namespace NuGet.ProjectModel
 
         public IList<LibraryDependency> Dependencies { get; set; } = new List<LibraryDependency>();
 
+        public IList<LibraryDependency> GlobalDependencies { get; set; } = new List<LibraryDependency>();
+
         /// <summary>
         /// A fallback PCL framework to use when no compatible items
         /// were found for <see cref="FrameworkName"/>.
@@ -98,6 +100,7 @@ namespace NuGet.ProjectModel
             var clonedObject = new TargetFrameworkInformation();
             clonedObject.FrameworkName = FrameworkName;
             clonedObject.Dependencies = Dependencies.Select(item => item.Clone()).ToList();
+            clonedObject.GlobalDependencies = GlobalDependencies.Select(item => item.Clone()).ToList();
             clonedObject.Imports = new List<NuGetFramework>(Imports);
             clonedObject.AssetTargetFallback = AssetTargetFallback;
             clonedObject.Warn = Warn;

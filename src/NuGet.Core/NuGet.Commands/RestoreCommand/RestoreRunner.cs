@@ -11,6 +11,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using NuGet.Common;
 using NuGet.ProjectModel;
+using NuGet.DependencyResolver;
+using System.Xml;
 
 namespace NuGet.Commands
 {
@@ -29,6 +31,15 @@ namespace NuGet.Commands
 
             // Run requests
             return await RunAsync(requests, restoreContext, token);
+        }
+
+        public static async Task<Dictionary<string, IEnumerable<GraphItem<RemoteResolveResult>>>> GetDGSpecAsync(RestoreArgs restoreContext, CancellationToken token)
+        {
+            // Create requests
+            var requests = await GetRequests(restoreContext);
+
+            // Run requests
+            return await GetDGSpecAsyncInt(requests, restoreContext);
         }
 
         /// <summary>
@@ -96,6 +107,41 @@ namespace NuGet.Commands
             return restoreSummaries;
         }
 
+        private static async Task<Dictionary<string, IEnumerable<GraphItem<RemoteResolveResult>>>> GetDGSpecAsyncInt(
+           IEnumerable<RestoreSummaryRequest> restoreRequests,
+           RestoreArgs restoreContext)
+        {
+            var maxTasks = GetMaxTaskCount(restoreContext);
+
+            var log = restoreContext.Log;
+
+            if (maxTasks > 1)
+            {
+                log.LogVerbose(string.Format(
+                    CultureInfo.CurrentCulture,
+                    Strings.Log_RunningParallelRestore,
+                    maxTasks));
+            }
+            else
+            {
+                log.LogVerbose(Strings.Log_RunningNonParallelRestore);
+            }
+
+            // Get requests
+            var execution = restoreRequests.
+                Select(rr => new KeyValuePair<string, Task<IEnumerable<GraphItem<RemoteResolveResult>>>>(rr.Request.Project.FilePath, Task.Run(() => GetRequestDependecySpecAsync(rr, CancellationToken.None))));
+            //ToDictionary(rr => new KeyValuePair<string, Task>(rr.Request.Project.FilePath, Task.Run(() => GetRequestDependecySpecAsync(rr, CancellationToken.None))));
+            //ToDictionary(rr => rr.Request.Project.FilePath);
+
+
+            await Task.WhenAll(execution.Select(x => x.Value)); //.Result.SelectMany(t => t);
+
+            var rrr = execution.ToDictionary(rr => rr.Key, rr => rr.Value.Result);
+
+            // Summary
+            return rrr;
+        }
+
         /// <summary>
         /// Execute and commit restore requests.
         /// </summary>
@@ -150,6 +196,8 @@ namespace NuGet.Commands
             // Summary
             return restoreResults;
         }
+
+       
 
         /// <summary>
         /// Create restore requests but do not execute them.
@@ -257,6 +305,32 @@ namespace NuGet.Commands
             var result = await command.ExecuteAsync(token);
 
             return new RestoreResultPair(summaryRequest, result);
+        }
+
+        private static async Task<IEnumerable<GraphItem<RemoteResolveResult>>> GetRequestDependecySpecAsync(RestoreSummaryRequest summaryRequest, CancellationToken token)
+        {
+            var log = summaryRequest.Request.Log;
+
+            log.LogVerbose(string.Format(
+                    CultureInfo.CurrentCulture,
+                    Strings.Log_ReadingProject,
+                    summaryRequest.InputPath));
+
+            // Run the restore
+            var request = summaryRequest.Request;
+
+            // Read the existing lock file, this is needed to support IsLocked=true
+            // This is done on the thread and not as part of creating the request due to
+            // how long it takes to load the lock file.
+            if (request.ExistingLockFile == null)
+            {
+                request.ExistingLockFile = LockFileUtilities.GetLockFile(request.LockFilePath, log);
+            }
+
+            var command = new RestoreCommand(request);
+            var result = await command.GetProjectDependecySpecAsync(token);
+
+            return result;
         }
 
         public static async Task<RestoreSummary> CommitAsync(RestoreResultPair restoreResult, CancellationToken token)

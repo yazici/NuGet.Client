@@ -1,4 +1,4 @@
-﻿// Copyright (c) .NET Foundation. All rights reserved.
+// Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
@@ -42,6 +42,10 @@ namespace NuGet.Commands
 
         public ISet<RemoteMatch> Install { get; }
         public ISet<GraphItem<RemoteResolveResult>> Flattened { get; }
+
+        public ISet<GraphItem<RemoteResolveResult>> FlattenedTransitive { get; }
+
+
         public ISet<LibraryRange> Unresolved { get; }
         public bool InConflict { get; }
 
@@ -63,6 +67,7 @@ namespace NuGet.Commands
                                    IEnumerable<GraphNode<RemoteResolveResult>> graphs,
                                    ISet<RemoteMatch> install,
                                    ISet<GraphItem<RemoteResolveResult>> flattened,
+                                    ISet<GraphItem<RemoteResolveResult>> flattenedTransitive,
                                    ISet<LibraryRange> unresolved,
                                    AnalyzeResult<RemoteResolveResult> analyzeResult,
                                    ISet<ResolvedDependencyKey> resolvedDependencies)
@@ -80,6 +85,7 @@ namespace NuGet.Commands
 
             Install = install;
             Flattened = flattened;
+            FlattenedTransitive = flattenedTransitive;
             AnalyzeResult = analyzeResult;
             Unresolved = unresolved;
             ResolvedDependencies = resolvedDependencies;
@@ -100,6 +106,8 @@ namespace NuGet.Commands
         {
             var install = new HashSet<RemoteMatch>();
             var flattened = new HashSet<GraphItem<RemoteResolveResult>>();
+            var flattenedTransitive = new HashSet<GraphItem<RemoteResolveResult>>();
+
             var unresolved = new HashSet<LibraryRange>();
 
             var conflicts = new Dictionary<string, HashSet<ResolverRequest>>();
@@ -151,6 +159,11 @@ namespace NuGet.Commands
                         // Don't add rejected nodes since we only want to write reduced nodes
                         // to the lock file
                         flattened.Add(node.Item);
+                        // assumption is that transitive == outernode is package 
+                        if (node.IsTransitivePackage())
+                        {
+                            flattenedTransitive.Add(node.Item);
+                        }
                     }
 
                     if (node?.OuterNode != null && node.Item.Key.Type != LibraryType.Unresolved)
@@ -181,6 +194,7 @@ namespace NuGet.Commands
                 graphs,
                 install,
                 flattened,
+                flattenedTransitive,
                 unresolved,
                 analyzeResult,
                 resolvedDependencies);

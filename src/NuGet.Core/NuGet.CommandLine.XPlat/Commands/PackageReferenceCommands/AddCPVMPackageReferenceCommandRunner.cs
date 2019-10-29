@@ -23,7 +23,42 @@ namespace NuGet.CommandLine.XPlat
 {
     public class AddCPVMPackageReferenceCommandRunner : IPackageReferenceCommandRunner
     {
+
         public async Task<int> ExecuteCommand(IPackageReferenceArgs packageReferenceArgs, MSBuildAPIUtility msBuild)
+        {
+            packageReferenceArgs.Logger.LogInformation(string.Format(CultureInfo.CurrentCulture,
+                Strings.Info_AddPkgAddingReference,
+                packageReferenceArgs.PackageDependency.Id,
+                packageReferenceArgs.ProjectPath));
+
+            //// Always no restore 
+            //packageReferenceArgs.Logger.LogWarning(string.Format(CultureInfo.CurrentCulture,
+            //       Strings.Warn_AddPkgWithoutRestore));
+
+            //var libraryDependency = new LibraryDependency
+            //{
+            //    LibraryRange = new LibraryRange(
+            //        name: packageReferenceArgs.PackageDependency.Id,
+            //        versionRange: packageReferenceArgs.PackageDependency.VersionRange,
+            //        typeConstraint: LibraryDependencyTarget.Package)
+            //};
+
+            //var cpvmFilePath = msBuild.GetCPVMFullPath(packageReferenceArgs.ProjectPath);
+            //msBuild.AddPackageReferenceToCPVM(cpvmFilePath, libraryDependency);
+            //msBuild.AddPackageReference(packageReferenceArgs.ProjectPath, libraryDependency, true);
+            //return await Task.FromResult(0);
+
+
+            if (packageReferenceArgs.NoRestore)
+            {
+                return await ExecuteCommandNoRestore(packageReferenceArgs, msBuild);
+            }
+
+            return await ExcecuteWithRestore(packageReferenceArgs, msBuild);
+        }
+
+
+        private async Task<int> ExecuteCommandNoRestore(IPackageReferenceArgs packageReferenceArgs, MSBuildAPIUtility msBuild)
         {
             packageReferenceArgs.Logger.LogInformation(string.Format(CultureInfo.CurrentCulture,
                 Strings.Info_AddPkgAddingReference,
@@ -68,7 +103,7 @@ namespace NuGet.CommandLine.XPlat
             //return await ExcecuteWithRestore(packageReferenceArgs, msBuild);
         }
 
-        private static async Task<int> ExcecuteWithRestore(PackageReferenceArgs packageReferenceArgs, MSBuildAPIUtility msBuild)
+        private static async Task<int> ExcecuteWithRestore(IPackageReferenceArgs packageReferenceArgs, MSBuildAPIUtility msBuild)
         {
             // 1. Get project dg file
             packageReferenceArgs.Logger.LogDebug("Reading project Dependency Graph");
@@ -170,10 +205,11 @@ namespace NuGet.CommandLine.XPlat
 
                 return 1;
             }
-            // Ignore the graphs with RID
-            else if (compatibleFrameworks.Count ==
-                restorePreviewResult.Result.CompatibilityCheckResults.Where(r => string.IsNullOrEmpty(r.Graph.RuntimeIdentifier)).Count())
-            {
+            else {
+                // the package will add to all the frameworks
+                // only the cpvm will filter per framework 
+
+
                 // Package is compatible with all the project TFMs
                 // Add an unconditional package reference to the project
                 packageReferenceArgs.Logger.LogInformation(string.Format(CultureInfo.CurrentCulture,
@@ -184,28 +220,56 @@ namespace NuGet.CommandLine.XPlat
                 // generate a library dependency with all the metadata like Include, Exlude and SuppressParent
                 var libraryDependency = GenerateLibraryDependency(updatedPackageSpec, packageReferenceArgs, restorePreviewResult, userSpecifiedFrameworks);
 
-                msBuild.AddPackageReference(packageReferenceArgs.ProjectPath, libraryDependency);
-            }
-            else
-            {
-                // Package is compatible with some of the project TFMs
-                // Add conditional package references to the project for the compatible TFMs
-                packageReferenceArgs.Logger.LogInformation(string.Format(CultureInfo.CurrentCulture,
-                    Strings.Info_AddPkgCompatibleWithSubsetFrameworks,
-                    packageReferenceArgs.PackageDependency.Id,
-                    packageReferenceArgs.ProjectPath));
+                
 
+                var cpvmFilePath = msBuild.GetCPVMFullPath(packageReferenceArgs.ProjectPath);
                 var compatibleOriginalFrameworks = originalPackageSpec.RestoreMetadata
                     .OriginalTargetFrameworks
-                    .Where(s => compatibleFrameworks.Contains(NuGetFramework.Parse(s)));
+                   .Where(s => compatibleFrameworks.Contains(NuGetFramework.Parse(s)));
 
-                // generate a library dependency with all the metadata like Include, Exlude and SuppressParent
-                var libraryDependency = GenerateLibraryDependency(updatedPackageSpec, packageReferenceArgs, restorePreviewResult, userSpecifiedFrameworks);
-
-                msBuild.AddPackageReferencePerTFM(packageReferenceArgs.ProjectPath,
-                    libraryDependency,
-                    compatibleOriginalFrameworks);
+                var libDepForCPVM = GenerateLibraryDependencyForCPVM(packageReferenceArgs, restorePreviewResult, userSpecifiedFrameworks);
+                msBuild.AddPackageReferencePerTFMToCPVM(cpvmFilePath, libDepForCPVM, compatibleOriginalFrameworks);
+                msBuild.AddPackageReference(packageReferenceArgs.ProjectPath, libraryDependency);
             }
+
+            //// Ignore the graphs with RID
+            //else if (compatibleFrameworks.Count ==
+            //    restorePreviewResult.Result.CompatibilityCheckResults.Where(r => string.IsNullOrEmpty(r.Graph.RuntimeIdentifier)).Count())
+            //{
+            //    // Package is compatible with all the project TFMs
+            //    // Add an unconditional package reference to the project
+            //    packageReferenceArgs.Logger.LogInformation(string.Format(CultureInfo.CurrentCulture,
+            //        Strings.Info_AddPkgCompatibleWithAllFrameworks,
+            //        packageReferenceArgs.PackageDependency.Id,
+            //        packageReferenceArgs.ProjectPath));
+
+            //    // generate a library dependency with all the metadata like Include, Exlude and SuppressParent
+            //    var libraryDependency = GenerateLibraryDependency(updatedPackageSpec, packageReferenceArgs, restorePreviewResult, userSpecifiedFrameworks);
+
+            //    msBuild.AddPackageReference(packageReferenceArgs.ProjectPath, libraryDependency);
+            //}
+
+
+            //else
+            //{
+            //    // Package is compatible with some of the project TFMs
+            //    // Add conditional package references to the project for the compatible TFMs
+            //    packageReferenceArgs.Logger.LogInformation(string.Format(CultureInfo.CurrentCulture,
+            //        Strings.Info_AddPkgCompatibleWithSubsetFrameworks,
+            //        packageReferenceArgs.PackageDependency.Id,
+            //        packageReferenceArgs.ProjectPath));
+
+            //    var compatibleOriginalFrameworks = originalPackageSpec.RestoreMetadata
+            //        .OriginalTargetFrameworks
+            //        .Where(s => compatibleFrameworks.Contains(NuGetFramework.Parse(s)));
+
+            //    // generate a library dependency with all the metadata like Include, Exlude and SuppressParent
+            //    var libraryDependency = GenerateLibraryDependency(updatedPackageSpec, packageReferenceArgs, restorePreviewResult, userSpecifiedFrameworks);
+
+            //    msBuild.AddPackageReferencePerTFM(packageReferenceArgs.ProjectPath,
+            //        libraryDependency,
+            //        compatibleOriginalFrameworks);
+            //}
 
             // 5. Commit restore result
             await RestoreRunner.CommitAsync(restorePreviewResult, CancellationToken.None);
@@ -215,7 +279,7 @@ namespace NuGet.CommandLine.XPlat
 
         private static LibraryDependency GenerateLibraryDependency(
             PackageSpec project,
-            PackageReferenceArgs packageReferenceArgs,
+            IPackageReferenceArgs packageReferenceArgs,
             RestoreResultPair restorePreviewResult,
             IEnumerable<NuGetFramework> UserSpecifiedFrameworks)
         {
@@ -286,7 +350,33 @@ namespace NuGet.CommandLine.XPlat
             };
         }
 
-        private static async Task<RestoreResultPair> PreviewAddPackageReferenceAsync(PackageReferenceArgs packageReferenceArgs,
+        private static LibraryDependency GenerateLibraryDependencyForCPVM(
+            IPackageReferenceArgs packageReferenceArgs,
+            RestoreResultPair restorePreviewResult,
+            IEnumerable<NuGetFramework> UserSpecifiedFrameworks)
+        {
+            // get the package resolved version from restore preview result
+            var resolvedVersion = GetPackageVersionFromRestoreResult(restorePreviewResult, packageReferenceArgs, UserSpecifiedFrameworks);
+
+            // calculate correct package version to write in project file
+            var version = packageReferenceArgs.PackageDependency.VersionRange;
+
+            // If the user did not specify a version then write the exact resolved version
+            if (packageReferenceArgs.NoVersion)
+            {
+                version = new VersionRange(resolvedVersion);
+            }
+
+            return new LibraryDependency
+            {
+                LibraryRange = new LibraryRange(
+                    name: packageReferenceArgs.PackageDependency.Id,
+                    versionRange: version,
+                    typeConstraint: LibraryDependencyTarget.Package)
+            };
+        }
+
+        private static async Task<RestoreResultPair> PreviewAddPackageReferenceAsync(IPackageReferenceArgs packageReferenceArgs,
             DependencyGraphSpec dgSpec)
         {
             // Set user agent and connection settings.
@@ -329,7 +419,7 @@ namespace NuGet.CommandLine.XPlat
             }
         }
 
-        private static DependencyGraphSpec ReadProjectDependencyGraph(PackageReferenceArgs packageReferenceArgs)
+        private static DependencyGraphSpec ReadProjectDependencyGraph(IPackageReferenceArgs packageReferenceArgs)
         {
             DependencyGraphSpec spec = null;
 
@@ -342,7 +432,7 @@ namespace NuGet.CommandLine.XPlat
         }
 
         private static NuGetVersion GetPackageVersionFromRestoreResult(RestoreResultPair restorePreviewResult,
-            PackageReferenceArgs packageReferenceArgs,
+            IPackageReferenceArgs packageReferenceArgs,
             IEnumerable<NuGetFramework> UserSpecifiedFrameworks)
         {
             // Get the restore graphs from the restore result

@@ -49,6 +49,7 @@ namespace NuGet.ProjectModel
             SetArrayValue(writer, "authors", packageSpec.Authors);
             SetValue(writer, "copyright", packageSpec.Copyright);
             SetValue(writer, "language", packageSpec.Language);
+            SetValue(writer, "centralDependenciesHash", packageSpec.GetCentralDependenciesHash());
             SetArrayValue(writer, "contentFiles", packageSpec.ContentFiles);
             SetDictionaryValue(writer, "packInclude", packageSpec.PackInclude);
             SetPackOptions(writer, packageSpec);
@@ -63,6 +64,37 @@ namespace NuGet.ProjectModel
             SetFrameworks(writer, packageSpec.TargetFrameworks);
 
             JsonRuntimeFormat.WriteRuntimeGraph(writer, packageSpec.RuntimeGraph);
+        }
+
+        public static void WriteCentralDepenendencies(PackageSpec packageSpec, IObjectWriter writer)
+        {
+            if (packageSpec == null)
+            {
+                throw new ArgumentNullException(nameof(packageSpec));
+            }
+
+            if (writer == null)
+            {
+                throw new ArgumentNullException(nameof(writer));
+            }
+            try
+            {
+                var frameworks = packageSpec.TargetFrameworks;
+                if (frameworks.Any())
+                {
+                    var frameworkSorter = new NuGetFrameworkSorter();
+                    foreach (var framework in frameworks.OrderBy(c => c.FrameworkName, frameworkSorter))
+                    {
+                        writer.WriteObjectStart(framework.FrameworkName.GetShortFolderName());
+                        SetGlobalDependencies(writer, framework.GlobalDependencies);
+                        writer.WriteObjectEnd();
+                    }
+                }
+            }
+            catch(Exception e)
+            {
+                string mm = e.Message;
+            }
         }
 
         /// <summary>
@@ -367,6 +399,12 @@ namespace NuGet.ProjectModel
             SetDependencies(writer, "frameworkAssemblies", libraryDependencies.Where(dependency => dependency.LibraryRange.TypeConstraint == LibraryDependencyTarget.Reference));
         }
 
+        private static void SetGlobalDependencies(IObjectWriter writer, IList<LibraryDependency> globalDependencies)
+        {
+            //it should be only LibraryDependencyTarget.Package typeConstraints
+            SetDependencies(writer, "globaldependencies", globalDependencies.Where(dependency => dependency.LibraryRange.TypeConstraint == LibraryDependencyTarget.Package));
+        }
+
         /// <summary>
         /// This method sorts the libraries based on the name
         /// This method also writes out the normalized versions to avoid cases where original string is set because it was gotten through project system vs being installed from PM UI
@@ -498,6 +536,7 @@ namespace NuGet.ProjectModel
                     writer.WriteObjectStart(framework.FrameworkName.GetShortFolderName());
 
                     SetDependencies(writer, framework.Dependencies);
+                    //SetGlobalDependencies(writer, framework.GlobalDependencies);
                     SetImports(writer, framework.Imports);
                     SetValueIfTrue(writer, "assetTargetFallback", framework.AssetTargetFallback);
                     SetValueIfTrue(writer, "warn", framework.Warn);

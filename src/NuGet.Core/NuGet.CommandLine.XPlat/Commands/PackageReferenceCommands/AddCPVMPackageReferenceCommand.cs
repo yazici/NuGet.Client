@@ -36,6 +36,11 @@ namespace NuGet.CommandLine.XPlat
                     Strings.AddPkg_PackageVersionDescription,
                     CommandOptionType.SingleValue);
 
+                var dgFilePath = addpkg.Option(
+                   "-d|--dg-file",
+                   Strings.AddPkg_DgFileDescription,
+                   CommandOptionType.SingleValue);
+
                 var frameworks = addpkg.Option(
                    "-f|--framework",
                    Strings.AddPkg_FrameworksDescription,
@@ -51,10 +56,10 @@ namespace NuGet.CommandLine.XPlat
                 //    Strings.AddPkg_ProjectPathDescription,
                 //    CommandOptionType.SingleValue);
 
-                //var noRestore = addpkg.Option(
-                //    "-n|--no-restore",
-                //    Strings.AddPkg_NoRestoreDescription,
-                //    CommandOptionType.NoValue);
+                var noRestore = addpkg.Option(
+                    "-n|--no-restore",
+                    Strings.AddPkg_NoRestoreDescription,
+                    CommandOptionType.NoValue);
 
                 //var sources = addpkg.Option(
                 //    "-s|--source",
@@ -89,8 +94,9 @@ namespace NuGet.CommandLine.XPlat
                         Frameworks = CommandLineUtility.SplitAndJoinAcrossMultipleValues(frameworks.Values),
                         Sources = new string[0], //CommandLineUtility.SplitAndJoinAcrossMultipleValues(sources.Values),
                         PackageDirectory = packageDirectory.Value(),
-                        NoRestore = true, // noRestore.HasValue(),
+                        NoRestore = noRestore.HasValue(),
                         NoVersion = noVersion,
+                        DgFilePath = dgFilePath.Value(),
                         Interactive = interactive.HasValue()
                     };
                     var msBuild = new MSBuildAPIUtility(logger);

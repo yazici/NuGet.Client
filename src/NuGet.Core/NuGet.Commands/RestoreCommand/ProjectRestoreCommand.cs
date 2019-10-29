@@ -26,6 +26,7 @@ namespace NuGet.Commands
     {
         private readonly RestoreCollectorLogger _logger;
         private readonly ProjectRestoreRequest _request;
+        //private readonly List<LibraryRange> _globalPackageReferences;
 
         private const string WalkFrameworkDependencyDuration = "WalkFrameworkDependencyDuration";
         private const string WalkRuntimeDependencyDuration = "WalkRuntimeDependencyDuration";
@@ -41,6 +42,7 @@ namespace NuGet.Commands
         }
 
         public async Task<Tuple<bool, List<RestoreTargetGraph>, RuntimeGraph>> TryRestoreAsync(LibraryRange projectRange,
+            List<LibraryRange> globalPackages,
             IEnumerable<FrameworkRuntimePair> frameworkRuntimePairs,
             NuGetv3LocalRepository userPackageFolder,
             IReadOnlyList<NuGetv3LocalRepository> fallbackPackageFolders,

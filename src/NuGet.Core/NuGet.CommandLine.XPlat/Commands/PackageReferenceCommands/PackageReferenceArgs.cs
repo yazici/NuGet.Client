@@ -11,6 +11,7 @@ namespace NuGet.CommandLine.XPlat
 {
     public class CPVMPackageReferenceArgs : IPackageReferenceArgs
     {
+        public string DgFilePath { get; set; }
         public string ProjectPath { get; }
         public ILogger Logger { get; }
         public bool NoVersion { get; set; }
@@ -99,6 +100,8 @@ namespace NuGet.CommandLine.XPlat
 
     public interface IPackageReferenceArgs
     {
+        string DgFilePath { get; set; }
+
         string ProjectPath { get; }
         ILogger Logger { get; }
         bool NoVersion { get; set; }

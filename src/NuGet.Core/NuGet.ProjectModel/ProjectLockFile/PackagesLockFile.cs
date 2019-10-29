@@ -15,6 +15,8 @@ namespace NuGet.ProjectModel
 
         public string Path { get; set; }
 
+       // public string ProjectSpecHash { get; set; }
+
         public IList<PackagesLockFileTarget> Targets { get; set; } = new List<PackagesLockFileTarget>();
 
         public bool Equals(PackagesLockFile other)
@@ -44,6 +46,7 @@ namespace NuGet.ProjectModel
 
             combiner.AddObject(Version);
             combiner.AddSequence(Targets);
+           // combiner.AddObject(ProjectSpecHash);
 
             return combiner.CombinedHash;
         }

@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -50,5 +51,7 @@ namespace NuGet.DependencyResolver
         /// True if this is a csproj or similar project. Xproj should be false.
         /// </summary>
         public bool IsMsBuildBased { get; set; }
+
+        public Dictionary<NuGetFramework, List<LibraryDependency>> GlobalLibraryDependencies { get; set; } = new Dictionary<NuGetFramework, List<LibraryDependency>>(NuGetFramework.FrameworkNameComparer);
     }
 }

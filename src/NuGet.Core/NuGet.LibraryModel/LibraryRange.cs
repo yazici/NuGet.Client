@@ -1,4 +1,4 @@
-﻿// Copyright (c) .NET Foundation. All rights reserved.
+// Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
@@ -31,6 +31,8 @@ namespace NuGet.LibraryModel
         public VersionRange VersionRange { get; set; }
 
         public LibraryDependencyTarget TypeConstraint { get; set; } = LibraryDependencyTarget.All;
+
+        public bool GlobalReferenced { get; set; }
 
         public override string ToString()
         {

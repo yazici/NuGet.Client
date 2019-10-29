@@ -794,6 +794,13 @@ namespace NuGet.ProjectModel
                 "dependencies",
                 isGacOrFrameworkReference: false);
 
+            PopulateDependencies(
+                packageSpec.FilePath,
+                targetFrameworkInformation.GlobalDependencies,
+                properties,
+                "globaldependencies",
+                isGacOrFrameworkReference: false);
+
             PopulateDownloadDependencies(
                 targetFrameworkInformation.DownloadDependencies,
                 properties,

@@ -298,6 +298,11 @@ namespace NuGet.DependencyResolver
             return node.Key.VersionRange ?? VersionRange.All;
         }
 
+        public static bool IsTransitivePackage<TItem>(this GraphNode<TItem> node)
+        {
+            return node.OuterNode != null && node.OuterNode.IsPackage();
+        }
+
         /// <summary>
         /// True if the node is resolved to a package or allows a package if unresolved.
         /// </summary>

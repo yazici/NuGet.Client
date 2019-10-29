@@ -28,6 +28,11 @@ namespace NuGet.LibraryModel
         /// </summary>
         public bool AutoReferenced { get; set; }
 
+        /// <summary>
+        /// True if the PackageReference is added by the global pack ref file but not by the project.
+        /// </summary>
+        public bool GlobalReferenced { get; set; }
+
         public bool GeneratePathProperty { get; set; }
 
         public LibraryDependency() { }

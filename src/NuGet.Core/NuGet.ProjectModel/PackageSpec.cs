@@ -6,7 +6,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using NuGet.Frameworks;
 using NuGet.LibraryModel;
+using NuGet.Packaging;
 using NuGet.RuntimeModel;
 using NuGet.Shared;
 using NuGet.Versioning;
@@ -81,7 +83,17 @@ namespace NuGet.ProjectModel
 
         public IList<string> ContentFiles { get; set; } = new List<string>();
 
-        public IList<LibraryDependency> Dependencies { get; set; } = new List<LibraryDependency>();
+        public IList<LibraryDependency> Dependencies {
+            get;
+            set;
+        } = new List<LibraryDependency>();
+
+        /// <summary>
+        /// Based on TFM
+        ///
+        /// Information added to the TargetFrameworks as well. Does not need to be here as well 
+        /// </summary>
+        public Dictionary<NuGetFramework, List<LibraryDependency>> GlobalDependencies { get; set; } = new Dictionary<NuGetFramework, List<LibraryDependency>>();
 
         public IDictionary<string, IEnumerable<string>> Scripts { get; private set; } = new Dictionary<string, IEnumerable<string>>(StringComparer.OrdinalIgnoreCase);
 
@@ -106,6 +118,16 @@ namespace NuGet.ProjectModel
         /// </summary>
         /// <remarks>Optional. This is normally set for internal use only.</remarks>
         public ProjectRestoreMetadata RestoreMetadata { get; set; }
+
+        public string GetCentralDependenciesHash()
+        {
+            using (var hashFunc = new Sha512HashFunction())
+            using (var writer = new HashObjectWriter(hashFunc))
+            {
+                PackageSpecWriter.WriteCentralDepenendencies(this, writer);
+                return writer.GetHash();
+            }
+        }
 
         public override int GetHashCode()
         {

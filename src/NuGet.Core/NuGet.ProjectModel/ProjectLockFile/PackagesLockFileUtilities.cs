@@ -71,6 +71,13 @@ namespace NuGet.ProjectModel
             var uniqueName = dgSpec.Restore.First();
             var project = dgSpec.GetProjectSpec(uniqueName);
 
+            //if(project.GetCentralDependenciesHash() != nuGetLockFile.ProjectSpecHash)
+            //{
+            //    return false;
+            //}
+
+            // Is anything else needed?
+
             // Validate all the direct dependencies
             var lockFileFrameworks = nuGetLockFile.Targets
                 .Where(t => t.TargetFramework != null)
@@ -95,6 +102,12 @@ namespace NuGet.ProjectModel
                 var directDependencies = target.Dependencies.Where(dep => dep.Type == PackageDependencyType.Direct);
 
                 if (HasProjectDependencyChanged(framework.Dependencies, directDependencies))
+                {
+                    // lock file is out of sync
+                    return false;
+                }
+                var transitiveDependencies = target.Dependencies.Where(dep => dep.Type == PackageDependencyType.Transitive);
+                if (HasProjectTransitiveDependencyChanged(framework.GlobalDependencies, transitiveDependencies))
                 {
                     // lock file is out of sync
                     return false;
@@ -315,6 +328,28 @@ namespace NuGet.ProjectModel
                 var lockFileDependency = lockFileDependencies.FirstOrDefault(d => StringComparer.OrdinalIgnoreCase.Equals(d.Id, dependency.Name));
 
                 if (lockFileDependency == null || !EqualityUtility.EqualsWithNullCheck(lockFileDependency.RequestedVersion, dependency.LibraryRange.VersionRange))
+                {
+                    // dependency has changed and lock file is out of sync.
+                    return true;
+                }
+            }
+
+            // no dependency changed. Lock file is still valid.
+            return false;
+        }
+
+        private static bool HasProjectTransitiveDependencyChanged(IEnumerable<LibraryDependency> centralDependencies, IEnumerable<LockFileDependency> lockFileTransitiveDependencies)
+        {
+            // If the count is not the same, something has changed.
+            // Otherwise we N^2 walk below determines whether anything has changed.
+            var newPackageDependencies = centralDependencies.Where(dep => dep.LibraryRange.TypeConstraint == LibraryDependencyTarget.Package);
+           
+            foreach (var lockFileDependency in lockFileTransitiveDependencies)
+            {
+                // if there is a central defined transitive package version with the version different from the one in the lock file then signal out-of-sync
+                var centralDependency = centralDependencies.FirstOrDefault(d => StringComparer.OrdinalIgnoreCase.Equals(d.Name, lockFileDependency.Id));
+
+                if (centralDependency != null && !EqualityUtility.EqualsWithNullCheck(lockFileDependency.RequestedVersion, centralDependency.LibraryRange.VersionRange))
                 {
                     // dependency has changed and lock file is out of sync.
                     return true;

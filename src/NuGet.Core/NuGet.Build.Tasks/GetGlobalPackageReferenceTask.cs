@@ -7,6 +7,7 @@ using System.Linq;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 using Newtonsoft.Json;
+using NuGet.Commands;
 using NuGet.Packaging;
 
 namespace NuGet.Build.Tasks
@@ -111,10 +112,20 @@ namespace NuGet.Build.Tasks
             var entries = new List<ITaskItem>();
             var seenIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             var globalSeenIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var globalMarkedPackageRefs = new List<ITaskItem>();
 
             foreach (var msbuildItem in PackageReferences)
             {
                 var packageId = msbuildItem.ItemSpec;
+                bool isGlobal = false;
+
+                // only to test the "GlobalReference" metadata
+                isGlobal = bool.TryParse(msbuildItem.GetMetadata("GlobalReference"), out isGlobal);
+                if(isGlobal)
+                {
+                    globalMarkedPackageRefs.Add(msbuildItem);
+                    continue;
+                }
 
                 if (string.IsNullOrEmpty(packageId) || !seenIds.Add(packageId))
                 {
@@ -144,6 +155,8 @@ namespace NuGet.Build.Tasks
                 entries.Add(new TaskItem(Guid.NewGuid().ToString(), properties));
             }
 
+            GlobalPackageReferences.AddRange(globalMarkedPackageRefs);
+
             foreach (var msbuildItem in GlobalPackageReferences)
             {
                 var packageId = msbuildItem.ItemSpec;
@@ -166,6 +179,13 @@ namespace NuGet.Build.Tasks
                 {
                     properties.Add("TargetFrameworks", TargetFrameworks);
                 }
+
+                BuildTasksUtility.CopyPropertyIfExists(msbuildItem, properties, "IncludeAssets");
+                BuildTasksUtility.CopyPropertyIfExists(msbuildItem, properties, "ExcludeAssets");
+                BuildTasksUtility.CopyPropertyIfExists(msbuildItem, properties, "PrivateAssets");
+                BuildTasksUtility.CopyPropertyIfExists(msbuildItem, properties, "NoWarn");
+                BuildTasksUtility.CopyPropertyIfExists(msbuildItem, properties, "IsImplicitlyDefined");
+                BuildTasksUtility.CopyPropertyIfExists(msbuildItem, properties, "GeneratePathProperty");
 
                 entries.Add(new TaskItem(Guid.NewGuid().ToString(), properties));
             }

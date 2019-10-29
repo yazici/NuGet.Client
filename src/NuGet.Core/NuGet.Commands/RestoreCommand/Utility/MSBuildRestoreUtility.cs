@@ -7,11 +7,13 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.FileSystemGlobbing.Internal.PatternContexts;
 using NuGet.Common;
 using NuGet.Configuration;
 using NuGet.Frameworks;
 using NuGet.LibraryModel;
 using NuGet.ProjectModel;
+using NuGet.Protocol;
 using NuGet.RuntimeModel;
 using NuGet.Versioning;
 
@@ -607,8 +609,29 @@ namespace NuGet.Commands
             return false;
         }
 
+        private static bool AddGlobalDependencyIfNotExist(PackageSpec spec, NuGetFramework framework, LibraryDependency globalDependency)
+        {
+            var frameworkInfo = spec.GetTargetFramework(framework);
+
+            if (!frameworkInfo.GlobalDependencies
+                            .Select(d => d.Name)
+                            .Contains(globalDependency.Name, StringComparer.OrdinalIgnoreCase))
+            {
+                frameworkInfo.GlobalDependencies.Add(globalDependency);
+
+                return true;
+            }
+
+            return false;
+        }
+
+
         private static void AddPackageReferences(PackageSpec spec, IEnumerable<IMSBuildItem> items)
         {
+            //spec.GlobalDependencies = CreateGlobalDependencies(items);
+
+            var globalDep = CreateGlobalDependencies(items);
+
             foreach (var item in MergePackageReferences(items)) //GetItemByType(items, "Dependency")
             {
                 var dependency = new LibraryDependency
@@ -616,9 +639,14 @@ namespace NuGet.Commands
                     LibraryRange = new LibraryRange(
                         name: item.GetProperty("Id"),
                         versionRange: GetVersionRange(item),
-                        typeConstraint: LibraryDependencyTarget.Package),
+                        typeConstraint: LibraryDependencyTarget.Package)
+                    {
+                        GlobalReferenced = IsPropertyTrue(item, "GlobalReference"),
+                    },
 
                     AutoReferenced = IsPropertyTrue(item, "IsImplicitlyDefined"),
+
+                    GlobalReferenced = IsPropertyTrue(item, "GlobalReference"),
 
                     GeneratePathProperty = IsPropertyTrue(item, "GeneratePathProperty")
                 };
@@ -643,6 +671,14 @@ namespace NuGet.Commands
                     {
                         AddDependencyIfNotExist(spec, framework, dependency);
                     }
+                }
+            }
+
+            foreach(var framework in globalDep.Keys)
+            {
+                foreach (var globalDependency in globalDep[framework])
+                {
+                    AddGlobalDependencyIfNotExist(spec, framework, globalDependency);
                 }
             }
         }
@@ -928,49 +964,220 @@ namespace NuGet.Commands
         /// <returns></returns>
         private static IEnumerable<IMSBuildItem> MergePackageReferences(IEnumerable<IMSBuildItem> items)
         {
-            var globalPackageDependencies = GetItemByType(items, "GlobalDependency")
-                .Select(x => (id: x.GetProperty("Id"),
-               version: x.GetProperty("Version") == null ? null : GetVersion(x).ToNormalizedString(),
-               versionRange: x.GetProperty("VersionRange") == null ? null : GetVersionRange(x).ToNormalizedString(),
-               targetFrameworks: x.GetProperty("TargetFrameworks"))); 
+            //var globalPackageDependencies = GetItemByType(items, "GlobalDependency")
+            //    .Select(x => (id: x.GetProperty("Id"),
+            //   version: x.GetProperty("Version") == null ? null : GetVersion(x).ToNormalizedString(),
+            //   versionRange: x.GetProperty("VersionRange") == null ? null : GetVersionRange(x).ToNormalizedString(),
+            //   includeAssets: x.GetProperty("IncludeAssets"),
+            //   excludeAssets: x.GetProperty("ExcludeAssets"),
+            //   privateAssets: x.GetProperty("PrivateAssets"),
+            //   targetFrameworks: x.GetProperty("TargetFrameworks"),
+            //   targetFramework: x.GetProperty("TargetFramework") ?? string.Empty));           
 
             var projectPackageDependencies = GetItemByType(items, "Dependency");
 
             foreach (var item in projectPackageDependencies)
             {
-                // more elements if multiple targets 
-                var globalItems = globalPackageDependencies.Where(x => x.id.Equals(item.GetProperty("Id")));
+                var itemTargetedFrameworks = GetFrameworks(item);
+                var itemTargetedFrameworksStrings = GetFrameworksStrings(item);
 
+                // more elements if multiple targets 
+                var globalItems = GetItemByType(items, "GlobalDependency").
+                    Where(x => x.GetProperty("Id").Equals(item.GetProperty("Id"))).
+                    ToList(); //.GroupBy(x => x.targetFramework); 
                 if (globalItems.Any())
                 {
-                    foreach (var globalItem in globalItems)
+                    foreach (var projectTFM in itemTargetedFrameworksStrings)
                     {
-                        var globalVersion = globalItem.version;
-                        var globalVersionRange = globalItem.versionRange;
-                        var globalTargetFrameworks = globalItem.targetFrameworks;
+                       var globalItemOnTFM = globalItems.Where(gi =>
+                       {
+                           var globalItemsTFMs = GetFrameworksStrings(gi);
+                           return globalItemsTFMs.Contains(projectTFM);
+                       }).FirstOrDefault();
 
-                        var metadata = GetBuildItemMetadata(item);
-                        if (globalVersion != null)
+                        if (globalItemOnTFM != null)
                         {
-                            metadata["Version"] = globalVersion;
+                            // Do we want to get all the information or only the version 
+                            var metadata = GetBuildItemMetadata(globalItemOnTFM);
+                            metadata["GlobalReference"] = "true";
+                            //get the tfm from the project
+                            //metadata["TargetFramework"] = projectTFM;
+                            yield return new MSBuildItem(item.Identity, metadata);
                         }
-                        if (globalVersionRange != null)
-                        {
-                            metadata["VersionRange"] = globalVersionRange;
-                        }
-                        if (globalTargetFrameworks != null)
-                        {
-                            metadata["TargetFrameworks"] = globalTargetFrameworks;
-                        }
-
-                        yield return new MSBuildItem(item.Identity, metadata);
                     }
                 }
                 else
                 {
                     yield return item;
                 }
+
+                //if (globalItems.Any())
+                //{
+                //    foreach (var projectTFM in itemTargetedFrameworksStrings)
+                //    {
+                //        foreach(var globalItem in globalItems)
+                //        {
+                //            var globalItemsTFMs = GetFrameworksStrings(globalItem);
+
+                //            if(globalItemsTFMs.Contains(projectTFM))
+                //            {
+                //                var metadata = GetBuildItemMetadata(globalItem);
+                //                metadata["GlobalReference"] = "true";
+                //                //get the tfm from the project
+                //                metadata["TargetFramework"] = projectTFM;
+                //                yield return new MSBuildItem(item.Identity, metadata);
+                //            }
+                //            else
+                //            {
+                //                yield return item;
+                //            }
+                //        }
+
+                //        //// if there is a global for the same tfm use it 
+                //        //var globalItemsWithTFM = globalItems.
+                //        //    Where(x => (x.GetProperty("TargetFramework") ?? string.Empty).
+                //        //    Equals(projectTFM));
+
+                //        //if (globalItemsWithTFM.Any())
+                //        //{
+                //        //    var metadata = GetBuildItemMetadata(globalItemsWithTFM.First());
+                //        //    metadata["GlobalReference"] = "true";
+                //        //    yield return new MSBuildItem(item.Identity, metadata);
+                //        //}
+                //        //else
+                //        //{
+                //        //    var globalItemsForAnyTFM = globalItems.Where(x => string.IsNullOrEmpty(x.GetProperty("TargetFramework")));
+                //        //    if (globalItemsForAnyTFM.Any())
+                //        //    {
+                //        //        var metadata = GetBuildItemMetadata(globalItemsForAnyTFM.First());
+                //        //        metadata["GlobalReference"] = "true";
+                //        //        //get the tfm from the project
+                //        //        metadata["TargetFramework"] = projectTFM;
+                //        //        yield return new MSBuildItem(item.Identity, metadata);
+                //        //    }
+                //        //    else
+                //        //    {
+                //        //        yield return item;
+                //        //    }
+                //        //}
+                //    }
+
+                //    //// if the project does not have framework restrictions take all the global
+                //    //if (!itemTargetedFrameworksStrings.Any())
+                //    //{
+                //    //    foreach (var globalItem in globalItems)
+                //    //    {
+                //    //        var metadata = GetBuildItemMetadata(globalItem);
+                //    //        metadata["GlobalReference"] = "true";
+                //    //        yield return new MSBuildItem(item.Identity, metadata);
+                //    //    }
+                //    //}
+                //    //else
+                //    //{
+                //    //    foreach(var projectTFM in itemTargetedFrameworksStrings)
+                //    //    {
+                //    //        // if there is a global for the same tfm use it 
+                //    //        var globalItemsWithTFM = globalItems.
+                //    //            Where(x => (x.GetProperty("TargetFramework") ?? string.Empty).
+                //    //            Equals(projectTFM));
+
+                //    //        if (globalItemsWithTFM.Any())
+                //    //        {
+                //    //            var metadata = GetBuildItemMetadata(globalItemsWithTFM.First());
+                //    //            metadata["GlobalReference"] = "true";
+                //    //            yield return new MSBuildItem(item.Identity, metadata);
+                //    //        }
+                //    //        else 
+                //    //        {
+                //    //            var globalItemsForAnyTFM = globalItems.Where(x => string.IsNullOrEmpty(x.GetProperty("TargetFramework")));
+                //    //            if(globalItemsForAnyTFM.Any())
+                //    //            {
+                //    //                var metadata = GetBuildItemMetadata(globalItemsForAnyTFM.First());
+                //    //                metadata["GlobalReference"] = "true";
+                //    //                //get the tfm from the project
+                //    //                metadata["TargetFramework"] = projectTFM;
+                //    //                yield return new MSBuildItem(item.Identity, metadata);
+                //    //            }
+                //    //            else
+                //    //            {
+                //    //                yield return item;
+                //    //            }
+                //    //        }
+                //    //    }
+                //    //}
+                //}
+                //else
+                //{
+                //    yield return item;
+                //}
             }
+
+            //var localDepIds = GetItemByType(items, "Dependency").Select(msi => msi.GetProperty("Id"));
+            //foreach (var item in GetItemByType(items, "GlobalDependency"))
+            //{            
+
+            //    if (!localDepIds.Contains(item.GetProperty("Id")))
+            //    {
+            //        yield return item;
+            //    }
+            //}
+
+        }
+
+
+        //private static MSBuildItem MergeItemInformation(MSBuildItem fromItem, MSBuildItem toItem)
+        //{
+
+        //}
+        private static Dictionary<NuGetFramework, List<LibraryDependency>> CreateGlobalDependencies(IEnumerable<IMSBuildItem> items)
+        {
+            var globalPackageDependencies = GetItemByType(items, "GlobalDependency").ToList();
+            var result = new Dictionary<NuGetFramework, List<LibraryDependency>>();
+               // .Select(x => (id: x.GetProperty("Id"),
+               //version: x.GetProperty("Version") == null ? null : GetVersion(x).ToNormalizedString(),
+               //versionRange: x.GetProperty("VersionRange") == null ? null : GetVersionRange(x).ToNormalizedString(),
+               //includeAssets: x.GetProperty("IncludeAssets"),
+               //excludeAssets: x.GetProperty("ExcludeAssets"),
+               //privateAssets: x.GetProperty("PrivateAssets"),
+               //targetFrameworks: x.GetProperty("TargetFrameworks"),
+               //targetFramework: x.GetProperty("TargetFramework")));
+
+            foreach ( var gd in globalPackageDependencies)
+            {
+                //var tfms = GetFrameworksStrings(gd);
+                var tfms = GetFrameworks(gd);
+
+                var dependency = new LibraryDependency
+                {
+                    LibraryRange = new LibraryRange(
+                       name: gd.GetProperty("Id"),
+                       versionRange: GetVersionRange(gd),
+                       typeConstraint: LibraryDependencyTarget.Package)
+                    {
+                        GlobalReferenced = true,
+                    },
+                    AutoReferenced = IsPropertyTrue(gd, "IsImplicitlyDefined"),
+                    GlobalReferenced = true,
+                    GeneratePathProperty = IsPropertyTrue(gd, "GeneratePathProperty")
+                };
+
+                foreach (var tfm in tfms)
+                {
+                    if (result.ContainsKey(tfm))
+                    {
+                        result[tfm].Add(dependency);
+
+                    }
+                    else
+                    {
+                        var deps = new List<LibraryDependency>() { dependency };
+                        result.Add(tfm, deps);
+                    }
+                }
+                //yield return dependency;
+            }
+
+            return result;
         }
 
         private static Dictionary<string,string> GetBuildItemMetadata(IMSBuildItem item)

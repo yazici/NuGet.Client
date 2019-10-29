@@ -1,12 +1,15 @@
 // Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
+//# define PromoteDepToDirect
+
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+//using System.Runtime.Remoting.Messaging;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -363,6 +366,134 @@ namespace NuGet.Commands
                     packagesLockFile,
                     _request.ProjectStyle,
                     restoreTime.Elapsed);
+            }
+        }
+
+
+
+        /// <summary>
+        ///  New
+        /// </summary>
+        /// <param name="token"></param>
+        /// <returns></returns>
+
+        public async Task<IEnumerable<GraphItem<RemoteResolveResult>>> GetProjectDependecySpecAsync(CancellationToken token)
+        {
+            using (var telemetry = TelemetryActivity.CreateTelemetryActivityWithNewOperationIdAndEvent(parentId: ParentId, eventName: ProjectRestoreInformation))
+            {
+                _operationId = telemetry.OperationId;
+                var restoreTime = Stopwatch.StartNew();
+
+                // Local package folders (non-sources)
+                var localRepositories = new List<NuGetv3LocalRepository>
+                {
+                    _request.DependencyProviders.GlobalPackages
+                };
+
+                localRepositories.AddRange(_request.DependencyProviders.FallbackPackageFolders);
+
+                var contextForProject = CreateRemoteWalkContext(_request, _logger);
+
+                CacheFile cacheFile = null;
+                var output = new List<GraphItem<RemoteResolveResult>>();
+
+                using (var noOpTelemetry = TelemetryActivity.CreateTelemetryActivityWithNewOperationIdAndEvent(parentId: _operationId, eventName: RestoreNoOpInformation))
+                {
+                    if (NoOpRestoreUtilities.IsNoOpSupported(_request))
+                    {
+                        noOpTelemetry.StartIntervalMeasure();
+
+                        var cacheFileAndStatus = EvaluateCacheFile();
+
+                        noOpTelemetry.EndIntervalMeasure(CacheFileEvaluateDuration);
+
+                        cacheFile = cacheFileAndStatus.Key;
+                        if (cacheFileAndStatus.Value)
+                        {
+                            noOpTelemetry.StartIntervalMeasure();
+
+                            var noOpSuccess = NoOpRestoreUtilities.VerifyRestoreOutput(_request);
+
+                            noOpTelemetry.EndIntervalMeasure(MsbuildAssetsVerificationDuration);
+                            noOpTelemetry.TelemetryEvent[MsbuildAssetsVerificationResult] = noOpSuccess;
+
+                            if (noOpSuccess)
+                            {
+                                noOpTelemetry.StartIntervalMeasure();
+
+                                // Replay Warnings and Errors from an existing lock file in case of a no-op.
+                                await MSBuildRestoreUtility.ReplayWarningsAndErrorsAsync(_request.ExistingLockFile, _logger);
+
+                                noOpTelemetry.EndIntervalMeasure(ReplayLogsDuration);
+
+                                restoreTime.Stop();
+
+                                return output;
+                            }
+                        }
+                    }
+                }
+
+
+                // Lock file validation logic ....
+
+                IEnumerable<RestoreTargetGraph> graphs = null;
+                using (var restoreGraphTelemetry = TelemetryActivity.CreateTelemetryActivityWithNewOperationIdAndEvent(parentId: _operationId, eventName: GenerateRestoreGraph))
+                {
+                    // Restore
+                    graphs = await ExecuteRestoreAsync(
+                    _request.DependencyProviders.GlobalPackages,
+                    _request.DependencyProviders.FallbackPackageFolders,
+                    contextForProject,
+                    token,
+                    restoreGraphTelemetry);
+                }
+
+                LockFile assetsFile = null;
+                using (TelemetryActivity.CreateTelemetryActivityWithNewOperationIdAndEvent(parentId: _operationId, eventName: GenerateAssetsFile))
+                {
+                    // Create assets file
+                    assetsFile = BuildAssetsFile(
+                    _request.ExistingLockFile,
+                    _request.Project,
+                    graphs,
+                    localRepositories,
+                    contextForProject);
+                }
+
+                IList<CompatibilityCheckResult> checkResults = null;
+                using (TelemetryActivity.CreateTelemetryActivityWithNewOperationIdAndEvent(parentId: _operationId, eventName: ValidateRestoreGraphs))
+                {
+                    _success &= await ValidateRestoreGraphsAsync(graphs, _logger);
+
+                    // Check package compatibility
+                    checkResults = await VerifyCompatibilityAsync(
+                    _request.Project,
+                    _includeFlagGraphs,
+                    localRepositories,
+                    assetsFile,
+                    graphs,
+                    _request.ValidateRuntimeAssets,
+                    _logger);
+
+                    if (checkResults.Any(r => !r.Success))
+                    {
+                        _success = false;
+                    }
+
+                }
+
+                restoreTime.Stop();
+
+                // Create result
+                foreach( var g in graphs )
+                {
+                    if (g.FlattenedTransitive != null)
+                    {
+                        output.AddRange(g.FlattenedTransitive);
+                    }
+                }
+                return output;
             }
         }
 
@@ -843,6 +974,83 @@ namespace NuGet.Commands
             return checkResults;
         }
 
+        /// <summary>
+        /// Transitive dependencies flatten and groued by framework 
+        /// </summary>
+        /// <param name="restoreGraphs"></param>
+        /// <returns></returns>
+        private Dictionary<NuGetFramework, List<GraphItem<RemoteResolveResult>>> GetTransitiveDependencies(List<RestoreTargetGraph> restoreGraphs)
+        {
+            var output = new Dictionary<NuGetFramework, List<GraphItem<RemoteResolveResult>>>(NuGetFramework.FrameworkNameComparer);
+
+            // Create result
+            foreach (var g in restoreGraphs)
+            {
+                if (g.FlattenedTransitive != null)
+                {
+                    // Restore graphs should be on Framework so this path should not be necessary 
+                    if (output.ContainsKey(g.Framework))
+                    {
+                        output[g.Framework].AddRange(g.FlattenedTransitive);
+                    }
+                    else
+                    {
+                        output.Add(g.Framework, new List<GraphItem<RemoteResolveResult>>(g.FlattenedTransitive)); 
+                    }
+                }
+               
+            }
+            return output;
+        }
+
+        /// <summary>
+        /// ProjectRestoreCommand
+        /// </summary>
+        /// <param name="transitiveDependenciesOnFrameworkKey"></param>
+        /// <param name="globalDependenciesOnFrameworkKey"></param>
+        private void PromoteGlobalTransitiveDependencyToDirectDependency(Dictionary<NuGetFramework, List<GraphItem<RemoteResolveResult>>> transitiveDependenciesOnFrameworkKey,
+            Dictionary<NuGetFramework, List<LibraryDependency>> globalDependenciesOnFrameworkKey)
+        {
+            var transitiveDependenciesIdsOnFramework = transitiveDependenciesOnFrameworkKey.
+                Select(td => (tf: td.Key, deps: td.Value.Select(x => x.Key.Name).ToList())).
+                ToDictionary(k=>k.tf, v=>v.deps, NuGetFramework.FrameworkNameComparer);//.ToHashSet();
+
+            foreach (var gd in globalDependenciesOnFrameworkKey)
+            {
+                var currentFramework = gd.Key;
+
+                if (transitiveDependenciesIdsOnFramework.ContainsKey(currentFramework))
+                {
+                    foreach (var gDep in globalDependenciesOnFrameworkKey[currentFramework])
+                    {
+                        if (transitiveDependenciesIdsOnFramework[gd.Key].Contains(gDep.Name))
+                        {
+                            // get the right framework to apply the dependencies to 
+                            var projectFrameworks = _request.Project.TargetFrameworks.Where( tfmi => NuGetFramework.FrameworkNameComparer.Equals(currentFramework, tfmi.FrameworkName));
+                            if(projectFrameworks.Any()) //it should be onlyu  one
+                            {
+                                var framework = projectFrameworks.First();
+                                framework.Dependencies.Add(gDep);
+                            }
+                        }
+                    }
+                }
+            }
+            ////does this need to be renewed ?
+            //var projectRestoreRequest = new ProjectRestoreRequest(
+            //   _request,
+            //   _request.Project,
+            //   _request.ExistingLockFile,
+            //   _logger)
+            //{
+            //    ParentId = _operationId
+            //};
+
+            //var projectRestoreCommand = new ProjectRestoreCommand(projectRestoreRequest);
+
+            //return projectRestoreCommand;
+        }
+
         private async Task<IEnumerable<RestoreTargetGraph>> ExecuteRestoreAsync(
             NuGetv3LocalRepository userPackageFolder,
             IReadOnlyList<NuGetv3LocalRepository> fallbackPackageFolders,
@@ -882,6 +1090,9 @@ namespace NuGet.Commands
                 TypeConstraint = LibraryDependencyTarget.Project | LibraryDependencyTarget.ExternalProject
             };
 
+            var globalPackageRanges = new List<LibraryRange>();
+
+
             // Resolve dependency graphs
             var allGraphs = new List<RestoreTargetGraph>();
             var runtimeIds = RequestRuntimeUtility.GetRestoreRuntimes(_request);
@@ -904,6 +1115,7 @@ namespace NuGet.Commands
             {
                 result = await projectRestoreCommand.TryRestoreAsync(
                     projectRange,
+                    globalPackageRanges,
                     projectFrameworkRuntimePairs,
                     userPackageFolder,
                     fallbackPackageFolders,
@@ -915,7 +1127,34 @@ namespace NuGet.Commands
             }
 
             var success = result.Item1;
-            allGraphs.AddRange(result.Item2);
+
+#if PromoteDepToDirect
+            // Promote global transitive dependecies to direct
+            if (success)
+            {
+                var transitiveDependencies = GetTransitiveDependencies(result.Item2);
+                PromoteGlobalTransitiveDependencyToDirectDependency(transitiveDependencies, context.GlobalLibraryDependencies);
+
+                //// do the restore again
+                using (var tryRestoreTelemetry = TelemetryActivity.CreateTelemetryActivityWithNewOperationIdAndEvent(telemetryActivity.OperationId, CreateRestoreTargetGraph))
+                {
+                    result = await projectRestoreCommand.TryRestoreAsync(
+                        projectRange,
+                        globalPackageRanges,
+                        projectFrameworkRuntimePairs,
+                        userPackageFolder,
+                        fallbackPackageFolders,
+                        remoteWalker,
+                        context,
+                        forceRuntimeGraphCreation: hasSupports,
+                        token: token,
+                        telemetryActivity: tryRestoreTelemetry);
+                }
+            }
+
+            success = result.Item1;
+#endif
+                allGraphs.AddRange(result.Item2);
             _success = success;
 
             // Calculate compatibility profiles to check by merging those defined in the project with any from the command line
@@ -953,6 +1192,7 @@ namespace NuGet.Commands
                 {
                     compatibilityResult = await projectRestoreCommand.TryRestoreAsync(
                     projectRange,
+                    globalPackageRanges,
                     _request.CompatibilityProfiles,
                     userPackageFolder,
                     fallbackPackageFolders,
@@ -1083,6 +1323,14 @@ namespace NuGet.Commands
             {
                 context.RemoteLibraryProviders.Add(provider);
             }
+
+            context.GlobalLibraryDependencies = request.Project.
+                TargetFrameworks.
+                Select(tfm => new KeyValuePair<NuGetFramework, IList<LibraryDependency>>(tfm.FrameworkName, tfm.GlobalDependencies)).
+                ToDictionary(kvp => kvp.Key, kvp => kvp.Value.ToList());
+
+                //request.Project.GlobalDependencies;
+            //request.Project.GlobalDependencies.ToDictionary( k => NuGetFramework.Parse(k.Key), v=> v.Value, NuGetFramework.FrameworkNameComparer);
 
             return context;
         }

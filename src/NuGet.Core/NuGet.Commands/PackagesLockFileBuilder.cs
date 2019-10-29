@@ -17,7 +17,7 @@ namespace NuGet.Commands
         public PackagesLockFile CreateNuGetLockFile(LockFile assetsFile)
         {
             var lockFile = new PackagesLockFile();
-
+            //lockFile.ProjectSpecHash = assetsFile.PackageSpec.GetCentralDependenciesHash();
             var libraryLookup = assetsFile.Libraries.Where(e => e.Type == LibraryType.Package)
                 .ToDictionary(e => new PackageIdentity(e.Name, e.Version));
 

@@ -29,6 +29,28 @@ namespace NuGet.DependencyResolver
             return CreateGraphNode(library, framework, runtimeIdentifier, runtimeGraph, _ => recursive ? DependencyResult.Acceptable : DependencyResult.Eclipsed, outerEdge: null);
         }
 
+        /// <summary>
+        /// If there is a global dependency with different version than the 
+        /// </summary>
+        /// <param name="currentLibraryRange"></param>
+        /// <param name="framework"></param>
+        /// <returns></returns>
+        private LibraryRange GetGlobalLibraryRangeIfExists(LibraryRange currentLibraryRange, NuGetFramework framework)
+        {
+            if (_context.GlobalLibraryDependencies.ContainsKey(framework))
+            {
+                var itemInGlobalDepList = _context.GlobalLibraryDependencies[framework].Where(d => StringComparer.OrdinalIgnoreCase.Equals(d.Name, currentLibraryRange.Name)).FirstOrDefault();
+
+                if(itemInGlobalDepList != null && !itemInGlobalDepList.LibraryRange.VersionRange.Equals(currentLibraryRange.VersionRange))
+                {
+                    return itemInGlobalDepList.LibraryRange;
+                }
+                return currentLibraryRange;
+            }
+
+            return currentLibraryRange;
+        }
+
         private async Task<GraphNode<RemoteResolveResult>> CreateGraphNode(
             LibraryRange libraryRange,
             NuGetFramework framework,
@@ -37,6 +59,11 @@ namespace NuGet.DependencyResolver
             Func<LibraryRange, DependencyResult> predicate,
             GraphEdge<RemoteResolveResult> outerEdge)
         {
+            var currentNodeName = libraryRange.Name;
+
+            // hijack the range of the node with a different one if defined in CPVM
+            libraryRange = GetGlobalLibraryRangeIfExists(libraryRange, framework);
+
             List<LibraryDependency> dependencies = null;
             HashSet<string> runtimeDependencies = null;
             List<Task<GraphNode<RemoteResolveResult>>> tasks = null;

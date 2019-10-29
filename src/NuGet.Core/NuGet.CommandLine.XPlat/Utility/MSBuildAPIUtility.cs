@@ -196,8 +196,8 @@ namespace NuGet.CommandLine.XPlat
                 var globalProperties = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                 { { "TargetFramework", framework } };
                 var project = GetProject(projectPath, globalProperties);
-                var existingPackageReferences = GetPackageReferences(project, libraryDependency);
-                //AddPackageReference(project, libraryDependency, existingPackageReferences, framework, true);
+                var existingPackageReferences = GetPackageReferencesCPVM(project, libraryDependency);
+                AddPackageReferenceToCPVMInternal(project, libraryDependency, existingPackageReferences, framework);
                 ProjectCollection.GlobalProjectCollection.UnloadProject(project);
             }
         }
