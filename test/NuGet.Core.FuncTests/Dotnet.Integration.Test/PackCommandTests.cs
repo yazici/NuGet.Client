@@ -3974,7 +3974,7 @@ namespace ClassLibrary
                 Assert.True(result.Success);
             }
         }
-
+#endif
         [PlatformFact(Platform.Windows, Skip = "https://github.com/NuGet/Home/issues/8601")]
         public void PackCommand_Deterministic_MultiplePackInvocations_CreateIdenticalPackages()
         {
