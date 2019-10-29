@@ -734,7 +734,7 @@ phases:
     name: DDNuGet-Windows
     demands: 
       - DotNetFramework
-      - Agent.Name -equals DDNuGetW002
+      - Agent.Name -equals DDNuGetW001
 
   steps:
   - task: PowerShell@1
