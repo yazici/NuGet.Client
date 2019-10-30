@@ -107,7 +107,7 @@ namespace NuGet.ProjectModel
                     return false;
                 }
                 var transitiveDependencies = target.Dependencies.Where(dep => dep.Type == PackageDependencyType.Transitive);
-                if (HasProjectTransitiveDependencyChanged(framework.GlobalDependencies, transitiveDependencies))
+                if (HasProjectTransitiveDependencyChanged(framework.CentralDependencies, transitiveDependencies))
                 {
                     // lock file is out of sync
                     return false;

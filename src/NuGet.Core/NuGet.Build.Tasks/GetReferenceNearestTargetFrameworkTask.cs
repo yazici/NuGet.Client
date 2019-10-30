@@ -46,7 +46,9 @@ namespace NuGet.Build.Tasks
 
         public override bool Execute()
         {
+#if DFEBUG
             System.Diagnostics.Debugger.Launch();
+#endif
 
             var logger = new MSBuildLogger(Log);
 

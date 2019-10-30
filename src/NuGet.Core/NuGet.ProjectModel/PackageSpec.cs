@@ -121,12 +121,13 @@ namespace NuGet.ProjectModel
 
         public string GetCentralDependenciesHash()
         {
-            using (var hashFunc = new Sha512HashFunction())
-            using (var writer = new HashObjectWriter(hashFunc))
-            {
-                PackageSpecWriter.WriteCentralDepenendencies(this, writer);
-                return writer.GetHash();
-            }
+            //using (var hashFunc = new Sha512HashFunction())
+            //using (var writer = new HashObjectWriter(hashFunc))
+            //{
+            //    PackageSpecWriter.WriteCentralDepenendencies(this, writer);
+            //    return writer.GetHash();
+            //}
+            return string.Empty;
         }
 
         public override int GetHashCode()

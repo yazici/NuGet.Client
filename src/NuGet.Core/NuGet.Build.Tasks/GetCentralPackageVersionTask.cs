@@ -13,7 +13,7 @@ using NuGet.Packaging;
 namespace NuGet.Build.Tasks
 {
    
-    public class GetGlobalPackageReferenceTask : Task
+    public class GetCentralPackageVersionTask : Task
     {
         /// <summary>
         /// Full path to the msbuild project.
@@ -25,7 +25,7 @@ namespace NuGet.Build.Tasks
         public ITaskItem[] PackageReferences { get; set; }
 
         [Required]
-        public ITaskItem[] GlobalPackageReferences { get; set; }
+        public ITaskItem[] CentralPackageVersions { get; set; }
 
         /// <summary>
         /// Target frameworks to apply this for. If empty this applies to all.
@@ -37,7 +37,6 @@ namespace NuGet.Build.Tasks
         /// </summary>
         [Required]
         public string CPVMF { get; set; }
-
 
         /// <summary>
         /// Output items
@@ -51,7 +50,9 @@ namespace NuGet.Build.Tasks
         /// <returns></returns>
         public bool Execute1()
         {
+#if DEBUG
             System.Diagnostics.Debugger.Launch();
+#endif
 
             var log = new MSBuildLogger(Log);
             log.LogDebug($"(in) ProjectUniqueName '{ProjectUniqueName}'");
@@ -102,7 +103,9 @@ namespace NuGet.Build.Tasks
 
         public override bool Execute()
         {
+#if DEBUG
             System.Diagnostics.Debugger.Launch();
+#endif
 
             var log = new MSBuildLogger(Log);
             log.LogDebug($"(in) ProjectUniqueName '{ProjectUniqueName}'");
@@ -112,20 +115,19 @@ namespace NuGet.Build.Tasks
             var entries = new List<ITaskItem>();
             var seenIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             var globalSeenIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            var globalMarkedPackageRefs = new List<ITaskItem>();
+            //var globalMarkedPackageRefs = new List<ITaskItem>();
 
             foreach (var msbuildItem in PackageReferences)
             {
                 var packageId = msbuildItem.ItemSpec;
-                bool isGlobal = false;
-
-                // only to test the "GlobalReference" metadata
-                isGlobal = bool.TryParse(msbuildItem.GetMetadata("GlobalReference"), out isGlobal);
-                if(isGlobal)
-                {
-                    globalMarkedPackageRefs.Add(msbuildItem);
-                    continue;
-                }
+                //bool isGlobal = false;
+                // only to test the "CentralVersion" metadata
+                //isGlobal = bool.TryParse(msbuildItem.GetMetadata("CentralVersion"), out isGlobal);
+                //if(isGlobal)
+                //{
+                //    globalMarkedPackageRefs.Add(msbuildItem);
+                //    continue;
+                //}
 
                 if (string.IsNullOrEmpty(packageId) || !seenIds.Add(packageId))
                 {
@@ -137,7 +139,7 @@ namespace NuGet.Build.Tasks
                 properties.Add("ProjectUniqueName", ProjectUniqueName);
                 properties.Add("Type", "Dependency");
                 properties.Add("Id", packageId);
-                properties.Add("GlobalPackageReference", "false");
+                properties.Add("CentralPackageVersion", "false");
                 BuildTasksUtility.CopyPropertyIfExists(msbuildItem, properties, "Version", "VersionRange");
 
                 if (!string.IsNullOrEmpty(TargetFrameworks))
@@ -155,9 +157,9 @@ namespace NuGet.Build.Tasks
                 entries.Add(new TaskItem(Guid.NewGuid().ToString(), properties));
             }
 
-            GlobalPackageReferences.AddRange(globalMarkedPackageRefs);
+            //PackageVersions.AddRange(globalMarkedPackageRefs);
 
-            foreach (var msbuildItem in GlobalPackageReferences)
+            foreach (var msbuildItem in CentralPackageVersions)
             {
                 var packageId = msbuildItem.ItemSpec;
 
@@ -171,7 +173,7 @@ namespace NuGet.Build.Tasks
                 properties.Add("ProjectUniqueName", ProjectUniqueName);
                 properties.Add("Type", "GlobalDependency");
                 properties.Add("Id", packageId);
-                properties.Add("GlobalPackageReference", "true");
+                properties.Add("CentralPackageVersion", "true");
                 properties.Add("CPVMF", CPVMF);
                 BuildTasksUtility.CopyPropertyIfExists(msbuildItem, properties, "Version", "VersionRange");
 
@@ -201,12 +203,13 @@ namespace NuGet.Build.Tasks
         {
             foreach(var item in PackageReferences)
             {
-                if(GlobalPackageReferences.Contains(item, new PackageReferenceComparer()))
+                if(CentralPackageVersions.Contains(item, new PackageReferenceComparer()))
                 {
                     var wrapper = new MSBuildTaskItem(item);
                     var ver = wrapper.GetProperty("Version");
                     item.SetMetadata("Version", GetVersionFromGlobalPackagereference(item));
-                    item.SetMetadata("GlobalPackageReference", "true");
+                    //GlobalPackageReference
+                    item.SetMetadata("CentralPackageVersion", "true");
                     item.SetMetadata("CPVMF", CPVMF);
                     yield return item;
                 }
@@ -219,7 +222,7 @@ namespace NuGet.Build.Tasks
 
         private string GetVersionFromGlobalPackagereference(ITaskItem item)
         {
-            var globalItem = GlobalPackageReferences.Where(x => x.ItemSpec == item.ItemSpec).First();
+            var globalItem = CentralPackageVersions.Where(x => x.ItemSpec == item.ItemSpec).First();
             var wrapper = new MSBuildTaskItem(globalItem);
             return wrapper.GetProperty("Version");
         }

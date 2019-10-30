@@ -32,9 +32,10 @@ namespace NuGet.Build.Tasks
 
         public override bool Execute()
         {
+#if DEBUG
             //System.Threading.Tasks.Task.Delay(30000).Wait();
             System.Diagnostics.Debugger.Launch();
-
+#endif
             if (RestoreGraphItems.Length < 1)
             {
                 Log.LogWarning("Unable to find a project to restore!");

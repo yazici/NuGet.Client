@@ -1326,7 +1326,7 @@ namespace NuGet.Commands
 
             context.GlobalLibraryDependencies = request.Project.
                 TargetFrameworks.
-                Select(tfm => new KeyValuePair<NuGetFramework, IList<LibraryDependency>>(tfm.FrameworkName, tfm.GlobalDependencies)).
+                Select(tfm => new KeyValuePair<NuGetFramework, IList<LibraryDependency>>(tfm.FrameworkName, tfm.CentralDependencies)).
                 ToDictionary(kvp => kvp.Key, kvp => kvp.Value.ToList());
 
                 //request.Project.GlobalDependencies;

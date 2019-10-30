@@ -260,7 +260,7 @@ Copyright (c) .NET Foundation. All rights reserved.
   <UsingTask TaskName="NuGet.Build.Tasks.GetRestoreSettingsTask" AssemblyFile="$(RestoreTaskAssemblyFile)" />
   <UsingTask TaskName="NuGet.Build.Tasks.WarnForInvalidProjectsTask" AssemblyFile="$(RestoreTaskAssemblyFile)" />
   <UsingTask TaskName="NuGet.Build.Tasks.GetReferenceNearestTargetFrameworkTask" AssemblyFile="$(RestoreTaskAssemblyFile)" />
-  <UsingTask TaskName="NuGet.Build.Tasks.GetGlobalPackageReferenceTask" AssemblyFile="$(RestoreTaskAssemblyFile)" />
+  <UsingTask TaskName="NuGet.Build.Tasks.GetCentralPackageVersionTask" AssemblyFile="$(RestoreTaskAssemblyFile)" />
   <UsingTask TaskName="NuGet.Build.Tasks.RestoreDGSpecTask" AssemblyFile="$(RestoreTaskAssemblyFile)" />
 
   <!--
@@ -330,7 +330,7 @@ Copyright (c) .NET Foundation. All rights reserved.
   -->
   <Target Name="CollectPackageReferences" Returns="@(PackageReference)" />
 
-  <Target Name="CollectGlobalPackageReference" Returns="@(GlobalPackageReference)" />
+  <Target Name="CollectCentralPackageVersion" Returns="@(CentralPackageVersion)" />
 
 
   <!--
@@ -997,7 +997,7 @@ Copyright (c) .NET Foundation. All rights reserved.
     ============================================================
   -->
   <Target Name="_GenerateProjectRestoreGraphPerFramework"
-    DependsOnTargets="_GetRestoreProjectStyle;CollectPackageReferences;CollectGlobalPackageReference;CollectPackageDownloads;CollectFrameworkReferences"
+    DependsOnTargets="_GetRestoreProjectStyle;CollectPackageReferences;CollectCentralPackageVersion;CollectPackageDownloads;CollectFrameworkReferences"
     Returns="@(_RestoreGraphEntry)">
 
     <Message Text="In target _GenerateProjectRestoreGraphPerFramework ProjectReferences0 are '@(ProjectReference)'" Importance="high" />
@@ -1046,21 +1046,21 @@ Copyright (c) .NET Foundation. All rights reserved.
     <!-- Pass the global package references to the project to participate in the restore graph-->
     <Message Text="In target _GenerateProjectRestoreGraphPerFramework CPVMF is '$(CentralPackagesFile)'" Importance="high" />
     <Message Text="In target _GenerateProjectRestoreGraphPerFramework EnableCentralPackageVersions is '$(EnableCentralPackageVersions)'" Importance="high" />
-    <Message Text="In target _GenerateProjectRestoreGraphPerFramework GlobalPackageReference are '@(GlobalPackageReference)'" Importance="high" />
+    <Message Text="In target _GenerateProjectRestoreGraphPerFramework CentralPackageVersion are '@(CentralPackageVersion)'" Importance="high" />
     <Message Text="In target _GenerateProjectRestoreGraphPerFramework PackageReference are '@(PackageReference)'" Importance="high" />
 
-    <GetGlobalPackageReferenceTask
+    <GetCentralPackageVersionTask
       Condition=" '$(PackageReferenceCompatibleProjectStyle)' == 'true' and '$(EnableCentralPackageVersions)' != 'false'"
       ProjectUniqueName="$(MSBuildProjectFullPath)"
       PackageReferences="@(PackageReference)"
-      GlobalPackageReferences="@(GlobalPackageReference)"
+      CentralPackageVersions="@(CentralPackageVersion)"
       CPVMF ="$(CentralPackagesFile)"
       TargetFrameworks="$(TargetFramework)"
       >
       <Output
         TaskParameter="RestoreGraphItems"
         ItemName="_RestoreGraphEntry" />
-    </GetGlobalPackageReferenceTask>
+    </GetCentralPackageVersionTask>
 
 
     <!-- Write out package downloads -->

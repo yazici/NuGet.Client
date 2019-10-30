@@ -49,7 +49,7 @@ namespace NuGet.ProjectModel
             SetArrayValue(writer, "authors", packageSpec.Authors);
             SetValue(writer, "copyright", packageSpec.Copyright);
             SetValue(writer, "language", packageSpec.Language);
-            SetValue(writer, "centralDependenciesHash", packageSpec.GetCentralDependenciesHash());
+            //SetValue(writer, "centralDependenciesHash", packageSpec.GetCentralDependenciesHash());
             SetArrayValue(writer, "contentFiles", packageSpec.ContentFiles);
             SetDictionaryValue(writer, "packInclude", packageSpec.PackInclude);
             SetPackOptions(writer, packageSpec);
@@ -86,7 +86,7 @@ namespace NuGet.ProjectModel
                     foreach (var framework in frameworks.OrderBy(c => c.FrameworkName, frameworkSorter))
                     {
                         writer.WriteObjectStart(framework.FrameworkName.GetShortFolderName());
-                        SetGlobalDependencies(writer, framework.GlobalDependencies);
+                        SetGlobalDependencies(writer, framework.CentralDependencies);
                         writer.WriteObjectEnd();
                     }
                 }
@@ -402,7 +402,7 @@ namespace NuGet.ProjectModel
         private static void SetGlobalDependencies(IObjectWriter writer, IList<LibraryDependency> globalDependencies)
         {
             //it should be only LibraryDependencyTarget.Package typeConstraints
-            SetDependencies(writer, "globaldependencies", globalDependencies.Where(dependency => dependency.LibraryRange.TypeConstraint == LibraryDependencyTarget.Package));
+            SetDependencies(writer, "centraldependencies", globalDependencies.Where(dependency => dependency.LibraryRange.TypeConstraint == LibraryDependencyTarget.Package));
         }
 
         /// <summary>
@@ -536,7 +536,7 @@ namespace NuGet.ProjectModel
                     writer.WriteObjectStart(framework.FrameworkName.GetShortFolderName());
 
                     SetDependencies(writer, framework.Dependencies);
-                    //SetGlobalDependencies(writer, framework.GlobalDependencies);
+                    SetGlobalDependencies(writer, framework.CentralDependencies);
                     SetImports(writer, framework.Imports);
                     SetValueIfTrue(writer, "assetTargetFallback", framework.AssetTargetFallback);
                     SetValueIfTrue(writer, "warn", framework.Warn);

@@ -82,8 +82,9 @@ namespace NuGet.Build.Tasks
 
         public override bool Execute()
         {
+#if DEBUG
             System.Diagnostics.Debugger.Launch();
-
+#endif
             var log = new MSBuildLogger(Log);
 
             // Log Inputs

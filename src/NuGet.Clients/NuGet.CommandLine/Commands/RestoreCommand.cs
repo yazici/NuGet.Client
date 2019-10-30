@@ -674,6 +674,9 @@ namespace NuGet.CommandLine
                     Math.Max(10, projectsWithPotentialP2PReferences.Length / 2) / 10;
             }
 
+            // to remove
+            scaleTimeout = int.MaxValue;
+
             Console.LogVerbose($"MSBuild P2P timeout [ms]: {scaleTimeout}");
 
             string restorePackagesWithLockFile = UseLockFile ? bool.TrueString : null;

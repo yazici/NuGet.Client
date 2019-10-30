@@ -612,12 +612,16 @@ namespace NuGet.Commands
         private static bool AddGlobalDependencyIfNotExist(PackageSpec spec, NuGetFramework framework, LibraryDependency globalDependency)
         {
             var frameworkInfo = spec.GetTargetFramework(framework);
-
-            if (!frameworkInfo.GlobalDependencies
+            var frameworkDepIds = frameworkInfo.Dependencies.Select(d=>d.Name).ToList();
+            if (!frameworkInfo.CentralDependencies
                             .Select(d => d.Name)
                             .Contains(globalDependency.Name, StringComparer.OrdinalIgnoreCase))
             {
-                frameworkInfo.GlobalDependencies.Add(globalDependency);
+                // Do not duplicate the item in dependecy and in the central list
+                if (!frameworkDepIds.Contains(globalDependency.Name, StringComparer.OrdinalIgnoreCase))
+                {
+                    frameworkInfo.CentralDependencies.Add(globalDependency);
+                }
 
                 return true;
             }
