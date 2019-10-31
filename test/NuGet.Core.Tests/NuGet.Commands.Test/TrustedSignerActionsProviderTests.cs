@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-#if IS_DESKTOP
+#if IS_SIGNING_SUPPORTED
 using System.Security.Cryptography.Pkcs;
 #endif
 using System.Threading;
@@ -195,7 +195,7 @@ namespace NuGet.Commands.Test
                     SettingsTestUtils.DeepEquals(i.Certificates.First(), expectedCert))));
         }
 
-#if IS_DESKTOP
+#if IS_SIGNING_SUPPORTED
         [Fact]
         public async Task AddTrustedSignerAsync_WithNullPackage_ThrowsAsync()
         {

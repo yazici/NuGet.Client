@@ -1524,7 +1524,7 @@ namespace NuGet.Packaging.Test
             }
         }
 
-#if IS_DESKTOP
+#if IS_SIGNING_SUPPORTED
         [Fact]
         public async Task ValidateIntegrityAsync_WhenSignatureContentNull_Throws()
         {
@@ -1762,7 +1762,7 @@ namespace NuGet.Packaging.Test
             }
         }
 
-#if IS_DESKTOP
+#if IS_SIGNING_SUPPORTED
         [CIOnlyFact]
         public async Task GetContentHash_IsSameForUnsignedAndSignedPackageAsync()
         {
