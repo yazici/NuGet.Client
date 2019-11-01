@@ -68,6 +68,13 @@ rm -rf "/tmp/"dotnet.*
 
 echo "================="
 
+#restore solution packages
+$DOTNET msbuild -t:restore "$DIR/build/bootstrap.proj"
+if [ $? -ne 0 ]; then
+	echo "Restore failed!!"
+	exit 1
+fi
+
 # init the repo
 
 git submodule init
