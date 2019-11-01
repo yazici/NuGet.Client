@@ -94,13 +94,18 @@ phases:
       - msbuild
 
   steps:
-  - task: UseDotNet@2
-    displayName: 'Use .NET Core sdk'
+  # - task: UseDotNet@2
+  #   displayName: 'Use .NET Core sdk'
+  #   inputs:
+  #     packageType: sdk
+  #     version: $(SDKVersionForBuild)
+  #     includePreviewVersions: true
+  #     installationPath: $(Agent.TempDirectory)/dotnet
+
+  - task: PowerShell@1
     inputs:
-      packageType: sdk
-      version: $(SDKVersionForBuild)
-      includePreviewVersions: true
-      installationPath: $(Agent.TempDirectory)/dotnet
+      scriptName: "$(Build.Repository.LocalPath)\\scrips\\utils\\InstallCLIforBuild.ps1"
+    displayName: "Install .NET 5.0 for build"
 
   - task: PowerShell@1
     displayName: "Update Build Number"
@@ -573,13 +578,18 @@ phases:
         SkipDesktopAssemblies: "true"
         
   steps:
-  - task: UseDotNet@2
-    displayName: 'Use .NET Core sdk'
+  # - task: UseDotNet@2
+  #   displayName: 'Use .NET Core sdk'
+  #   inputs:
+  #     packageType: sdk
+  #     version: $(SDKVersionForBuild)
+  #     includePreviewVersions: true
+  #     installationPath: $(Agent.TempDirectory)/dotnet
+
+  - task: PowerShell@1
     inputs:
-      packageType: sdk
-      version: $(SDKVersionForBuild)
-      includePreviewVersions: true
-      installationPath: $(Agent.TempDirectory)/dotnet
+      scriptName: "$(Build.Repository.LocalPath)\\scrips\\utils\\InstallCLIforBuild.ps1"
+    displayName: "Install .NET 5.0 for build"
 
   - task: PowerShell@1
     displayName: "Print Environment Variables"
@@ -657,13 +667,21 @@ phases:
     demands: sh
 
   steps:
-  - task: UseDotNet@2
-    displayName: 'Use .NET Core sdk'
+  # - task: UseDotNet@2
+  #   displayName: 'Use .NET Core sdk'
+  #   inputs:
+  #     packageType: sdk
+  #     version: $(SDKVersionForBuild)
+  #     includePreviewVersions: true
+  #     installationPath: $(Agent.TempDirectory)/dotnet
+
+  - task: ShellScript@2
+    displayName: "Install .NET 5.0 for build"
+    continueOnError: "true"
     inputs:
-      packageType: sdk
-      version: $(SDKVersionForBuild)
-      includePreviewVersions: true
-      installationPath: $(Agent.TempDirectory)/dotnet
+      scriptPath: "scripts/utils/InstallCLIforBuild.sh"
+      disableAutoCwd: "true"
+      cwd: "$(Build.Repository.LocalPath)"
       
   - task: PowerShell@2
     displayName: "Update Build Number"
@@ -716,14 +734,22 @@ phases:
     demands: sh
 
   steps:
-  - task: UseDotNet@2
-    displayName: 'Use .NET Core sdk'
-    inputs:
-      packageType: sdk
-      version: $(SDKVersionForBuild)
-      includePreviewVersions: true
-      installationPath: $(Agent.TempDirectory)/dotnet
+  # - task: UseDotNet@2
+  #   displayName: 'Use .NET Core sdk'
+  #   inputs:
+  #     packageType: sdk
+  #     version: $(SDKVersionForBuild)
+  #     includePreviewVersions: true
+  #     installationPath: $(Agent.TempDirectory)/dotnet
       
+  - task: ShellScript@2
+    displayName: "Install .NET 5.0 for build"
+    continueOnError: "true"
+    inputs:
+      scriptPath: "scripts/utils/InstallCLIforBuild.sh"
+      disableAutoCwd: "true"
+      cwd: "$(Build.Repository.LocalPath)"
+
   - task: PowerShell@2
     displayName: "Update Build Number"
     inputs:
@@ -782,13 +808,18 @@ phases:
     demands: DotNetFramework
 
   steps:
-  - task: UseDotNet@2
-    displayName: 'Use .NET Core sdk'
+  # - task: UseDotNet@2
+  #   displayName: 'Use .NET Core sdk'
+  #   inputs:
+  #     packageType: sdk
+  #     version: $(SDKVersionForBuild)
+  #     includePreviewVersions: true
+  #     installationPath: $(Agent.TempDirectory)/dotnet
+
+  - task: PowerShell@1
     inputs:
-      packageType: sdk
-      version: $(SDKVersionForBuild)
-      includePreviewVersions: true
-      installationPath: $(Agent.TempDirectory)/dotnet
+      scriptName: "$(Build.Repository.LocalPath)\\scrips\\utils\\InstallCLIforBuild.ps1"
+    displayName: "Install .NET 5.0 for build"
 
   - task: PowerShell@1
     displayName: "Print Environment Variables"
