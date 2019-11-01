@@ -1909,7 +1909,7 @@ namespace NuGet.CommandLine.Test
                     Assert.True(
                    result.Item3.Contains(
                        "NameResolutionFailure"),
-                   "Expected error message not found in " + result.Item3
+                   "Expected error message not found in " + result.Item3 + "@@ isMono = true @@"
                    );
                 }
                 else
@@ -1917,7 +1917,7 @@ namespace NuGet.CommandLine.Test
                     Assert.True(
                         result.Item3.Contains(
                             "The remote name could not be resolved: 'invalid-2a0358f1-88f2-48c0-b68a-bb150cac00bd.org'"),
-                        "Expected error message not found in " + result.Item3
+                        "Expected error message not found in " + result.Item3 + "@@ isMono=false @@"
                         );
                 }
             }

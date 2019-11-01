@@ -853,7 +853,7 @@ namespace NuGet.CommandLine.Test
                 Assert.True(
                result.Item3.Contains(
                    "NameResolutionFailure"),
-               "Expected error message not found in " + result.Item3
+               "Expected error message not found in " + result.Item3 +"@@ isMono=true @@"
                );
             }
             else
@@ -861,7 +861,7 @@ namespace NuGet.CommandLine.Test
                 Assert.True(
                     result.Item3.Contains(
                         $"Unable to load the service index for source {invalidInput}."),
-                    "Expected error message not found in " + result.Item3
+                    "Expected error message not found in " + result.Item3 +"@@ isMono=false @@"
                     );
             }
         }
