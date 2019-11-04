@@ -281,7 +281,7 @@ namespace Dotnet.Integration.Test
                 {
                      var files = nupkg.GetFiles()
                     .Where(fileName => fileName.StartsWith("lib/netstandard2.1")
-                                    || fileName.StartsWith("lib/netcoreapp3.0")
+                                    || fileName.StartsWith("lib/netcoreapp5.0")
                                     || fileName.Contains("NuGet.targets"));
                     if (!files.Any()) {
                         files = nupkg.GetFiles()

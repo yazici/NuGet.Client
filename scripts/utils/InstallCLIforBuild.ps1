@@ -26,9 +26,5 @@ else
 
 $Env:PATH
 
-$Env:PATH = "$InstallDir;${Env:PATH}"
-
-$Env:PATH
-
 # Display build info
 & dotnet --info
