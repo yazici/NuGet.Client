@@ -24,6 +24,11 @@ else
 
 & $DotNetInstall -Channel master -i $InstallDir -Architecture $arch 
 
+$Env:PATH
+
+$Env:PATH = "$InstallDir;${Env:PATH}"
+
+$Env:PATH
 
 # Display build info
 & dotnet --info
