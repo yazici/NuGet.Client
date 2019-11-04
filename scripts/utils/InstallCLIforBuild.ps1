@@ -4,6 +4,8 @@
 
 $InstallDir = Join-Path $Env:AGENT_TEMPDIRECTORY 'dotnet'
 
+New-Item -ItemType Directory -Force -Path $InstallDir
+
 $DotNetInstall = Join-Path $InstallDir 'dotnet-install.ps1'
 
 Invoke-WebRequest 'https://dot.net/v1/dotnet-install.ps1' -OutFile $DotNetInstall
