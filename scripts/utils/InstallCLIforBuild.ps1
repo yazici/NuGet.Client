@@ -1,6 +1,6 @@
 # Download the CLI install script to Agent.TempDirectory
 
-echo "Installing dotnet CLI into $(Agent.TempDirectory) folder for building"
+#Write-Host "Installing dotnet CLI into $(Agent.TempDirectory) folder for building"
 
 $InstallDir = Join-Path $(Agent.TempDirectory) 'dotnet'
 
@@ -23,4 +23,3 @@ else
 
 # Display build info
 & dotnet --info
-
