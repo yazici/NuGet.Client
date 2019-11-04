@@ -21,6 +21,11 @@ chmod +x $installDir/dotnet-install.sh
 
 $installDir/dotnet-install.sh -i $installDir -c master
 
+echo "Add ${installDir} to PATH"
+$PATH=$PATH:${installDir}
+
+echo $PATH
+
 echo "Deleting .NET Core temporary files"
 rm -rf "/tmp/"dotnet.*
 
