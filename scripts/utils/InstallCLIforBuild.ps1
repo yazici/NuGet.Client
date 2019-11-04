@@ -1,8 +1,8 @@
 # Download the CLI install script to Agent.TempDirectory
 
-#Write-Host "Installing dotnet CLI into $(AGENT_TEMPDIRECTORY) folder for building"
+#Write-Host "Installing dotnet CLI into $Env:AGENT_TEMPDIRECTORY folder for building"
 
-$InstallDir = Join-Path $(AGENT_TEMPDIRECTORY) 'dotnet'
+$InstallDir = Join-Path $Env:AGENT_TEMPDIRECTORY 'dotnet'
 
 $DotNetInstall = Join-Path $InstallDir 'dotnet-install.ps1'
 
