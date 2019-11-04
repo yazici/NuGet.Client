@@ -22,7 +22,7 @@ chmod +x $installDir/dotnet-install.sh
 $installDir/dotnet-install.sh -i $installDir -c master
 
 echo "Add ${installDir} to PATH"
-$PATH=$PATH:${installDir}
+PATH=$PATH:${installDir}
 
 echo $PATH
 
