@@ -9,7 +9,6 @@ $DotNetInstall = Join-Path $InstallDir 'dotnet-install.ps1'
 Invoke-WebRequest 'https://dot.net/v1/dotnet-install.ps1' -OutFile $DotNetInstall
 
 
-
 if ([Environment]::Is64BitOperatingSystem) 
 {
     $arch = "x64";

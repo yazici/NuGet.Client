@@ -2,9 +2,9 @@
 
 # Download the CLI install script to Agent.TempDirectory
 
-echo "Installing dotnet CLI into $(Agent.TempDirectory) folder for building"
+echo "Installing dotnet CLI into ${Agent.TempDirectory} folder for building"
 
-installDir="$(Agent.TempDirectory)/dotnet"
+installDir="${Agent.TempDirectory}/dotnet"
 
 mkdir -p $installDir
 
