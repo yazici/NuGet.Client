@@ -4,9 +4,11 @@
 
 $InstallDir = Join-Path $Env:AGENT_TEMPDIRECTORY 'dotnet'
 
-New-Item -ItemType Directory -Force -Path $InstallDir
+New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
 
 $DotNetInstall = Join-Path $InstallDir 'dotnet-install.ps1'
+
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
 Invoke-WebRequest 'https://dot.net/v1/dotnet-install.ps1' -OutFile $DotNetInstall
 
