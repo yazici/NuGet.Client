@@ -121,6 +121,7 @@ phases:
       scriptType: "inlineScript"
       inlineScript: |
         Write-Host "##vso[task.setvariable variable=ManifestFilePath]$(Build.Repository.LocalPath)\artifacts\manifests\nuget.client.xml"
+        Write-Host "##vso[task.setvariable variable=PATH;isOutput=true]$PATH;${env:AGENT_TEMPDIRECTORY}\dotnet"
 
   - task: NuGetToolInstaller@0
     displayName: "Use NuGet 5.0.0"
