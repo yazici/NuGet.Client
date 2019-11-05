@@ -698,7 +698,7 @@ phases:
     inputs:
       scriptType: "inlineScript"
       inlineScript: |
-        Write-Host "##vso[task.setvariable variable=Path]${env:Path}:${env:AGENT_TEMPDIRECTORY}/dotnet"
+        Write-Host "##vso[task.setvariable variable=PATH]${env:PATH}:${env:AGENT_TEMPDIRECTORY}/dotnet"
 
   - task: PowerShell@2
     displayName: "Update Build Number"
@@ -782,7 +782,7 @@ phases:
     inputs:
       scriptType: "inlineScript"
       inlineScript: |
-        Write-Host "##vso[task.setvariable variable=Path]${env:Path}:${env:AGENT_TEMPDIRECTORY}/dotnet"
+        Write-Host "##vso[task.setvariable variable=PATH]${env:PATH}:${env:AGENT_TEMPDIRECTORY}/dotnet"
 
   - task: DownloadBuildArtifacts@0
     displayName: "Download NuGet.CommandLine.Test artifacts"
