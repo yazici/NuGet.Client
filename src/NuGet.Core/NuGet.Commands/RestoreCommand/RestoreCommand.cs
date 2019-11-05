@@ -858,7 +858,7 @@ namespace NuGet.Commands
                 _success = false;
                 return Enumerable.Empty<RestoreTargetGraph>();
             }
-            _logger.LogInformation(string.Format(CultureInfo.CurrentCulture, Strings.Log_RestoringPackages, _request.Project.FilePath)); 
+            _logger.LogMinimal(string.Format(CultureInfo.CurrentCulture, Strings.Log_RestoringPackages, _request.Project.FilePath)); 
 
             // Get external project references
             // If the top level project already exists, update the package spec provided

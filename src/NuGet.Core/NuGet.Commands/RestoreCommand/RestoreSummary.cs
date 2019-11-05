@@ -74,11 +74,43 @@ namespace NuGet.Commands
             Errors = errors;
         }
 
-        public static void Log(ILogger logger, IEnumerable<RestoreSummary> restoreSummaries, bool logErrors = false)
+        public static void Log(ILogger logger, IReadOnlyList<RestoreSummary> restoreSummaries, bool logErrors = false)
         {
-            if (restoreSummaries.Count() == 0)
+            if (restoreSummaries.Count == 0)
             {
                 return;
+            }
+
+            int noOpCount = 0;
+            var feedsUsed = new HashSet<string>();
+            var configFiles = new HashSet<string>();
+            var installed = new Dictionary<string, int>(restoreSummaries.Count, PathUtility.GetStringComparerBasedOnOS());
+
+            foreach (RestoreSummary restoreSummary in restoreSummaries)
+            {
+                if (restoreSummary.NoOpRestore)
+                {
+                    noOpCount++;
+                }
+
+                foreach (var feed in restoreSummary.FeedsUsed)
+                {
+                    feedsUsed.Add(feed);
+                }
+
+                foreach (var configFile in restoreSummary.ConfigFiles)
+                {
+                    configFiles.Add(configFile);
+                }
+
+                if (installed.ContainsKey(restoreSummary.InputPath))
+                {
+                    installed[restoreSummary.InputPath] += restoreSummary.InstallCount;
+                }
+                else
+                {
+                    installed[restoreSummary.InputPath] = restoreSummary.InstallCount;
+                }
             }
 
             // This should only be true by nuget exe since it does not have msbuild logger
@@ -96,10 +128,6 @@ namespace NuGet.Commands
             }
 
             // Display the information summary
-            var configFiles = restoreSummaries
-                .SelectMany(summary => summary.ConfigFiles)
-                .Distinct();
-
             if (configFiles.Any())
             {
                 logger.LogInformationSummary(string.Empty);
@@ -109,10 +137,6 @@ namespace NuGet.Commands
                     logger.LogInformationSummary($"    {configFile}");
                 }
             }
-
-            var feedsUsed = restoreSummaries
-                .SelectMany(summary => summary.FeedsUsed)
-                .Distinct();
 
             if (feedsUsed.Any())
             {
@@ -124,16 +148,11 @@ namespace NuGet.Commands
                 }
             }
 
-            var installed = restoreSummaries
-                .GroupBy(summary => summary.InputPath, summary => summary.InstallCount)
-                .Select(group => new KeyValuePair<string, int>(group.Key, group.Sum()))
-                .Where(pair => pair.Value > 0);
-
-            if (installed.Any())
+            if (installed.Any(i => i.Value > 0))
             {
                 logger.LogInformationSummary(string.Empty);
                 logger.LogInformationSummary(Strings.Log_InstalledSummary);
-                foreach (var pair in installed)
+                foreach (var pair in installed.Where(i => i.Value > 0))
                 {
                     logger.LogInformationSummary("    " + string.Format(
                         CultureInfo.CurrentCulture,
@@ -141,6 +160,15 @@ namespace NuGet.Commands
                         pair.Value,
                         pair.Key));
                 }
+            }
+
+            if (noOpCount == restoreSummaries.Count)
+            {
+                logger.LogMinimal(Strings.Log_AllProjectsUpToDate);
+            }
+            else if(noOpCount > 0)
+            {
+                logger.LogMinimal(Strings.Log_ProjectUpToDateSummary);
             }
         }
 

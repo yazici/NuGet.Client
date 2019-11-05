@@ -272,7 +272,7 @@ namespace NuGet.Commands
 
             if (result.Success)
             {
-                log.LogMinimal(string.Format(
+                log.LogInformation(string.Format(
                     CultureInfo.CurrentCulture,
                     summaryRequest.Request.ProjectStyle == ProjectStyle.DotnetToolReference ?
                     Strings.Log_RestoreCompleteDotnetTool :
