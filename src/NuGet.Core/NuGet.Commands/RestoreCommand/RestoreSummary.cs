@@ -103,13 +103,16 @@ namespace NuGet.Commands
                     configFiles.Add(configFile);
                 }
 
-                if (installed.ContainsKey(restoreSummary.InputPath))
+                if (!string.IsNullOrEmpty(restoreSummary.InputPath))
                 {
-                    installed[restoreSummary.InputPath] += restoreSummary.InstallCount;
-                }
-                else
-                {
-                    installed[restoreSummary.InputPath] = restoreSummary.InstallCount;
+                    if (installed.ContainsKey(restoreSummary.InputPath))
+                    {
+                        installed[restoreSummary.InputPath] += restoreSummary.InstallCount;
+                    }
+                    else
+                    {
+                        installed[restoreSummary.InputPath] = restoreSummary.InstallCount;
+                    }
                 }
             }
 
@@ -168,7 +171,7 @@ namespace NuGet.Commands
             }
             else if(noOpCount > 0)
             {
-                logger.LogMinimal(Strings.Log_ProjectUpToDateSummary);
+                logger.LogMinimal(string.Format(CultureInfo.CurrentCulture, Strings.Log_ProjectUpToDateSummary, noOpCount, restoreSummaries.Count));
             }
         }
 
