@@ -131,7 +131,9 @@ phases:
         Write-Host "=================================check env=================================="
         gci env:* | format-table -Wrap -AutoSize
         Write-Host "=================================check temp folder=================================="
-        cd ${env:AGENT_TEMPDIRECTORY}\dotnet
+        cd ${env:AGENT_TEMPDIRECTORY}
+        ls
+        cd dotnet
         ls
         Write-Host "=================================check temp folder dotnet=================================="
         ${env:AGENT_TEMPDIRECTORY}\dotnet\dotnet.exe --info
@@ -622,7 +624,9 @@ phases:
         Write-Host "=================================check env=================================="
         gci env:* | format-table -Wrap -AutoSize
         Write-Host "=================================check temp folder=================================="
-        cd ${env:AGENT_TEMPDIRECTORY}\dotnet
+        cd ${env:AGENT_TEMPDIRECTORY}
+        ls
+        cd dotnet
         ls
         Write-Host "=================================check temp folder dotnet=================================="
         ${env:AGENT_TEMPDIRECTORY}\dotnet\dotnet.exe --info
@@ -721,12 +725,12 @@ phases:
       disableAutoCwd: "true"
       cwd: "$(Build.Repository.LocalPath)"
 
-  - task: PowerShell@2
-    displayName: "Define variables"
-    inputs:
-      scriptType: "inlineScript"
-      inlineScript: |
-        Write-Host "##vso[task.setvariable variable=PATH]${env:PATH}:${env:AGENT_TEMPDIRECTORY}/dotnet/"
+  # - task: PowerShell@2
+  #   displayName: "Define variables"
+  #   inputs:
+  #     scriptType: "inlineScript"
+  #     inlineScript: |
+  #       Write-Host "##vso[task.setvariable variable=PATH]${env:PATH}:${env:AGENT_TEMPDIRECTORY}/dotnet/"
 
   - task: PowerShell@2
     displayName: "add check step"
@@ -819,12 +823,12 @@ phases:
       failOnStderr: "true"
     condition: "always()"
 
-  - task: PowerShell@2
-    displayName: "Define variables"
-    inputs:
-      scriptType: "inlineScript"
-      inlineScript: |
-        Write-Host "##vso[task.setvariable variable=PATH]${env:PATH}:${env:AGENT_TEMPDIRECTORY}/dotnet/"
+  # - task: PowerShell@2
+  #   displayName: "Define variables"
+  #   inputs:
+  #     scriptType: "inlineScript"
+  #     inlineScript: |
+  #       Write-Host "##vso[task.setvariable variable=PATH]${env:PATH}:${env:AGENT_TEMPDIRECTORY}/dotnet/"
 
   - task: PowerShell@2
     displayName: "add check step"
@@ -834,10 +838,12 @@ phases:
         Write-Host "=================================check env=================================="
         gci env:* | format-table -Wrap -AutoSize
         Write-Host "=================================check temp folder=================================="
-        cd ${env:AGENT_TEMPDIRECTORY}\dotnet
+        cd ${env:AGENT_TEMPDIRECTORY}
+        ls
+        cd dotnet
         ls
         Write-Host "=================================check temp folder dotnet=================================="
-        ${env:AGENT_TEMPDIRECTORY}\dotnet\dotnet.exe --info
+        ${env:AGENT_TEMPDIRECTORY}/dotnet/dotnet.exe --info
         Write-Host "=================================check dotnet=================================="
         dotnet --info
 
