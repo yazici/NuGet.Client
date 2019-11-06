@@ -121,7 +121,7 @@ phases:
       scriptType: "inlineScript"
       inlineScript: |
         Write-Host "##vso[task.setvariable variable=ManifestFilePath]$(Build.Repository.LocalPath)\artifacts\manifests\nuget.client.xml"
-        Write-Host "##vso[task.setvariable variable=Path]${env:Path};${env:AGENT_TEMPDIRECTORY}\dotnet\"
+        Write-Host "##vso[task.setvariable variable=Path]${env:AGENT_TEMPDIRECTORY}\dotnet\;${env:Path}"
   
   - task: PowerShell@1
     displayName: "add check step"
@@ -614,7 +614,7 @@ phases:
     inputs:
       scriptType: "inlineScript"
       inlineScript: |
-        Write-Host "##vso[task.setvariable variable=Path]${env:Path};${env:AGENT_TEMPDIRECTORY}\dotnet\"
+        Write-Host "##vso[task.setvariable variable=Path]${env:AGENT_TEMPDIRECTORY}\dotnet\;${env:Path}"
 
   - task: PowerShell@1
     displayName: "add check step"
