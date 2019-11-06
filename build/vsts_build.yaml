@@ -122,6 +122,21 @@ phases:
       inlineScript: |
         Write-Host "##vso[task.setvariable variable=ManifestFilePath]$(Build.Repository.LocalPath)\artifacts\manifests\nuget.client.xml"
         Write-Host "##vso[task.setvariable variable=Path]${env:Path};${env:AGENT_TEMPDIRECTORY}\dotnet\"
+  
+  - task: PowerShell@1
+    displayName: "add check step"
+    inputs:
+      scriptType: "inlineScript"
+      inlineScript: |
+        Write-Host "=================================check env=================================="
+        gci env:* | format-table -Wrap -AutoSize
+        Write-Host "=================================check temp folder=================================="
+        cd ${env:AGENT_TEMPDIRECTORY}\dotnet
+        ls
+        Write-Host "=================================check temp folder dotnet=================================="
+        ${env:AGENT_TEMPDIRECTORY}\dotnet\dotnet.exe --info
+        Write-Host "=================================check dotnet=================================="
+        dotnet --info
 
   - task: NuGetToolInstaller@0
     displayName: "Use NuGet 5.0.0"
@@ -600,6 +615,21 @@ phases:
         Write-Host "##vso[task.setvariable variable=Path]${env:Path};${env:AGENT_TEMPDIRECTORY}\dotnet\"
 
   - task: PowerShell@1
+    displayName: "add check step"
+    inputs:
+      scriptType: "inlineScript"
+      inlineScript: |
+        Write-Host "=================================check env=================================="
+        gci env:* | format-table -Wrap -AutoSize
+        Write-Host "=================================check temp folder=================================="
+        cd ${env:AGENT_TEMPDIRECTORY}\dotnet
+        ls
+        Write-Host "=================================check temp folder dotnet=================================="
+        ${env:AGENT_TEMPDIRECTORY}\dotnet\dotnet.exe --info
+        Write-Host "=================================check dotnet=================================="
+        dotnet --info
+
+  - task: PowerShell@1
     displayName: "Print Environment Variables"
     inputs:
       scriptType: "inlineScript"
@@ -699,6 +729,21 @@ phases:
         Write-Host "##vso[task.setvariable variable=PATH]${env:PATH}:${env:AGENT_TEMPDIRECTORY}/dotnet/"
 
   - task: PowerShell@2
+    displayName: "add check step"
+    inputs:
+      scriptType: "inlineScript"
+      inlineScript: |
+        Write-Host "=================================check env=================================="
+        gci env:* | format-table -Wrap -AutoSize
+        Write-Host "=================================check temp folder=================================="
+        cd ${env:AGENT_TEMPDIRECTORY}\dotnet
+        ls
+        Write-Host "=================================check temp folder dotnet=================================="
+        ${env:AGENT_TEMPDIRECTORY}\dotnet\dotnet.exe --info
+        Write-Host "=================================check dotnet=================================="
+        dotnet --info
+
+  - task: PowerShell@2
     displayName: "Update Build Number"
     inputs:
       targetType: "inline"
@@ -780,6 +825,21 @@ phases:
       scriptType: "inlineScript"
       inlineScript: |
         Write-Host "##vso[task.setvariable variable=PATH]${env:PATH}:${env:AGENT_TEMPDIRECTORY}/dotnet/"
+
+  - task: PowerShell@2
+    displayName: "add check step"
+    inputs:
+      scriptType: "inlineScript"
+      inlineScript: |
+        Write-Host "=================================check env=================================="
+        gci env:* | format-table -Wrap -AutoSize
+        Write-Host "=================================check temp folder=================================="
+        cd ${env:AGENT_TEMPDIRECTORY}\dotnet
+        ls
+        Write-Host "=================================check temp folder dotnet=================================="
+        ${env:AGENT_TEMPDIRECTORY}\dotnet\dotnet.exe --info
+        Write-Host "=================================check dotnet=================================="
+        dotnet --info
 
   - task: DownloadBuildArtifacts@0
     displayName: "Download NuGet.CommandLine.Test artifacts"
