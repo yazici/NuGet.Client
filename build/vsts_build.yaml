@@ -745,7 +745,7 @@ phases:
         cd dotnet
         ls
         Write-Host "=================================check temp folder dotnet=================================="
-        ./dotnet.exe --info
+        ./dotnet --info
         Write-Host "=================================check dotnet=================================="
         dotnet --info
 
@@ -845,7 +845,7 @@ phases:
         cd dotnet
         ls
         Write-Host "=================================check temp folder dotnet=================================="
-        ./dotnet.exe --info
+        ./dotnet --info
         Write-Host "=================================check dotnet=================================="
         dotnet --info
 
