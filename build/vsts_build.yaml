@@ -725,18 +725,18 @@ phases:
       disableAutoCwd: "true"
       cwd: "$(Build.Repository.LocalPath)"
 
-  # - task: PowerShell@2
-  #   displayName: "Define variables"
-  #   inputs:
-  #     scriptType: "inlineScript"
-  #     inlineScript: |
-  #       Write-Host "##vso[task.setvariable variable=PATH]${env:PATH}:${env:AGENT_TEMPDIRECTORY}/dotnet/"
+  - task: PowerShell@2
+    displayName: "Define variables"
+    inputs:
+      targetType: "inline"
+      script: |
+        Write-Host "##vso[task.setvariable variable=PATH]${env:AGENT_TEMPDIRECTORY}/dotnet/:${env:PATH}"
 
   - task: PowerShell@2
     displayName: "add check step"
     inputs:
-      scriptType: "inlineScript"
-      inlineScript: |
+      targetType: "inline"
+      script: |
         Write-Host "=================================check env=================================="
         gci env:* | format-table -Wrap -AutoSize
         Write-Host "=================================check temp folder=================================="
@@ -745,7 +745,7 @@ phases:
         cd dotnet
         ls
         Write-Host "=================================check temp folder dotnet=================================="
-        .\dotnet.exe --info
+        ./dotnet.exe --info
         Write-Host "=================================check dotnet=================================="
         dotnet --info
 
@@ -825,18 +825,18 @@ phases:
       failOnStderr: "true"
     condition: "always()"
 
-  # - task: PowerShell@2
-  #   displayName: "Define variables"
-  #   inputs:
-  #     scriptType: "inlineScript"
-  #     inlineScript: |
-  #       Write-Host "##vso[task.setvariable variable=PATH]${env:PATH}:${env:AGENT_TEMPDIRECTORY}/dotnet/"
+  - task: PowerShell@2
+    displayName: "Define variables"
+    inputs:
+      targetType: "inline"
+      script: |
+        Write-Host "##vso[task.setvariable variable=PATH]${env:AGENT_TEMPDIRECTORY}/dotnet/:${env:PATH}"
 
   - task: PowerShell@2
     displayName: "add check step"
     inputs:
-      scriptType: "inlineScript"
-      inlineScript: |
+      targetType: "inline"
+      script: |
         Write-Host "=================================check env=================================="
         gci env:* | format-table -Wrap -AutoSize
         Write-Host "=================================check temp folder=================================="
