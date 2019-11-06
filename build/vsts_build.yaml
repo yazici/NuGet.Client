@@ -136,7 +136,7 @@ phases:
         cd dotnet
         ls
         Write-Host "=================================check temp folder dotnet=================================="
-        ${env:AGENT_TEMPDIRECTORY}\dotnet\dotnet.exe --info
+        .\dotnet.exe --info
         Write-Host "=================================check dotnet=================================="
         dotnet --info
 
@@ -629,7 +629,7 @@ phases:
         cd dotnet
         ls
         Write-Host "=================================check temp folder dotnet=================================="
-        ${env:AGENT_TEMPDIRECTORY}\dotnet\dotnet.exe --info
+        .\dotnet.exe --info
         Write-Host "=================================check dotnet=================================="
         dotnet --info
 
@@ -740,10 +740,12 @@ phases:
         Write-Host "=================================check env=================================="
         gci env:* | format-table -Wrap -AutoSize
         Write-Host "=================================check temp folder=================================="
-        cd ${env:AGENT_TEMPDIRECTORY}\dotnet
+        cd ${env:AGENT_TEMPDIRECTORY}
+        ls
+        cd dotnet
         ls
         Write-Host "=================================check temp folder dotnet=================================="
-        ${env:AGENT_TEMPDIRECTORY}\dotnet\dotnet.exe --info
+        .\dotnet.exe --info
         Write-Host "=================================check dotnet=================================="
         dotnet --info
 
@@ -843,7 +845,7 @@ phases:
         cd dotnet
         ls
         Write-Host "=================================check temp folder dotnet=================================="
-        ${env:AGENT_TEMPDIRECTORY}/dotnet/dotnet.exe --info
+        ./dotnet.exe --info
         Write-Host "=================================check dotnet=================================="
         dotnet --info
 
