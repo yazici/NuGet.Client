@@ -245,7 +245,7 @@ EndGlobal";
 
                 // Assert
                 Assert.True(result.ExitCode == 0, result.AllOutput);
-                Assert.Contains("Restore completed", result.AllOutput);
+                Assert.Contains("Restoring packages for", result.AllOutput);
 
                 Directory.Move(projectDirectory, movedDirectory);
 
