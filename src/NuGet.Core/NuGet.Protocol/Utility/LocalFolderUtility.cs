@@ -993,12 +993,17 @@ namespace NuGet.Protocol
         /// <param name="matchingPackagePaths">A list of matching package paths that need to be checked.</param>
         public static void EnsurePackageFileExists(string packagePath, IEnumerable<string> matchingPackagePaths)
         {
-            if (!matchingPackagePaths.Any())
+            if (!PackageFileExists(packagePath, matchingPackagePaths))
             {
                 throw new ArgumentException(string.Format(CultureInfo.CurrentCulture,
-                    Strings.UnableToFindFile,
-                    packagePath));
+                      Strings.UnableToFindFile,
+                      packagePath));
             }
+        }
+
+        public static bool PackageFileExists(string packagePath, IEnumerable<string> matchingPackagePaths)
+        {
+            return matchingPackagePaths.Any();
         }
 
         /// <summary>
