@@ -44,6 +44,9 @@ namespace NuGet.CommandLine
         [Option(typeof(NuGetCommand), "PackageCommandSymbolsDescription")]
         public bool Symbols { get; set; }
 
+        [Option(typeof(NuGetCommand), "PackageCommandSymbolsDescription")]
+        public bool ExcludeTransitive { get; set; }
+
         [Option(typeof(NuGetCommand), "PackageCommandToolDescription")]
         public bool Tool { get; set; }
 
@@ -172,6 +175,7 @@ namespace NuGet.CommandLine
             }
             packArgs.Suffix = Suffix;
             packArgs.Symbols = Symbols;
+            packArgs.ExcludeTransitive = ExcludeTransitive;
             packArgs.Tool = Tool;
             packArgs.InstallPackageToOutputPath = InstallPackageToOutputPath;
             packArgs.OutputFileNamesWithoutVersion = OutputFileNamesWithoutVersion;

@@ -453,7 +453,7 @@ namespace NuGet.ProjectModel
             };
         }
 
-        private static void PopulateDependencies(
+        internal static void PopulateDependencies(
             string packageSpecPath,
             IList<LibraryDependency> results,
             JObject settings,
@@ -461,6 +461,15 @@ namespace NuGet.ProjectModel
             bool isGacOrFrameworkReference)
         {
             var dependencies = settings[propertyName] as JObject;
+            PopulateDependencies(packageSpecPath, results, dependencies, isGacOrFrameworkReference);
+        }
+
+        internal static void PopulateDependencies(
+            string packageSpecPath,
+            IList<LibraryDependency> results,
+            JObject dependencies,
+            bool isGacOrFrameworkReference)
+        {
             if (dependencies != null)
             {
                 foreach (var dependency in dependencies)
@@ -485,7 +494,7 @@ namespace NuGet.ProjectModel
                     var dependencyExcludeFlagsValue = LibraryIncludeFlags.None;
                     var suppressParentFlagsValue = LibraryIncludeFlagUtils.DefaultSuppressParent;
                     var noWarn = new List<NuGetLogCode>();
-                    
+
                     // This method handles both the dependencies and framework assembly sections.
                     // Framework references should be limited to references.
                     // Dependencies should allow everything but framework references.

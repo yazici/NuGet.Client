@@ -53,6 +53,7 @@ namespace NuGet.Commands
                 project.RestoreMetadata?.ProjectStyle == ProjectStyle.DotnetToolReference)
             {
                 AddProjectFileDependenciesForPackageReference(project, lockFile, targetGraphs);
+                AddProjectTransitiveDependenciesFromCentralFile(project, lockFile, targetGraphs);
             }
             else
             {
@@ -142,6 +143,8 @@ namespace NuGet.Commands
                         {
                             lockFileLib = CreateLockFileLibrary(package, sha512, path);
                         }
+
+                        //lockFileLib.IsCentrallyDefined = item.EnforcedFromCentralVersion;
 
                         // Create a new lock file library
                         lockFile.Libraries.Add(lockFileLib);
@@ -317,6 +320,7 @@ namespace NuGet.Commands
                 .OrderBy(framework => framework.FrameworkName.ToString(),
                     StringComparer.Ordinal))
             {
+               // var centralEnforcedTransitiveDependencies = new List<LibraryDependency>();
                 var dependencies = new List<LibraryRange>();
                 dependencies.AddRange(project.Dependencies.Select(e => e.LibraryRange));
                 dependencies.AddRange(frameworkInfo.Dependencies.Select(e => e.LibraryRange));
@@ -339,16 +343,31 @@ namespace NuGet.Commands
                         .Select(lib => lib.LibraryRange));
                 }
 
-                var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                var uniqueDependencies = new List<LibraryRange>();
+                //centralEnforcedTransitiveDependencies = targetGraph?
+                //    .Flattened
+                //    .Where(graphItem => graphItem.EnforcedFromCentralVersion)
+                //    .Select(
+                //        graphItem =>
+                //            new LibraryRange(graphItem.Data.Match.Library.Name,
+                //                             new VersionRange(minVersion: graphItem.Data.Match.Library.Version,
+                //                                              includeMinVersion: true,
+                //                                              maxVersion: null,
+                //                                              includeMaxVersion: false,
+                //                                              floatRange: null,
+                //                                              originalString: null), LibraryDependencyTarget.Package)
+                //    )
+                //    .ToList();
 
-                foreach (var dependency in dependencies)
-                {
-                    if (seen.Add(dependency.Name))
-                    {
-                        uniqueDependencies.Add(dependency);
-                    }
-                }
+                var centralEnforcedTransitiveDependencies2 = targetGraph?
+                    .Flattened
+                    .Where(graphItem => graphItem.EnforcedFromCentralVersion)
+                    .Select(
+                        graphItem => graphItem.CentralDependency
+                    )
+                    .ToList();
+
+                var uniqueDependencies = GetDistinct(dependencies);
+                //var uniqueCentralEnforcedTransitiveDependencies = GetDistinct(centralEnforcedTransitiveDependencies);
 
                 // Add entry
                 var dependencyGroup = new ProjectFileDependencyGroup(
@@ -356,8 +375,66 @@ namespace NuGet.Commands
                     uniqueDependencies.Select(x => x.ToLockFileDependencyGroupString())
                         .OrderBy(dependency => dependency, StringComparer.Ordinal));
 
+
+                //var centralEnforcedTransitiveDependencyGroup = new ProjectFileTransitiveDependencyGroup(
+                //   frameworkInfo.FrameworkName,
+                //   uniqueCentralEnforcedTransitiveDependencies.Select(x => x.ToLockFileDependencyGroupString())
+                //       .OrderBy(dependency => dependency, StringComparer.Ordinal));
+
                 lockFile.ProjectFileDependencyGroups.Add(dependencyGroup);
+                //lockFile.ProjectTransitiveDependencyGroups.Add(centralEnforcedTransitiveDependencyGroup);
+
             }
+        }
+
+        private static void AddProjectTransitiveDependenciesFromCentralFile(PackageSpec project, LockFile lockFile, IEnumerable<RestoreTargetGraph> targetGraphs)
+        {
+            foreach (var frameworkInfo in project.TargetFrameworks
+                .OrderBy(framework => framework.FrameworkName.ToString(),
+                    StringComparer.Ordinal))
+            {
+                var centralEnforcedTransitiveDependencies = new List<LibraryDependency>();
+                var targetGraph = targetGraphs.SingleOrDefault(graph =>
+                    graph.Framework.Equals(frameworkInfo.FrameworkName)
+                    && string.IsNullOrEmpty(graph.RuntimeIdentifier));
+
+                var resolvedEntry = targetGraph?
+                    .Flattened
+                    .SingleOrDefault(library => library.Key.Name.Equals(project.Name, StringComparison.OrdinalIgnoreCase));
+
+                Debug.Assert(resolvedEntry != null, "Unable to find project entry in target graph.");
+
+                centralEnforcedTransitiveDependencies = targetGraph?
+                    .Flattened
+                    .Where(graphItem => graphItem.EnforcedFromCentralVersion)
+                    .Select(
+                        graphItem => graphItem.CentralDependency
+                    )
+                    .ToList();
+
+                // Add entry
+
+                var centralEnforcedTransitiveDependencyGroup = new ProjectFileTransitiveDependencyGroup(
+                   frameworkInfo.FrameworkName,
+                   centralEnforcedTransitiveDependencies);
+
+                lockFile.ProjectTransitiveDependencyGroups.Add(centralEnforcedTransitiveDependencyGroup);
+            }
+        }
+
+        private static List<LibraryRange> GetDistinct(List<LibraryRange> libraryRangeList)
+        {
+            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var uniqueLibraryRangeList = new List<LibraryRange>();
+
+            foreach (var lr in libraryRangeList)
+            {
+                if (seen.Add(lr.Name))
+                {
+                    uniqueLibraryRangeList.Add(lr);
+                }
+            }
+            return uniqueLibraryRangeList;
         }
 
         private static void PopulatePackageFolders(IEnumerable<string> packageFolders, LockFile lockFile)

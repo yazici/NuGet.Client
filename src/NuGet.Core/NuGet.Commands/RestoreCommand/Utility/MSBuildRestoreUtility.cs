@@ -74,7 +74,12 @@ namespace NuGet.Commands
             }
 
             // Add projects
-            var validProjectSpecs = itemsById.Values.Select(GetPackageSpec).Where(e => e != null);
+            var validProjectSpecs = itemsById.Values
+                .Select((x) =>
+                {
+                    return GetPackageSpec(x);
+                })
+                .Where(e => e != null);
 
             foreach (var spec in validProjectSpecs)
             {
@@ -634,7 +639,7 @@ namespace NuGet.Commands
         {
             //spec.GlobalDependencies = CreateGlobalDependencies(items);
 
-            var globalDep = CreateGlobalDependencies(items);
+            var globalDep = CreateGlobalDependencies(items, spec.TargetFrameworks);
 
             foreach (var item in MergePackageReferences(items)) //GetItemByType(items, "Dependency")
             {
@@ -825,6 +830,17 @@ namespace NuGet.Commands
                 GetFrameworksStrings(item).Select(NuGetFramework.Parse));
         }
 
+        private static HashSet<NuGetFramework> GetFrameworksOrAny(IMSBuildItem item)
+        {
+            var targetFrameworks = GetFrameworksStrings(item).Select(NuGetFramework.Parse).ToList();
+
+            if(targetFrameworks.Count > 1)
+            {
+                return new HashSet<NuGetFramework>(targetFrameworks);
+            }
+            return new HashSet<NuGetFramework>( new List<NuGetFramework> { NuGetFramework.AnyFramework });
+        }
+
         private static HashSet<string> GetFrameworksStrings(IMSBuildItem item)
         {
             var frameworks = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -834,7 +850,19 @@ namespace NuGet.Commands
             {
                 frameworks.UnionWith(MSBuildStringUtility.Split(frameworksString));
             }
-
+            //else
+            //{
+            //    frameworksString = item.GetProperty("TargetFramework");
+            //    if (!string.IsNullOrEmpty(frameworksString))
+            //    {
+            //        frameworks.UnionWith(MSBuildStringUtility.Split(frameworksString));
+            //    }
+            //    else
+            //    {
+            //        frameworks.Add(NuGetFramework.AnyFramework.Framework);
+            //    }
+            //}
+           
             return frameworks;
         }
 
@@ -991,13 +1019,14 @@ namespace NuGet.Commands
                     ToList(); //.GroupBy(x => x.targetFramework); 
                 if (globalItems.Any())
                 {
-                    foreach (var projectTFM in itemTargetedFrameworksStrings)
+                    // For legacy
+                    if (itemTargetedFrameworksStrings.Count == 0)
                     {
-                       var globalItemOnTFM = globalItems.Where(gi =>
-                       {
-                           var globalItemsTFMs = GetFrameworksStrings(gi);
-                           return globalItemsTFMs.Contains(projectTFM);
-                       }).FirstOrDefault();
+                        var globalItemOnTFM = globalItems.Where(gi =>
+                        {
+                            var globalItemsTFMs = GetFrameworksStrings(gi);
+                            return globalItemsTFMs.Count == 0;
+                        }).FirstOrDefault();
 
                         if (globalItemOnTFM != null)
                         {
@@ -1007,6 +1036,27 @@ namespace NuGet.Commands
                             //get the tfm from the project
                             //metadata["TargetFramework"] = projectTFM;
                             yield return new MSBuildItem(item.Identity, metadata);
+                        }
+                    }
+                    else
+                    {
+                        foreach (var projectTFM in itemTargetedFrameworksStrings)
+                        {
+                            var globalItemOnTFM = globalItems.Where(gi =>
+                            {
+                                var globalItemsTFMs = GetFrameworksStrings(gi);
+                                return globalItemsTFMs.Contains(projectTFM);
+                            }).FirstOrDefault();
+
+                            if (globalItemOnTFM != null)
+                            {
+                                // Do we want to get all the information or only the version 
+                                var metadata = GetBuildItemMetadata(globalItemOnTFM);
+                                metadata["GlobalReference"] = "true";
+                                //get the tfm from the project
+                                //metadata["TargetFramework"] = projectTFM;
+                                yield return new MSBuildItem(item.Identity, metadata);
+                            }
                         }
                     }
                 }
@@ -1133,10 +1183,11 @@ namespace NuGet.Commands
         //{
 
         //}
-        private static Dictionary<NuGetFramework, List<LibraryDependency>> CreateGlobalDependencies(IEnumerable<IMSBuildItem> items)
+        private static Dictionary<NuGetFramework, List<LibraryDependency>> CreateGlobalDependencies(IEnumerable<IMSBuildItem> items, IList<TargetFrameworkInformation> specFrameworks)
         {
             var globalPackageDependencies = GetItemByType(items, "GlobalDependency").ToList();
             var result = new Dictionary<NuGetFramework, List<LibraryDependency>>();
+            
                // .Select(x => (id: x.GetProperty("Id"),
                //version: x.GetProperty("Version") == null ? null : GetVersion(x).ToNormalizedString(),
                //versionRange: x.GetProperty("VersionRange") == null ? null : GetVersionRange(x).ToNormalizedString(),
@@ -1146,11 +1197,10 @@ namespace NuGet.Commands
                //targetFrameworks: x.GetProperty("TargetFrameworks"),
                //targetFramework: x.GetProperty("TargetFramework")));
 
-            foreach ( var gd in globalPackageDependencies)
+            foreach (var gd in globalPackageDependencies)
             {
                 //var tfms = GetFrameworksStrings(gd);
                 var tfms = GetFrameworks(gd);
-
                 var dependency = new LibraryDependency
                 {
                     LibraryRange = new LibraryRange(
@@ -1164,20 +1214,37 @@ namespace NuGet.Commands
                     GlobalReferenced = true,
                     GeneratePathProperty = IsPropertyTrue(gd, "GeneratePathProperty")
                 };
-
-                foreach (var tfm in tfms)
+                if (tfms.Count > 0)
                 {
-                    if (result.ContainsKey(tfm))
+                    foreach (var tfm in tfms)
                     {
-                        result[tfm].Add(dependency);
-
-                    }
-                    else
-                    {
-                        var deps = new List<LibraryDependency>() { dependency };
-                        result.Add(tfm, deps);
+                        if (result.ContainsKey(tfm))
+                        {
+                            result[tfm].Add(dependency);
+                        }
+                        else
+                        {
+                            var deps = new List<LibraryDependency>() { dependency };
+                            result.Add(tfm, deps);
+                        }
                     }
                 }
+                else
+                {
+                    foreach (var f in specFrameworks)
+                    {
+                        if (result.ContainsKey(f.FrameworkName))
+                        {
+                            result[f.FrameworkName].Add(dependency);
+                        }
+                        else
+                        {
+                            var deps = new List<LibraryDependency>() { dependency };
+                            result.Add(f.FrameworkName, deps);
+                        }
+                    }
+                }
+
                 //yield return dependency;
             }
 

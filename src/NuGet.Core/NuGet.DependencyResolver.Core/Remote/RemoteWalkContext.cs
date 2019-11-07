@@ -45,7 +45,9 @@ namespace NuGet.DependencyResolver
         /// <summary>
         /// Library entry cache.
         /// </summary>
-        public ConcurrentDictionary<LibraryRangeCacheKey, Task<GraphItem<RemoteResolveResult>>> FindLibraryEntryCache { get; }
+        public ConcurrentDictionary<LibraryRangeCacheKey, Task<GraphItem<RemoteResolveResult>>> FindLibraryEntryCache {
+            get;
+        }
 
         /// <summary>
         /// True if this is a csproj or similar project. Xproj should be false.
@@ -53,5 +55,19 @@ namespace NuGet.DependencyResolver
         public bool IsMsBuildBased { get; set; }
 
         public Dictionary<NuGetFramework, List<LibraryDependency>> GlobalLibraryDependencies { get; set; } = new Dictionary<NuGetFramework, List<LibraryDependency>>(NuGetFramework.FrameworkNameComparer);
+
+        //private Dictionary<NuGetFramework, List<LibraryDependency>> HijackedLibraryDependencies { get; set; } = new Dictionary<NuGetFramework, List<LibraryDependency>>(NuGetFramework.FrameworkNameComparer);
+
+        //public void AddHijackedDependency(NuGetFramework framework, LibraryDependency dependency)
+        //{
+        //    if (HijackedLibraryDependencies.ContainsKey(framework))
+        //    {
+        //        HijackedLibraryDependencies[framework].Add(dependency);
+        //    }
+        //    else
+        //    {
+        //        HijackedLibraryDependencies.Add(framework, new List<LibraryDependency>() { dependency });
+        //    }
+        //}
     }
 }

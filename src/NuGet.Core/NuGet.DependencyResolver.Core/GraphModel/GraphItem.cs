@@ -1,4 +1,4 @@
-﻿// Copyright (c) .NET Foundation. All rights reserved.
+// Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
@@ -14,6 +14,13 @@ namespace NuGet.DependencyResolver
         {
             Key = key;
         }
+
+
+        public bool EnforcedFromCentralVersion { get { return CentralDependency != null; } }
+
+        public LibraryDependency CentralDependency { get; set; }
+
+        public LibraryIncludeFlags InheritedLibraryIncludeFlags { get; set; }
 
         public LibraryIdentity Key { get; set; }
         public TItem Data { get; set; }

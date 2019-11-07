@@ -76,6 +76,11 @@ namespace NuGet.Build.Tasks.Pack
         public string PackageIcon { get; set; }
         public ILogger Logger => new MSBuildLogger(Log);
 
+        /// <summary>
+        ///  Default true
+        /// </summary>
+        public bool ExcludeTransitive { get; set; }
+
         private IPackTaskLogic _packTaskLogic;
 
         /// <summary>

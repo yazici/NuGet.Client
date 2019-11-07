@@ -225,6 +225,7 @@ namespace NuGet.Commands
             ExcludeFiles(builder.Files);
         }
 
+        // ToDo : Dead Code ?
         private void AddOutputFiles(PackageBuilder builder, bool includeSymbols)
         {
             // Default to Debug unless the configuration was passed in as a property

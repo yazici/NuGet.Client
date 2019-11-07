@@ -22,6 +22,7 @@ namespace NuGet.ProjectModel
         public int Version { get; set; } = LockFileFormat.Version;
         public string Path { get; set; }
         public IList<ProjectFileDependencyGroup> ProjectFileDependencyGroups { get; set; } = new List<ProjectFileDependencyGroup>();
+        public IList<ProjectFileTransitiveDependencyGroup> ProjectTransitiveDependencyGroups { get; set; } = new List<ProjectFileTransitiveDependencyGroup>();
         public IList<LockFileLibrary> Libraries { get; set; } = new List<LockFileLibrary>();
         public IList<LockFileTarget> Targets { get; set; } = new List<LockFileTarget>();
         public IList<LockFileItem> PackageFolders { get; set; } = new List<LockFileItem>();
@@ -125,6 +126,7 @@ namespace NuGet.ProjectModel
 
             return Version == other.Version
                 && ProjectFileDependencyGroups.OrderedEquals(other.ProjectFileDependencyGroups, group => group.FrameworkName, StringComparer.OrdinalIgnoreCase)
+                && ProjectTransitiveDependencyGroups.OrderedEquals(other.ProjectTransitiveDependencyGroups, group => group.FrameworkName, StringComparer.OrdinalIgnoreCase)
                 && Libraries.OrderedEquals(other.Libraries, library => library.Name, StringComparer.OrdinalIgnoreCase)
                 && Targets.OrderedEquals(other.Targets, target => target.Name, StringComparer.Ordinal)
                 && PackageFolders.SequenceEqual(other.PackageFolders)
@@ -181,6 +183,7 @@ namespace NuGet.ProjectModel
             combiner.AddObject(Version);
 
             HashProjectFileDependencyGroups(combiner, ProjectFileDependencyGroups);
+            HashProjectFileTransitiveDependencyGroups(combiner, ProjectTransitiveDependencyGroups);
 
             foreach (var item in Libraries.OrderBy(library => library.Name, StringComparer.OrdinalIgnoreCase))
             {
@@ -210,6 +213,15 @@ namespace NuGet.ProjectModel
         }
 
         private static void HashProjectFileDependencyGroups(HashCodeCombiner combiner, IList<ProjectFileDependencyGroup> groups)
+        {
+            foreach (var item in groups.OrderBy(
+                group => @group.FrameworkName, StringComparer.OrdinalIgnoreCase))
+            {
+                combiner.AddObject(item);
+            }
+        }
+
+        private static void HashProjectFileTransitiveDependencyGroups(HashCodeCombiner combiner, IList<ProjectFileTransitiveDependencyGroup> groups)
         {
             foreach (var item in groups.OrderBy(
                 group => @group.FrameworkName, StringComparer.OrdinalIgnoreCase))

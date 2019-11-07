@@ -39,6 +39,9 @@ namespace NuGet.Commands
         public string SolutionDirectory { get; set; }
         public string Suffix { get; set; }
         public bool Symbols { get; set; }
+
+        public bool ExcludeTransitive { get; set; }
+
         public bool Tool { get; set; }
         public string Version { get; set; }
         public bool Deterministic { get; set; }

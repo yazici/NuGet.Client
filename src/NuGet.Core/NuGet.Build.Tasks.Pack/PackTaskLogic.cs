@@ -31,6 +31,7 @@ namespace NuGet.Build.Tasks.Pack
                 Serviceable = request.Serviceable,
                 Tool = request.IsTool,
                 Symbols = request.IncludeSymbols,
+                ExcludeTransitive = request.ExcludeTransitive,
                 SymbolPackageFormat = PackArgs.GetSymbolPackageFormat(request.SymbolPackageFormat),
                 BasePath = request.NuspecBasePath,
                 NoPackageAnalysis = request.NoPackageAnalysis,
@@ -744,6 +745,7 @@ namespace NuGet.Build.Tasks.Pack
 
             InitializeProjectDependencies(assetsFile, dependenciesByFramework, projectRefToVersionMap, frameworksWithSuppressedDependencies);
             InitializePackageDependencies(assetsFile, dependenciesByFramework, frameworksWithSuppressedDependencies);
+            //InitializePackageTransitiveDependencies(assetsFile, dependenciesByFramework, frameworksWithSuppressedDependencies);
 
             foreach (var pair in dependenciesByFramework)
             {
@@ -759,7 +761,6 @@ namespace NuGet.Build.Tasks.Pack
         {
             // From the package spec, all we know is each absolute path to the project reference the the target
             // framework that project reference applies to.
-
             if (assetsFile.PackageSpec.RestoreMetadata == null)
             {
                 return;
@@ -850,11 +851,16 @@ namespace NuGet.Build.Tasks.Pack
                     continue;
                 }
 
+                var transitiveEntries = assetsFile.ProjectTransitiveDependencyGroups
+                    .Where(ptg=>ptg.FrameworkName == framework.FrameworkName.GetShortFolderName())
+                    .SelectMany(ptg=>ptg.TransitiveDependencies);
+
                 // First, add each of the generic package dependencies to the framework-specific list.
                 var packageDependencies = assetsFile
                     .PackageSpec
                     .Dependencies
-                    .Concat(framework.Dependencies);
+                    .Concat(framework.Dependencies)
+                    .Concat(transitiveEntries);
 
                 HashSet<LibraryDependency> dependencies;
                 if (!dependenciesByFramework.TryGetValue(framework.FrameworkName, out dependencies))
@@ -896,6 +902,59 @@ namespace NuGet.Build.Tasks.Pack
 
                     PackCommandRunner.AddLibraryDependency(packageDependency, dependencies);
                 }
+            }
+        }
+
+        private static void InitializePackageTransitiveDependencies(
+            LockFile assetsFile,
+            ISet<NuGetFramework> frameworkWithSuppressedDependencies)
+        {
+            var transitiveEntriesPerFramework = assetsFile.ProjectTransitiveDependencyGroups;
+
+            // From the package spec, we know the direct package dependencies of this project.
+            foreach (var transitiveDeps in transitiveEntriesPerFramework)
+            {
+                var framework = NuGetFramework.Parse(transitiveDeps.FrameworkName);
+
+                if (frameworkWithSuppressedDependencies.Contains(framework))
+                {
+                    continue;
+                }
+
+                
+                // Add each package dependency.
+                //foreach (var packageDependency in packageDependencies)
+                //{
+                //    // If we have a floating package dependency like 1.2.3-xyz-*, we 
+                //    // use the version of the package that restore resolved it to.
+                //    if (packageDependency.LibraryRange.VersionRange.IsFloating)
+                //    {
+                //        var lockFileTarget = assetsFile.GetTarget(framework.FrameworkName, runtimeIdentifier: null);
+                //        var package = lockFileTarget.Libraries.First(
+                //            library =>
+                //                string.Equals(library.Name, packageDependency.Name, StringComparison.OrdinalIgnoreCase));
+                //        if (package != null)
+                //        {
+                //            if (packageDependency.LibraryRange.VersionRange.HasUpperBound)
+                //            {
+                //                packageDependency.LibraryRange.VersionRange = new VersionRange(
+                //                    minVersion: package.Version,
+                //                    includeMinVersion: packageDependency.LibraryRange.VersionRange.IsMinInclusive,
+                //                    maxVersion: packageDependency.LibraryRange.VersionRange.MaxVersion,
+                //                    includeMaxVersion: packageDependency.LibraryRange.VersionRange.IsMaxInclusive);
+                //            }
+                //            else
+                //            {
+                //                packageDependency.LibraryRange.VersionRange = new VersionRange(
+                //                    minVersion: package.Version,
+                //                    includeMinVersion: packageDependency.LibraryRange.VersionRange.IsMinInclusive);
+                //            }
+
+                //        }
+                //    }
+
+                //    PackCommandRunner.AddLibraryDependency(packageDependency, dependencies);
+                //}
             }
         }
 

@@ -34,15 +34,21 @@ namespace NuGet.DependencyResolver
         /// </summary>
         /// <param name="currentLibraryRange"></param>
         /// <param name="framework"></param>
+        /// <param name="centralDependency"></param>
+        /// <param name="parentIncludeFlags"></param>
         /// <returns></returns>
-        private LibraryRange GetGlobalLibraryRangeIfExists(LibraryRange currentLibraryRange, NuGetFramework framework)
+        private LibraryRange GetGlobalLibraryRangeIfExists(LibraryRange currentLibraryRange, NuGetFramework framework, LibraryIncludeFlags parentIncludeFlags, out LibraryDependency centralDependency)
         {
+            centralDependency = null;
             if (_context.GlobalLibraryDependencies.ContainsKey(framework))
             {
                 var itemInGlobalDepList = _context.GlobalLibraryDependencies[framework].Where(d => StringComparer.OrdinalIgnoreCase.Equals(d.Name, currentLibraryRange.Name)).FirstOrDefault();
 
                 if(itemInGlobalDepList != null && !itemInGlobalDepList.LibraryRange.VersionRange.Equals(currentLibraryRange.VersionRange))
                 {
+                    // this is hijacked
+                    centralDependency = itemInGlobalDepList;
+                    centralDependency.IncludeType = centralDependency.IncludeType & parentIncludeFlags;
                     return itemInGlobalDepList.LibraryRange;
                 }
                 return currentLibraryRange;
@@ -57,12 +63,15 @@ namespace NuGet.DependencyResolver
             string runtimeName,
             RuntimeGraph runtimeGraph,
             Func<LibraryRange, DependencyResult> predicate,
-            GraphEdge<RemoteResolveResult> outerEdge)
+            GraphEdge<RemoteResolveResult> outerEdge,
+            LibraryIncludeFlags inheritedIncludeFlags = LibraryIncludeFlags.All)
         {
             var currentNodeName = libraryRange.Name;
 
             // hijack the range of the node with a different one if defined in CPVM
-            libraryRange = GetGlobalLibraryRangeIfExists(libraryRange, framework);
+            libraryRange = GetGlobalLibraryRangeIfExists(libraryRange, framework, inheritedIncludeFlags, out var hijackedByCentralDependency);
+
+            //outerEdge.OuterEdge.Item.Data.Match.Library.
 
             List<LibraryDependency> dependencies = null;
             HashSet<string> runtimeDependencies = null;
@@ -119,7 +128,7 @@ namespace NuGet.DependencyResolver
                     framework,
                     runtimeName,
                     _context,
-                    CancellationToken.None)
+                    CancellationToken.None),
             };
 
             Debug.Assert(node.Item != null, "FindLibraryCached should return an unresolved item instead of null");
@@ -182,7 +191,8 @@ namespace NuGet.DependencyResolver
                             runtimeName,
                             runtimeGraph,
                             ChainPredicate(predicate, node, dependency),
-                            innerEdge));
+                            innerEdge,
+                            dependency.IncludeType & inheritedIncludeFlags));
                     }
                     else
                     {
@@ -215,6 +225,10 @@ namespace NuGet.DependencyResolver
                 node.InnerNodes.Add(dependencyNode);
             }
 
+            node.Item.CentralDependency = hijackedByCentralDependency;
+            // I do not know if this is needed
+            node.Item.InheritedLibraryIncludeFlags = hijackedByCentralDependency?.IncludeType ?? inheritedIncludeFlags;
+            //node.Item.Data.EnforcedFromCentralVersion = hijackedByCentralDependency != null;
             return node;
         }
 

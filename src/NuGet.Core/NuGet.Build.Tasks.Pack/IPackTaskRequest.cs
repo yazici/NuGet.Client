@@ -32,6 +32,9 @@ namespace NuGet.Build.Tasks.Pack
         bool IncludeBuildOutput { get; }
         bool IncludeSource { get; }
         bool IncludeSymbols { get; }
+
+        bool ExcludeTransitive { get; }
+
         bool InstallPackageToOutputPath { get; }
         bool IsTool { get; }
         string LicenseUrl { get; }

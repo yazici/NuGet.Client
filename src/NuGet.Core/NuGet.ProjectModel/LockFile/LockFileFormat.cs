@@ -25,6 +25,7 @@ namespace NuGet.ProjectModel
         private const string LibrariesProperty = "libraries";
         private const string TargetsProperty = "targets";
         private const string ProjectFileDependencyGroupsProperty = "projectFileDependencyGroups";
+        private const string ProjectFileTransitiveDependencyGroupsProperty = "projectFileTransitiveDependencyGroups";
         private const string ServicableProperty = "servicable";
         private const string Sha512Property = "sha512";
         private const string FilesProperty = "files";
@@ -99,7 +100,7 @@ namespace NuGet.ProjectModel
             try
             {
                 var json = JsonUtility.LoadJson(reader);
-                var lockFile = ReadLockFile(json);
+                var lockFile = ReadLockFile(json, path);
                 lockFile.Path = path;
                 return lockFile;
             }
@@ -158,7 +159,7 @@ namespace NuGet.ProjectModel
             }
         }
 
-        private static LockFile ReadLockFile(JObject cursor)
+        private static LockFile ReadLockFile(JObject cursor, string lockFilePath)
         {
             var lockFile = new LockFile()
             {
@@ -167,7 +168,8 @@ namespace NuGet.ProjectModel
                 Targets = JsonUtility.ReadObject(cursor[TargetsProperty] as JObject, ReadTarget),
                 ProjectFileDependencyGroups = JsonUtility.ReadObject(cursor[ProjectFileDependencyGroupsProperty] as JObject, ReadProjectFileDependencyGroup),
                 PackageFolders = JsonUtility.ReadObject(cursor[PackageFoldersProperty] as JObject, ReadFileItem),
-                PackageSpec = ReadPackageSpec(cursor[PackageSpecProperty] as JObject)
+                PackageSpec = ReadPackageSpec(cursor[PackageSpecProperty] as JObject),
+                ProjectTransitiveDependencyGroups = ReadProjectFileTransitiveDependencyGroup(cursor[ProjectFileTransitiveDependencyGroupsProperty] as JObject, lockFilePath)
             };
 
             lockFile.LogMessages = ReadLogMessageArray(cursor[LogsProperty] as JArray,
@@ -183,7 +185,8 @@ namespace NuGet.ProjectModel
                 [VersionProperty] = new JValue(lockFile.Version),
                 [TargetsProperty] = JsonUtility.WriteObject(lockFile.Targets, WriteTarget),
                 [LibrariesProperty] = JsonUtility.WriteObject(lockFile.Libraries, WriteLibrary),
-                [ProjectFileDependencyGroupsProperty] = JsonUtility.WriteObject(lockFile.ProjectFileDependencyGroups, WriteProjectFileDependencyGroup)
+                [ProjectFileDependencyGroupsProperty] = JsonUtility.WriteObject(lockFile.ProjectFileDependencyGroups, WriteProjectFileDependencyGroup),
+               // [ProjectFileTransitiveDependencyGroupsProperty] = JsonUtility.WriteObject(lockFile.ProjectTransitiveDependencyGroups, WriteProjectFileTransitiveDependencyGroup)
             };
             if (lockFile.PackageFolders?.Any() == true)
             {
@@ -208,6 +211,24 @@ namespace NuGet.ProjectModel
                     var projectPath = lockFile.PackageSpec?.RestoreMetadata?.ProjectPath;
                     json[LogsProperty] = WriteLogMessages(lockFile.LogMessages, projectPath);
                 }
+            }
+
+            if (lockFile.ProjectTransitiveDependencyGroups.Count > 0)
+            {
+                //var writer = new JsonObjectWriter();
+                //writer.WriteObjectStart("frameworks");
+                //var frameworkNames = new HashSet<string>();
+                //var frameworkSorter = new NuGetFrameworkSorter();
+
+                //foreach(var projectTransitiveDepGroup in lockFile.ProjectTransitiveDependencyGroups.OrderBy( ptdg => ptdg.FrameworkName ))
+                //{
+                //    PackageSpecWriter.SetDependencies(writer, projectTransitiveDepGroup.FrameworkName, projectTransitiveDepGroup.TransitiveDependencies);
+                //}
+
+                //writer.WriteObjectEnd();
+
+                //json[ProjectFileTransitiveDependencyGroupsProperty] = writer.GetJObject();
+                json[ProjectFileTransitiveDependencyGroupsProperty] = ProjectFileTransitiveDependencyGroupWriter.Write(lockFile);
             }
 
             return json;
@@ -625,11 +646,27 @@ namespace NuGet.ProjectModel
                 snapshotValue: null);
         }
 
+        private static List<ProjectFileTransitiveDependencyGroup> ReadProjectFileTransitiveDependencyGroup(JObject json, string assetsFilePath)
+        {
+            if (json == null)
+            {
+                return null;
+            }
+            return ProjectFileTransitiveDependencyGroupReader.ReadJson(json, assetsFilePath);
+        }
+
         private static JProperty WriteProjectFileDependencyGroup(ProjectFileDependencyGroup frameworkInfo)
         {
             return new JProperty(
                 frameworkInfo.FrameworkName,
                 WriteArray(frameworkInfo.Dependencies, JsonUtility.WriteString));
+        }
+
+        private static JObject WriteProjectFileTransitiveDependencyGroup(ProjectFileTransitiveDependencyGroup projectFileTransitiveDependencyGroup)
+        {
+            var writer = new JsonObjectWriter();
+            PackageSpecWriter.SetDependencies(writer, projectFileTransitiveDependencyGroup.FrameworkName, projectFileTransitiveDependencyGroup.TransitiveDependencies);
+            return writer.GetJObject();
         }
 
         private static LockFileItem ReadFileItem(string property, JToken json)

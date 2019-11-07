@@ -69,5 +69,6 @@ namespace NuGet.Build.Tasks.Pack
         public string PackageLicenseExpressionVersion { get; set; }
         public bool Deterministic { get; set; }
         public string PackageIcon { get; set; }
+        public bool ExcludeTransitive { get; set; }
     }
 }
