@@ -122,7 +122,7 @@
   </data>
   <data name="ConfigCommandExamples" xml:space="preserve">
     <value>nuget config -Set HTTP_PROXY=http://127.0.0.1 -Set HTTP_PROXY.USER=domain\user
-nuget.config HTTP_PROXY</value>
+nuget config HTTP_PROXY</value>
     <comment>Please don't localize this string</comment>
   </data>
   <data name="ConfigCommandSetDesc" xml:space="preserve">
