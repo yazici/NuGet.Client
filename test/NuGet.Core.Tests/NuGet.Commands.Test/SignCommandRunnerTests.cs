@@ -5,6 +5,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using System.Threading.Tasks;
 using NuGet.Common;
 using NuGet.Test.Utility;
@@ -143,8 +144,30 @@ namespace NuGet.Commands.Test
 
                 await test.Runner.ExecuteCommandAsync(test.Args);
 
-                Assert.Equal(1, test.Logger.LogMessages.Count(
-                    message => message.Level == LogLevel.Warning && message.Code == NuGetLogCode.NU3018));
+                StringBuilder sb = new StringBuilder();
+                try
+                {
+                    int i = 0;
+                    foreach (var error in test.Logger.LogMessages.Where(e => e.Level == LogLevel.Error))
+                    {
+                        sb.AppendLine(i + " error: " + error.Message);
+                        i++;
+                    }
+                    i = 0;
+                    foreach (var warning in test.Logger.LogMessages.Where(w => w.Level == LogLevel.Warning))
+                    {
+                        sb.AppendLine(i + " warning: " + warning.Message);
+                        i++;
+                    }
+                    Assert.Equal(0, test.Logger.LogMessages.Count(
+message => message.Level == LogLevel.Warning && message.Code == NuGetLogCode.NU3018));
+                }
+
+                catch (Exception e)
+                {
+                    throw new Exception(e.Message + " \n " + sb.ToString());
+                }
+
             }
         }
 
