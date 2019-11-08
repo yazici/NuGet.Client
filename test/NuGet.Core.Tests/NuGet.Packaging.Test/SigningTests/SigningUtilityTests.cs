@@ -140,14 +140,9 @@ namespace NuGet.Packaging.Test
                 SigningUtility.Verify(request, logger);
 
                 Assert.Equal(0, logger.Errors);
-                Assert.Equal(RuntimeEnvironmentHelper.IsLinux ? 2 : 1, logger.Warnings);
+                Assert.Equal(1, logger.Warnings);
 
                 SigningTestUtility.AssertUntrustedRoot(logger.LogMessages, LogLevel.Warning);
-
-                if (RuntimeEnvironmentHelper.IsLinux)
-                {
-                    SigningTestUtility.AssertOfflineRevocation(logger.LogMessages, LogLevel.Warning);
-                }
             }
         }
 
