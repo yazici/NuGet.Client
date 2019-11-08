@@ -18,6 +18,7 @@ using NuGet.Packaging.Signing;
 using NuGet.Test.Utility;
 using Test.Utility.Signing;
 using Xunit;
+using System.Text;
 
 namespace NuGet.Packaging.Test
 {
@@ -108,23 +109,45 @@ namespace NuGet.Packaging.Test
                 Assert.Equal(NuGetLogCode.NU3018, exception.Code);
                 Assert.Equal("Certificate chain validation failed.", exception.Message);
 
-                Assert.Equal(1, logger.Errors);
-                Assert.Equal(1, logger.Warnings);
 
-                if (RuntimeEnvironmentHelper.IsWindows)
+                StringBuilder sb = new StringBuilder();
+                try
                 {
-                    AssertNotTimeValid(logger.LogMessages, LogLevel.Error);
-                    SigningTestUtility.AssertUntrustedRoot(logger.LogMessages, LogLevel.Warning);
+                    int i = 0;
+                    foreach (var error in logger.LogMessages.Where(e => e.Level == LogLevel.Error))
+                    {
+                        sb.AppendLine(i + " error: " + error.Message);
+                        i++;
+                    }
+                    i = 0;
+                    foreach (var warning in logger.LogMessages.Where(w => w.Level == LogLevel.Warning))
+                    {
+                        sb.AppendLine(i + " warning: " + warning.Message);
+                        i++;
+                    }
+                    Assert.Equal(0, logger.Errors);
+                    Assert.Equal(0, logger.Warnings);
+
+                    if (RuntimeEnvironmentHelper.IsWindows)
+                    {
+                        AssertNotTimeValid(logger.LogMessages, LogLevel.Error);
+                        SigningTestUtility.AssertUntrustedRoot(logger.LogMessages, LogLevel.Warning);
+                    }
+                    else if (RuntimeEnvironmentHelper.IsMacOSX)
+                    {
+                        AssertExpiredCertificate(logger.LogMessages, LogLevel.Error);
+                        SigningTestUtility.AssertUntrustedRoot(logger.LogMessages, LogLevel.Warning); 
+                    }
+                    else
+                    {
+                        AssertPartialChain(logger.LogMessages, LogLevel.Error);
+                        SigningTestUtility.AssertOfflineRevocation(logger.LogMessages, LogLevel.Warning);
+                    }
                 }
-                else if (RuntimeEnvironmentHelper.IsMacOSX)
+
+                catch (Exception e)
                 {
-                    AssertExpiredCertificate(logger.LogMessages, LogLevel.Error);
-                    SigningTestUtility.AssertUntrustedRoot(logger.LogMessages, LogLevel.Warning); 
-                }
-                else
-                {
-                    AssertPartialChain(logger.LogMessages, LogLevel.Error);
-                    SigningTestUtility.AssertOfflineRevocation(logger.LogMessages, LogLevel.Warning);
+                    throw new Exception(e.Message + " \n " + sb.ToString());
                 }
             }
         }
