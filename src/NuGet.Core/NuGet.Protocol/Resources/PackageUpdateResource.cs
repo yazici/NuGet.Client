@@ -79,8 +79,8 @@ namespace NuGet.Protocol.Core.Types
                 // if only a snupkg is being pushed, then don't try looking for nupkgs.
                 if (!packagePath.EndsWith(NuGetConstants.SnupkgExtension, StringComparison.OrdinalIgnoreCase))
                 {
-                    await PushPackage(packagePath, _source, apiKey, noServiceEndpoint, skipDuplicate
-                                      , requestTimeout, log, tokenSource.Token, isSnupkgPush: false);
+                    await PushPackage(packagePath, _source, apiKey, noServiceEndpoint, skipDuplicate,
+                                      requestTimeout, log, tokenSource.Token, isSnupkgPush: false);
 
                     //Since this was a nupkg push, when we try pushing symbols later, don't error if there are no snupkg files found.
                     ignoreFileNotFoundForSymbols = true;
@@ -100,6 +100,7 @@ namespace NuGet.Protocol.Core.Types
             }
         }
 
+        [Obsolete("Consolidating to one PackageUpdateResource.Push method which has all parameters defined.")]
         public async Task Push(
             string packagePath,
             string symbolSource, // empty to not push symbols
@@ -189,7 +190,7 @@ namespace NuGet.Protocol.Core.Types
 
                 var skipDuplicate = false;
                 await PushPackage(symbolPackagePath, source, apiKey, noServiceEndpoint, skipDuplicate, requestTimeout, log, token,
-                                  isSnupkgPush: isSymbolEndpointSnupkgCapable, ignoreFileNotFound: ignoreFileNotFound);
+                                  isSnupkgPush: isSymbolEndpointSnupkgCapable, fileNotFoundThrows: ignoreFileNotFound);
            // }
         }
 
@@ -212,7 +213,7 @@ namespace NuGet.Protocol.Core.Types
             ILogger log,
             CancellationToken token,
             bool isSnupkgPush,
-            bool ignoreFileNotFound = false)
+            bool fileNotFoundThrows = true)
         {
             var sourceUri = UriUtility.CreateSourceUri(source);
 
@@ -225,7 +226,7 @@ namespace NuGet.Protocol.Core.Types
 
             var packagesToPush = LocalFolderUtility.ResolvePackageFromPath(packagePath, isSnupkgPush);
 
-            if (!ignoreFileNotFound)
+            if (fileNotFoundThrows)
             {
                 LocalFolderUtility.EnsurePackageFileExists(packagePath, packagesToPush);
             }
