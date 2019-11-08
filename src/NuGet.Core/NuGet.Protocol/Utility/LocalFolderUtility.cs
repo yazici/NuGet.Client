@@ -987,13 +987,13 @@ namespace NuGet.Protocol
         }
 
         /// <summary>
-        /// This method checks of a given list of package paths exist on disk.
+        /// If there isn't at least one Path specified, throw that no file paths were resolved for this Package.
         /// </summary>
-        /// <param name="packagePath">A package path to be used while creating logs.</param>
-        /// <param name="matchingPackagePaths">A list of matching package paths that need to be checked.</param>
+        /// <param name="packagePath">The package path the user originally provided for use while creating logs.</param>
+        /// <param name="matchingPackagePaths">A list of matching package paths that were previously resolved.</param>
         public static void EnsurePackageFileExists(string packagePath, IEnumerable<string> matchingPackagePaths)
         {
-            if (!PackageFileExists(packagePath, matchingPackagePaths))
+            if (!PackagePathResolved(matchingPackagePaths))
             {
                 throw new ArgumentException(string.Format(CultureInfo.CurrentCulture,
                       Strings.UnableToFindFile,
@@ -1001,7 +1001,7 @@ namespace NuGet.Protocol
             }
         }
 
-        public static bool PackageFileExists(string packagePath, IEnumerable<string> matchingPackagePaths)
+        public static bool PackagePathResolved(IEnumerable<string> matchingPackagePaths)
         {
             return matchingPackagePaths.Any();
         }
