@@ -33,7 +33,7 @@ namespace Dotnet.Integration.Test
             var sdkPaths = Directory.GetDirectories(Path.Combine(_cliDirectory, "sdk"));
 
             MsBuildSdksPath = Path.Combine(
-             sdkPaths.Where(path => path.Split(Path.DirectorySeparatorChar).Last().StartsWith("3")).First()
+             sdkPaths.Where(path => path.Split(Path.DirectorySeparatorChar).Last().StartsWith("5")).First()
              , "Sdks");
      
             _processEnvVars.Add("MSBuildSDKsPath", MsBuildSdksPath);
