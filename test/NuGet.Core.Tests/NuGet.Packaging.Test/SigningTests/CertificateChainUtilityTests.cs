@@ -131,9 +131,19 @@ namespace NuGet.Packaging.Test
                 }
 
                 Assert.Equal(0, logger.Errors);
+#if (IS_DESKTOP || NETCORE5_0)
                 Assert.Equal(1, logger.Warnings);
-
+#else
+                Assert.Equal(RuntimeEnvironmentHelper.IsLinux ? 2 : 1, logger.Warnings);
+#endif
                 SigningTestUtility.AssertUntrustedRoot(logger.LogMessages, LogLevel.Warning);
+
+#if !NETCORE5_0
+                if (RuntimeEnvironmentHelper.IsLinux)
+                {
+                    SigningTestUtility.AssertOfflineRevocation(logger.LogMessages, LogLevel.Warning);
+                }
+#endif
             }
         }
 
