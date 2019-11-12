@@ -1082,6 +1082,57 @@ namespace NuGet.Protocol.Tests
 
                 //Assert
                 Assert.Equal(0, resolvedPaths.Count());
+
+        }
+
+        [Fact]
+        public void LocalFolderUtility_ResolvePackageFromPath_EmptyWhenNotFound()
+        {
+            using (var root = TestDirectory.Create())
+            {
+                // Arrange
+                var testLogger = new TestLogger();
+
+                // Act
+                var packages = LocalFolderUtility.GetPackagesV3(root, "A", testLogger).ToList();
+
+                // Assert
+                Assert.Equal(0, packages.Count);
+                Assert.Equal(0, testLogger.Messages.Count);
+            }
+        }
+
+        [Fact]
+        public void LocalFolderUtility_ResolvePackageFromPath_OneWhenExactFileNameFound()
+        {
+            using (var root = TestDirectory.Create())
+            {
+                // Arrange
+                var testLogger = new TestLogger();
+
+                // Act
+                var packages = LocalFolderUtility.GetPackagesV3(root, "A", testLogger).ToList();
+
+                // Assert
+                Assert.Equal(0, packages.Count);
+                Assert.Equal(0, testLogger.Messages.Count);
+            }
+        }
+
+        [Fact]
+        public void LocalFolderUtility_ResolvePackageFromPath_FindsAllWhenWildcard()
+        {
+            using (var root = TestDirectory.Create())
+            {
+                // Arrange
+                var testLogger = new TestLogger();
+
+                // Act
+                var packages = LocalFolderUtility.GetPackagesV3(root, "A", testLogger).ToList();
+
+                // Assert
+                Assert.Equal(0, packages.Count);
+                Assert.Equal(0, testLogger.Messages.Count);
             }
         }
 
