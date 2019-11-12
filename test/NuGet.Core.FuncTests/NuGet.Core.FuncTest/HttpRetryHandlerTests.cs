@@ -100,7 +100,7 @@ namespace NuGet.Core.FuncTest
             }
             else
             {
-#if NETCORE3_0
+#if (NETCORE3_0 || NETCORE5_0)
                 Assert.Equal("No connection could be made because the target machine actively refused it.", exception.InnerException.Message);
 #else
                 Assert.Equal("No connection could be made because the target machine actively refused it", exception.InnerException.Message);
@@ -162,7 +162,7 @@ namespace NuGet.Core.FuncTest
             }
             else
             {
-#if NETCORE3_0
+#if (NETCORE3_0 || NETCORE5_0)
                 Assert.Equal("No such host is known.", exception.InnerException.Message);
 #else
                 Assert.Equal("No such host is known", exception.InnerException.Message);
