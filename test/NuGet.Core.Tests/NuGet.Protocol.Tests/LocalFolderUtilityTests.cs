@@ -1083,56 +1083,29 @@ namespace NuGet.Protocol.Tests
                 //Assert
                 Assert.Equal(0, resolvedPaths.Count());
 
+            //Act            
+            LocalFolderUtility.EnsurePackageFileExists(packagePath, testList);
+
+            //Assert
+            //Expected no thrown Exception.
         }
 
         [Fact]
-        public void LocalFolderUtility_ResolvePackageFromPath_EmptyWhenNotFound()
+        public async void LocalFolderUtility_ResolvePackageFromPath_EmptyWhenNotFound()
         {
             using (var root = TestDirectory.Create())
             {
-                // Arrange
-                var testLogger = new TestLogger();
+                //Arrange
+                string nonexistentPath = "nonexistentPath";
+                var a = new PackageIdentity("a", NuGetVersion.Parse("1.0.0"));
+                
+                await SimpleTestPackageUtility.CreateFolderFeedPackagesConfigAsync(root, a);
 
-                // Act
-                var packages = LocalFolderUtility.GetPackagesV3(root, "A", testLogger).ToList();
+                //Act
+                var resolvedPaths = LocalFolderUtility.ResolvePackageFromPath(nonexistentPath);
 
-                // Assert
-                Assert.Equal(0, packages.Count);
-                Assert.Equal(0, testLogger.Messages.Count);
-            }
-        }
-
-        [Fact]
-        public void LocalFolderUtility_ResolvePackageFromPath_OneWhenExactFileNameFound()
-        {
-            using (var root = TestDirectory.Create())
-            {
-                // Arrange
-                var testLogger = new TestLogger();
-
-                // Act
-                var packages = LocalFolderUtility.GetPackagesV3(root, "A", testLogger).ToList();
-
-                // Assert
-                Assert.Equal(0, packages.Count);
-                Assert.Equal(0, testLogger.Messages.Count);
-            }
-        }
-
-        [Fact]
-        public void LocalFolderUtility_ResolvePackageFromPath_FindsAllWhenWildcard()
-        {
-            using (var root = TestDirectory.Create())
-            {
-                // Arrange
-                var testLogger = new TestLogger();
-
-                // Act
-                var packages = LocalFolderUtility.GetPackagesV3(root, "A", testLogger).ToList();
-
-                // Assert
-                Assert.Equal(0, packages.Count);
-                Assert.Equal(0, testLogger.Messages.Count);
+                //Assert
+                Assert.Equal(0, resolvedPaths.Count());
             }
         }
 
