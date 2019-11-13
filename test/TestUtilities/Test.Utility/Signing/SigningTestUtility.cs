@@ -270,7 +270,7 @@ namespace Test.Utility.Signing
                             critical: false));
                 }
 
-                if (chainCertificateRequest.IsCA)
+                if (chainCertificateRequest.IsCA || isSelfSigned)
                 {
                     // update key usage with CA cert sign and crl sign attributes
                     keyUsage |= X509KeyUsageFlags.CrlSign | X509KeyUsageFlags.KeyCertSign;

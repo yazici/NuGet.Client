@@ -123,8 +123,12 @@ namespace NuGet.Packaging.Test
                 }
                 else
                 {
-                    AssertPartialChain(logger.LogMessages, LogLevel.Error);
-                    SigningTestUtility.AssertOfflineRevocation(logger.LogMessages, LogLevel.Warning);
+#if NETCORE5_0
+                    AssertNotTimeValid(logger.LogMessages, LogLevel.Error);
+#else
+                    AssertNotTimeValid(logger.LogMessages, LogLevel.Error);
+                    SigningTestUtility.AssertRevocationStatusUnknown(logger.LogMessages, LogLevel.Warning);
+#endif
                 }
             }
         }
@@ -696,10 +700,20 @@ namespace NuGet.Packaging.Test
 
         private static void AssertNotTimeValid(IEnumerable<ILogMessage> issues, LogLevel logLevel)
         {
+            string notTimeValid;
+
+            if (RuntimeEnvironmentHelper.IsWindows)
+            {
+                notTimeValid = "A required certificate is not within its validity period when verifying against the current system clock or the timestamp in the signed file";
+            }
+            else
+            {
+                notTimeValid = "certificate has expired";
+            }
             Assert.Contains(issues, issue =>
                 issue.Code == NuGetLogCode.NU3018 &&
                 issue.Level == logLevel &&
-                issue.Message.Contains("A required certificate is not within its validity period when verifying against the current system clock or the timestamp in the signed file"));
+                issue.Message.Contains(notTimeValid));
         }
 
         private static AuthorSignPackageRequest CreateRequest(X509Certificate2 certificate)
