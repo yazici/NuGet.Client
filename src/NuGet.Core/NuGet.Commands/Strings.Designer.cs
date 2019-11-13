@@ -836,7 +836,7 @@ namespace NuGet.Commands {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to All projects are up-to-date.
+        ///   Looks up a localized string similar to All projects are up to date..
         /// </summary>
         internal static string Log_AllProjectsUpToDate {
             get {
@@ -1223,7 +1223,7 @@ namespace NuGet.Commands {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to {0} of {1} projects are up-to-date.
+        ///   Looks up a localized string similar to {0} of {1} projects are up to date..
         /// </summary>
         internal static string Log_ProjectUpToDateSummary {
             get {
