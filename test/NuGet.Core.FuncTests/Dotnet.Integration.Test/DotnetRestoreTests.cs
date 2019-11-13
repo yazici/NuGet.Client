@@ -187,15 +187,25 @@ EndGlobal";
                 var result = _msbuildFixture.RunDotnet(pathContext.SolutionRoot, $"restore proj.sln {$"--source \"{pathContext.PackageSource}\""}", ignoreExitCode: true);
 
                 // Assert
-                Assert.True(result.ExitCode == 0);
-                Assert.True(1 == result.AllOutput.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries).Length, result.AllOutput);
+                Assert.Equal(0, result.ExitCode);
+                Assert.Equal(
+                    $@"  Determining projects to restore...
+  Restoring packages for {projectFile1}...
+
+",
+                    result.AllOutput);
 
                 // Act - make sure no-op does the same thing.
                 result = _msbuildFixture.RunDotnet(pathContext.SolutionRoot, $"restore proj.sln {$"--source \"{pathContext.PackageSource}\""}", ignoreExitCode: true);
 
                 // Assert
-                Assert.True(result.ExitCode == 0);
-                Assert.True(1 == result.AllOutput.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries).Length, result.AllOutput);
+                Assert.Equal(0, result.ExitCode);
+                Assert.Equal(
+                    @"  Determining projects to restore...
+  All projects are up to date.
+
+",
+                    result.AllOutput);
 
             }
         }

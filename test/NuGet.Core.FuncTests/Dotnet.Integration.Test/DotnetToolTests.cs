@@ -111,7 +111,12 @@ namespace Dotnet.Integration.Test
 
                 // Assert
                 Assert.True(result.Item1 == 0, result.AllOutput);
-                Assert.True(1 == result.AllOutput.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries).Count(), result.AllOutput);
+                Assert.Equal(
+                    $@"  Determining projects to restore...
+  Restoring packages for {Path.Combine(workingDirectory, $"{projectName}.csproj")}...
+
+",
+                    result.AllOutput);
                 // Verify the assets file
                 var lockFile = LockFileUtilities.GetLockFile(Path.Combine(testDirectory, projectName, "project.assets.json"), NullLogger.Instance);
                 Assert.NotNull(lockFile);
