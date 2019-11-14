@@ -207,6 +207,13 @@ namespace Test.Utility.Signing
             int publicKeyLength = 2048,
             ChainCertificateRequest chainCertificateRequest = null)
         {
+            if (chainCertificateRequest is null)
+            {
+                chainCertificateRequest = new ChainCertificateRequest();
+            }
+            
+            chainCertificateRequest.IsCA = true;
+
             using (var rsa = RSA.Create(publicKeyLength))
             {
                 return GenerateCertificate(subjectName, modifyGenerator, rsa, hashAlgorithm, paddingMode, chainCertificateRequest);
@@ -270,7 +277,7 @@ namespace Test.Utility.Signing
                             critical: false));
                 }
 
-                if (chainCertificateRequest.IsCA || isSelfSigned)
+                if (chainCertificateRequest.IsCA)
                 {
                     // update key usage with CA cert sign and crl sign attributes
                     keyUsage |= X509KeyUsageFlags.CrlSign | X509KeyUsageFlags.KeyCertSign;

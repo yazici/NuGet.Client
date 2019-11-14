@@ -109,7 +109,22 @@ namespace NuGet.Packaging.Test
                 Assert.Equal("Certificate chain validation failed.", exception.Message);
 
                 Assert.Equal(1, logger.Errors);
+#if NETCORE5_0
+                if (RuntimeEnvironmentHelper.IsWindows)
+                {
+                    Assert.Equal(1, logger.Warnings);
+                }
+                else if (RuntimeEnvironmentHelper.IsMacOSX)
+                {
+                    Assert.Equal(1, logger.Warnings);
+                }
+                else
+                {
+                    Assert.Equal(0, logger.Warnings);
+                }
+#else
                 Assert.Equal(1, logger.Warnings);
+#endif
 
                 if (RuntimeEnvironmentHelper.IsWindows)
                 {
