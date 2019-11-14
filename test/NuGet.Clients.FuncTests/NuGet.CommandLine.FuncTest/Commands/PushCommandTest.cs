@@ -134,11 +134,15 @@ namespace NuGet.CommandLine.FuncTest.Commands
 
                 var sourcePath2 = Util.CreateTestPackage("PackageB", "1.1.0", packageDirectory);
                 var outputPath2 = Path.Combine(packageDirectory, "pushed2.nupkg");
+<<<<<<< HEAD
 
                 CommandRunnerResult result = null;
                 CommandRunnerResult result2 = null;
                 CommandRunnerResult result3 = null;
 
+=======
+                
+>>>>>>> ***NO_CI*** WIP
                 using (var server = new MockServer())
                 {
                     SetupMockServerForSkipDuplicate(server,
@@ -146,6 +150,7 @@ namespace NuGet.CommandLine.FuncTest.Commands
                                                       FuncStatusDuplicate_OccursOnSecondPush());
 
                     server.Start();
+
 
                     // Act
                     result = CommandRunner.Run(
@@ -897,16 +902,46 @@ namespace NuGet.CommandLine.FuncTest.Commands
                // var outputPath = Path.Combine(packageDirectory, "packageInTheDirectory.nupkg");
                 string snupkgToPush = "*.snupkg";
 
+            
                 using (var server = new MockServer())
                 {
+                    var indexJson = Util.CreateIndexJson();
+
+                    server.Get.Add("/", r =>
+                    {
+                        var path = server.GetRequestUrlAbsolutePath(r);
+                        if (path == "/index.json")
+                        {
+                            return new Action<HttpListenerResponse>(response =>
+                            {
+                                response.StatusCode = 200;
+                                response.ContentType = "text/javascript";
+                                MockServer.SetResponseContent(response, indexJson.ToString());
+                            });
+                        }
+
+                        throw new Exception("This test needs to be updated to support: " + path);
+                    });
+
                     server.Start();
 
+                    var sources = new List<string>();
+                    string sourceName = $"{server.Uri}index.json";
+                    sources.Add(sourceName);
+                    //var sourceRepos = sources.Select(source => Repository.Factory.GetCoreV3(source.Source)).ToList();
+                    //var provider = new TestPackageSourceProvider(sources);
+
+                    Util.CreateNuGetConfig(packageDirectory, sources);
+
+                    
+                    Util.AddPublishSymbolsResource(indexJson, server);
+                    
                     // Act
                     //PushRunner.Run()
                     var result = CommandRunner.Run(
                         nuget,
                         packageDirectory,
-                        $"push {snupkgToPush} -Source {server.Uri}push -Timeout 110 --debug",
+                        $"push {snupkgToPush} -Source {sourceName} -Timeout 110 --debug",
                         waitForExit: true,
                         timeOutInMilliseconds: 120000); // 120 seconds
 
