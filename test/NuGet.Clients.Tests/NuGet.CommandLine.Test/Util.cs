@@ -557,6 +557,18 @@ namespace NuGet.CommandLine.Test
             array.Add(resource);
         }
 
+        public static void AddPublishSymbolsResource(JObject index, MockServer publishServer)
+        {
+            var resource = new JObject
+            {
+                { "@id", $"{publishServer.Uri}push" },
+                { "@type", "SymbolPackagePublish/4.9.0" }
+            };
+
+            var array = index["resources"] as JArray;
+            array.Add(resource);
+        }
+
         public static void CreateConfigForGlobalPackagesFolder(string workingDirectory)
         {
             CreateNuGetConfig(workingDirectory, new List<string>());

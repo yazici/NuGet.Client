@@ -2,12 +2,18 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Threading;
 using NuGet.CommandLine.Test;
 using NuGet.Commands;
+using NuGet.Configuration;
+using NuGet.Protocol;
+using NuGet.Protocol.Core.Types;
 using NuGet.Test.Utility;
+using Test.Utility;
 using Xunit;
 
 namespace NuGet.CommandLine.FuncTest.Commands
@@ -127,7 +133,7 @@ namespace NuGet.CommandLine.FuncTest.Commands
 
                 var sourcePath2 = Util.CreateTestPackage("PackageB", "1.1.0", packageDirectory);
                 var outputPath2 = Path.Combine(packageDirectory, "pushed2.nupkg");
-
+                
                 using (var server = new MockServer())
                 {
                     SetupMockServerForSkipDuplicate(server,
@@ -135,6 +141,7 @@ namespace NuGet.CommandLine.FuncTest.Commands
                                                       FuncStatusDuplicate_OccursOnSecondPush());
 
                     server.Start();
+
 
                     // Act
                     var result = CommandRunner.Run(
@@ -297,16 +304,46 @@ namespace NuGet.CommandLine.FuncTest.Commands
                // var outputPath = Path.Combine(packageDirectory, "packageInTheDirectory.nupkg");
                 string snupkgToPush = "*.snupkg";
 
+            
                 using (var server = new MockServer())
                 {
+                    var indexJson = Util.CreateIndexJson();
+
+                    server.Get.Add("/", r =>
+                    {
+                        var path = server.GetRequestUrlAbsolutePath(r);
+                        if (path == "/index.json")
+                        {
+                            return new Action<HttpListenerResponse>(response =>
+                            {
+                                response.StatusCode = 200;
+                                response.ContentType = "text/javascript";
+                                MockServer.SetResponseContent(response, indexJson.ToString());
+                            });
+                        }
+
+                        throw new Exception("This test needs to be updated to support: " + path);
+                    });
+
                     server.Start();
 
+                    var sources = new List<string>();
+                    string sourceName = $"{server.Uri}index.json";
+                    sources.Add(sourceName);
+                    //var sourceRepos = sources.Select(source => Repository.Factory.GetCoreV3(source.Source)).ToList();
+                    //var provider = new TestPackageSourceProvider(sources);
+
+                    Util.CreateNuGetConfig(packageDirectory, sources);
+
+                    
+                    Util.AddPublishSymbolsResource(indexJson, server);
+                    
                     // Act
                     //PushRunner.Run()
                     var result = CommandRunner.Run(
                         nuget,
                         packageDirectory,
-                        $"push {snupkgToPush} -Source {server.Uri}push -Timeout 110 --debug",
+                        $"push {snupkgToPush} -Source {sourceName} -Timeout 110 --debug",
                         waitForExit: true,
                         timeOutInMilliseconds: 120000); // 120 seconds
 
