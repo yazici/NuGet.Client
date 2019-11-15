@@ -109,42 +109,23 @@ namespace NuGet.Packaging.Test
                 Assert.Equal("Certificate chain validation failed.", exception.Message);
 
                 Assert.Equal(1, logger.Errors);
-#if NETCORE5_0
-                if (RuntimeEnvironmentHelper.IsWindows)
-                {
-                    Assert.Equal(1, logger.Warnings);
-                }
-                else if (RuntimeEnvironmentHelper.IsMacOSX)
-                {
-                    Assert.Equal(1, logger.Warnings);
-                }
-                else
-                {
-                    Assert.Equal(0, logger.Warnings);
-                }
-#else
+#if (NETCORE5_0 || IS_DESKTOP)
                 Assert.Equal(1, logger.Warnings);
-#endif
-
-                if (RuntimeEnvironmentHelper.IsWindows)
-                {
-                    AssertNotTimeValid(logger.LogMessages, LogLevel.Error);
-                    SigningTestUtility.AssertUntrustedRoot(logger.LogMessages, LogLevel.Warning);
-                }
-                else if (RuntimeEnvironmentHelper.IsMacOSX)
-                {
-                    AssertExpiredCertificate(logger.LogMessages, LogLevel.Error);
-                    SigningTestUtility.AssertUntrustedRoot(logger.LogMessages, LogLevel.Warning); 
-                }
-                else
-                {
-#if NETCORE5_0
-                    AssertNotTimeValid(logger.LogMessages, LogLevel.Error);
 #else
-                    AssertNotTimeValid(logger.LogMessages, LogLevel.Error);
-                    SigningTestUtility.AssertRevocationStatusUnknown(logger.LogMessages, LogLevel.Warning);
+                if (!RuntimeEnvironmentHelper.IsMacOSX && RuntimeEnvironmentHelper.IsLinux)
+                {
+                    Assert.Equal(2, logger.Warnings);
+                }        
 #endif
+                SigningTestUtility.AssertNotTimeValid(logger.LogMessages, LogLevel.Error);
+                SigningTestUtility.AssertUntrustedRoot(logger.LogMessages, LogLevel.Warning);
+
+#if !NETCORE5_0
+                if (!RuntimeEnvironmentHelper.IsMacOSX && RuntimeEnvironmentHelper.IsLinux)
+                {
+                    SigningTestUtility.AssertRevocationStatusUnknown(logger.LogMessages, LogLevel.Warning);
                 }
+#endif
             }
         }
 
@@ -713,23 +694,6 @@ namespace NuGet.Packaging.Test
         }
 #endif
 
-        private static void AssertNotTimeValid(IEnumerable<ILogMessage> issues, LogLevel logLevel)
-        {
-            string notTimeValid;
-
-            if (RuntimeEnvironmentHelper.IsWindows)
-            {
-                notTimeValid = "A required certificate is not within its validity period when verifying against the current system clock or the timestamp in the signed file";
-            }
-            else
-            {
-                notTimeValid = "certificate has expired";
-            }
-            Assert.Contains(issues, issue =>
-                issue.Code == NuGetLogCode.NU3018 &&
-                issue.Level == logLevel &&
-                issue.Message.Contains(notTimeValid));
-        }
 
         private static AuthorSignPackageRequest CreateRequest(X509Certificate2 certificate)
         {
@@ -737,22 +701,6 @@ namespace NuGet.Packaging.Test
                 certificate,
                 Common.HashAlgorithmName.SHA256,
                 Common.HashAlgorithmName.SHA256);
-        }
-
-        private static void AssertExpiredCertificate(IEnumerable<ILogMessage> issues, LogLevel logLevel)
-        {
-            Assert.Contains(issues, issue =>
-                issue.Code == NuGetLogCode.NU3018 &&
-                issue.Level == logLevel &&
-                issue.Message.Contains("An expired certificate was detected"));
-        }
-
-        private static void AssertPartialChain(IEnumerable<ILogMessage> issues, LogLevel logLevel)
-        {
-            Assert.Contains(issues, issue =>
-                issue.Code == NuGetLogCode.NU3018 &&
-                issue.Level == logLevel &&
-                issue.Message.Contains("unable to get local issuer certificate"));
         }
 
         private static RepositorySignPackageRequest CreateRequestRepository(
