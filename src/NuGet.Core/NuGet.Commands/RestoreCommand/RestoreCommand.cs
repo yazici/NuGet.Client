@@ -901,7 +901,7 @@ namespace NuGet.Commands
             Tuple<bool, List<RestoreTargetGraph>, RuntimeGraph> result = null;
             using (var tryRestoreTelemetry = TelemetryActivity.CreateTelemetryActivityWithNewOperationIdAndEvent(telemetryActivity.OperationId, CreateRestoreTargetGraph))
             {
-                result = await projectRestoreCommand.TryRestoreAsync(
+                 result = await projectRestoreCommand.TryRestoreAsync(
                     projectRange,
                     projectFrameworkRuntimePairs,
                     userPackageFolder,
