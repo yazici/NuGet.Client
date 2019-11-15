@@ -959,14 +959,32 @@ namespace NuGet.CommandLine.FuncTest.Commands
                         waitForExit: true,
                         timeOutInMilliseconds: 120000); // 120 seconds
 
+                    //Second run with SkipDuplicate
+                    var result2 = CommandRunner.Run(
+                        nuget,
+                        packageDirectory,
+                        $"push {nupkgFullPath} -Source {sourceName} -Timeout 110 -SkipDuplicate",
+                        waitForExit: true,
+                        timeOutInMilliseconds: 120000); // 120 seconds
+
                     // Assert
 
                     //Ignoring filename in File Not Found error since the error should not appear in any case.
                     string genericFileNotFoundError = string.Format(MESSAGE_FILE_DOES_NOT_EXIST, string.Empty);
 
-                    Assert.True(0 == result.Item1, "Expected to successfully push a nupkg without a snupkg.");
-                    Assert.Contains(MESSAGE_PACKAGE_PUSHED, result.Item2);
+                    Assert.False(0 == result.Item1, "Expected to fail push a due to duplicate snupkg.");
+                    Assert.Contains(MESSAGE_PACKAGE_PUSHED, result.Item2); //nupkg pushed
+                    Assert.Contains(MESSAGE_RESPONSE_NO_SUCCESS, result.AllOutput); //snupkg duplicate
                     Assert.DoesNotContain(genericFileNotFoundError, result.Item3);
+
+                    //TODO: Once SkipDuplicate is passed into the inherit snupkg push, this should succeed and contain MESSAGE_EXISTING_PACKAGE.
+                    //      False to True for Item1.
+                    //      DoesNotContain to Contains MESSAGE_EXISTING_PACKAGE
+                    Assert.False(0 == result2.Item1, "Expected to fail push with SkipDuplicate with a duplicate snupkg.");
+                    Assert.Contains(MESSAGE_PACKAGE_PUSHED, result2.Item2); //nupkg pushed
+                    Assert.DoesNotContain(MESSAGE_EXISTING_PACKAGE, result2.AllOutput); //snupkg duplicate
+
+                    Assert.DoesNotContain(genericFileNotFoundError, result2.Item3);
                 }
             }
         }
@@ -1009,7 +1027,8 @@ namespace NuGet.CommandLine.FuncTest.Commands
         }
 
         /// <summary>
-        /// When pushing a nupkg by filename to a Symbol Server with a matching snupkg, a 409 Conflict halts the push. 
+        /// When pushing a nupkg by filename to a Symbol Server with a matching snupkg, a 409 Conflict halts the push.
+        /// TODO: bug fixes will come from https://github.com/NuGet/Home/issues/8148
         /// </summary>
         [Fact]
         public void PushCommand_Server_Nupkg_FilenameSnupkgExists_Conflict()
