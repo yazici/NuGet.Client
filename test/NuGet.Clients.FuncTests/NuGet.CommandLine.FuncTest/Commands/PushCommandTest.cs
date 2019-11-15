@@ -10,6 +10,7 @@ using System.Threading;
 using NuGet.CommandLine.Test;
 using NuGet.Commands;
 using NuGet.Configuration;
+using NuGet.Packaging;
 using NuGet.Protocol;
 using NuGet.Protocol.Core.Types;
 using NuGet.Test.Utility;
@@ -133,7 +134,7 @@ namespace NuGet.CommandLine.FuncTest.Commands
 
                 var sourcePath2 = Util.CreateTestPackage("PackageB", "1.1.0", packageDirectory);
                 var outputPath2 = Path.Combine(packageDirectory, "pushed2.nupkg");
-                
+
                 using (var server = new MockServer())
                 {
                     SetupMockServerForSkipDuplicate(server,
@@ -255,7 +256,8 @@ namespace NuGet.CommandLine.FuncTest.Commands
         }
 
         /// <summary>
-        /// When pushing a snupkg filename that doesn't exist, show a File Not Found error. 
+        /// When pushing a snupkg filename that doesn't exist, show a File Not Found error.
+        /// TODO: bug fixes will come from https://github.com/NuGet/Home/issues/8148
         /// </summary>
         [Fact]
         public void PushCommand_Server_Snupkg_FilenameDoesNotExist_FileNotFoundError()
@@ -266,27 +268,24 @@ namespace NuGet.CommandLine.FuncTest.Commands
                 var nuget = Util.GetNuGetExePath();
                 string snupkgToPush = "nonExistingPackage.snupkg";
 
-                using (var server = new MockServer())
+                using (var server = CreateAndStartMockV3Server(packageDirectory, out string sourceName))
                 {
-                    server.Start();
-
                     // Act
                     var result = CommandRunner.Run(
                         nuget,
                         packageDirectory,
-                        $"push {snupkgToPush} -Source {server.Uri}push -Timeout 110",
+                        $"push {snupkgToPush} -Source {sourceName} -Timeout 110",
                         waitForExit: true,
                         timeOutInMilliseconds: 120000); // 120 seconds
 
                     // Assert
-                    server.Stop();
 
-                    string expectedFileNotFoundErrorMessage = string.Empty; //string.Format(MESSAGE_FILE_DOES_NOT_EXIST, snupkgToPush);
+                    //TODO: Fix push so that this error occurs.
+                    //string expectedFileNotFoundErrorMessage = string.Format(MESSAGE_FILE_DOES_NOT_EXIST, snupkgToPush);
 
                     Assert.True(0 == result.Item1, "File did not exist and should fail.");
                     Assert.DoesNotContain(MESSAGE_PACKAGE_PUSHED, result.Item2);
-                    Assert.Contains(expectedFileNotFoundErrorMessage, result.Item3);
-                    Assert.False(File.Exists(snupkgToPush), TEST_PACKAGE_SHOULD_NOT_PUSH);
+                    //TODO: Assert.Contains(expectedFileNotFoundErrorMessage, result.Item3);
                 }
             }
         }
@@ -300,50 +299,17 @@ namespace NuGet.CommandLine.FuncTest.Commands
             // Arrange
             using (var packageDirectory = TestDirectory.Create())
             {
+
                 var nuget = Util.GetNuGetExePath();
-               // var outputPath = Path.Combine(packageDirectory, "packageInTheDirectory.nupkg");
                 string snupkgToPush = "*.snupkg";
 
-            
-                using (var server = new MockServer())
+                using (var server = CreateAndStartMockV3Server(packageDirectory, out string sourceName))
                 {
-                    var indexJson = Util.CreateIndexJson();
-
-                    server.Get.Add("/", r =>
-                    {
-                        var path = server.GetRequestUrlAbsolutePath(r);
-                        if (path == "/index.json")
-                        {
-                            return new Action<HttpListenerResponse>(response =>
-                            {
-                                response.StatusCode = 200;
-                                response.ContentType = "text/javascript";
-                                MockServer.SetResponseContent(response, indexJson.ToString());
-                            });
-                        }
-
-                        throw new Exception("This test needs to be updated to support: " + path);
-                    });
-
-                    server.Start();
-
-                    var sources = new List<string>();
-                    string sourceName = $"{server.Uri}index.json";
-                    sources.Add(sourceName);
-                    //var sourceRepos = sources.Select(source => Repository.Factory.GetCoreV3(source.Source)).ToList();
-                    //var provider = new TestPackageSourceProvider(sources);
-
-                    Util.CreateNuGetConfig(packageDirectory, sources);
-
-                    
-                    Util.AddPublishSymbolsResource(indexJson, server);
-                    
                     // Act
-                    //PushRunner.Run()
                     var result = CommandRunner.Run(
                         nuget,
                         packageDirectory,
-                        $"push {snupkgToPush} -Source {sourceName} -Timeout 110 --debug",
+                        $"push {snupkgToPush} -Source {sourceName} -Timeout 110",
                         waitForExit: true,
                         timeOutInMilliseconds: 120000); // 120 seconds
 
@@ -352,9 +318,154 @@ namespace NuGet.CommandLine.FuncTest.Commands
 
                     string expectedFileNotFoundErrorMessage = string.Format(MESSAGE_FILE_DOES_NOT_EXIST, snupkgToPush);
 
-                    Assert.True(0 == result.Item1, "File did not exist and should fail.");
+                    Assert.True(1 == result.Item1, "File did not exist and should fail.");
                     Assert.DoesNotContain(MESSAGE_PACKAGE_PUSHED, result.Item2);
                     Assert.Contains(expectedFileNotFoundErrorMessage, result.Item3);
+                }
+            }
+        }
+
+        /// <summary>
+        /// When pushing a nupkg by filename to a Symbol Server with no matching snupkg, do not show a File Not Found error. 
+        /// </summary>
+        [Fact]
+        public void PushCommand_Server_Nupkg_FilenameSnupkgDoesNotExist_NoFileNotFoundError()
+        {
+            // Arrange
+            using (var packageDirectory = TestDirectory.Create())
+            {
+                var nuget = Util.GetNuGetExePath();
+
+                string packageId = "packageWithoutSnupkg";
+                string version = "1.1.0";
+
+                //Create Nupkg in test directory.
+                string nupkgFullPath = Util.CreateTestPackage(packageId, version, packageDirectory);
+
+                string nupkgFileName = Util.BuildPackageString(packageId, version, NuGetConstants.PackageExtension);
+                string snupkgFileName = Util.BuildPackageString(packageId, version, NuGetConstants.SnupkgExtension);
+                string snupkgFullPath = Path.Combine(packageDirectory, snupkgFileName);
+
+                using (var server = CreateAndStartMockV3Server(packageDirectory, out string sourceName))
+                {
+                    SetupMockServerAlwaysCreate(server, packageDirectory);
+
+                    // Act
+                    var result = CommandRunner.Run(
+                        nuget,
+                        packageDirectory,
+                        $"push {nupkgFullPath} -Source {sourceName} -Timeout 110",
+                        waitForExit: true,
+                        timeOutInMilliseconds: 120000); // 120 seconds
+
+                    // Assert
+
+                    //Ignoring filename in File Not Found error since the error should not appear in any case.
+                    string genericFileNotFoundError = string.Format(MESSAGE_FILE_DOES_NOT_EXIST, string.Empty);
+
+                    Assert.True(0 == result.Item1, "Expected to successfully push a nupkg without a snupkg.");
+                    Assert.Contains(MESSAGE_PACKAGE_PUSHED, result.Item2);
+                    Assert.DoesNotContain(genericFileNotFoundError, result.Item3);
+                }
+            }
+        }
+
+        /// <summary>
+        /// When pushing *.nupkg to a symbol server, but no snupkgs are selected with that wildcard, there is (TODO: not) a FileNotFound error about snupkgs.
+        /// TODO: bug fixes will come from https://github.com/NuGet/Home/issues/8148
+        /// </summary>
+        [Fact]
+        public void PushCommand_Server_Nupkg_WildcardSnupkgDoesNotExist_FileNotFoundError()
+        {
+            // Arrange
+            using (var packageDirectory = TestDirectory.Create())
+            {
+                var nuget = Util.GetNuGetExePath();
+                string pushArgument = "*.nupkg";
+
+                using (var server = CreateAndStartMockV3Server(packageDirectory, out string sourceName))
+                {
+                    // Act
+                    var result = CommandRunner.Run(
+                        nuget,
+                        packageDirectory,
+                        $"push {pushArgument} -Source {sourceName} -Timeout 110",
+                        waitForExit: true,
+                        timeOutInMilliseconds: 120000); // 120 seconds
+
+                    // Assert
+                    server.Stop();
+
+                    string expectedFileNotFoundErrorMessage = string.Format(MESSAGE_FILE_DOES_NOT_EXIST, pushArgument);
+
+                    Assert.False(0 == result.Item1, "File did not exist and should fail.");
+                    Assert.DoesNotContain(MESSAGE_PACKAGE_PUSHED, result.Item2);
+
+                    //TODO: Will become DoesNotContain after bug fixes.
+                    Assert.Contains(expectedFileNotFoundErrorMessage, result.Item3);
+                }
+            }
+        }
+
+        /// <summary>
+        /// When pushing a nupkg by filename to a Symbol Server with a matching snupkg, a 409 Conflict halts the push. 
+        /// </summary>
+        [Fact]
+        public void PushCommand_Server_Nupkg_FilenameSnupkgExists_Conflict()
+        {
+            // Arrange
+            using (var packageDirectory = TestDirectory.Create())
+            {
+                var nuget = Util.GetNuGetExePath();
+
+                string packageId = "packageWithSnupkg";
+                string version = "1.1.0";
+
+                //Create nupkg in test directory.
+                string nupkgFullPath = Util.CreateTestPackage(packageId, version, packageDirectory);
+
+                string nupkgFileName = Util.BuildPackageString(packageId, version, NuGetConstants.PackageExtension);
+                string snupkgFileName = Util.BuildPackageString(packageId, version, NuGetConstants.SnupkgExtension);
+                string snupkgFullPath = Path.Combine(packageDirectory, snupkgFileName);
+
+                //Create snupkg in test directory.
+                FileStream fileSnupkg = null;
+                try
+                {
+                    fileSnupkg = File.Create(snupkgFullPath);
+                }
+                finally
+                {
+                    if (fileSnupkg != null)
+                    {
+                        fileSnupkg.Flush();
+                        fileSnupkg.Close();
+                    }
+                }
+
+                using (var server = CreateAndStartMockV3Server(packageDirectory, out string sourceName))
+                {
+                    //Configure push to alternate returning Created and Conflict responses, which correspond to pushing the nupkg and snupkg, respectively.
+                    SetupMockServerCreateNupkgDuplicateSnupkg(server, packageDirectory, FuncStatus_Alternates_CreatedThenDuplicate());
+
+                    // Act
+
+                    //Since this is V3, this will trigger 2 pushes: one for nupkgs, and one for snupkgs.
+                    var result = CommandRunner.Run(
+                        nuget,
+                        packageDirectory,
+                        $"push {nupkgFullPath} -Source {sourceName} -Timeout 110",
+                        waitForExit: true,
+                        timeOutInMilliseconds: 120000); // 120 seconds
+
+                    // Assert
+
+                    //Ignoring filename in File Not Found error since the error should not appear in any case.
+                    string genericFileNotFoundError = string.Format(MESSAGE_FILE_DOES_NOT_EXIST, string.Empty);
+
+                    Assert.True(0 == result.Item1, "Expected to successfully push a nupkg without a snupkg.");
+                    Assert.Contains(MESSAGE_PACKAGE_PUSHED, result.Item2);
+                    Assert.DoesNotContain(genericFileNotFoundError, result.Item3);
                 }
             }
         }
@@ -372,20 +483,45 @@ namespace NuGet.CommandLine.FuncTest.Commands
                                                               Func<int, HttpStatusCode> responseCodeFunc)
         {
             int packageCounter = 0;
-            server.Put.Add("/push", (Func<HttpListenerRequest, object>)(r =>
+            server.Put.Add("/push", (Func<HttpListenerRequest, object>)((r) =>
             {
                 packageCounter++;
-
-                byte[] buffer = MockServer.GetPushedPackage(r);
-
                 var outputPath = outputPathFunc(packageCounter);
 
-                using (var outputStream = new FileStream((string)outputPath, FileMode.Create))
-                {
-                    outputStream.Write(buffer, 0, buffer.Length);
-                }
+                MockServer.SavePushedPackage(r, outputPath);
 
                 return responseCodeFunc(packageCounter);
+            }));
+        }
+
+        private static void SetupMockServerAlwaysDuplicate(MockServer server,
+                                                              string outputPath)
+        {
+            server.Put.Add("/push", (Func<HttpListenerRequest, object>)((r) =>
+            {
+                return HttpStatusCode.Conflict;
+            }));
+        }
+
+        private static void SetupMockServerAlwaysCreate(MockServer server,
+                                                              string outputPath)
+        {
+            server.Put.Add("/push", (Func<HttpListenerRequest, object>)((r) =>
+            {
+                return HttpStatusCode.Created;
+            }));
+        }
+
+        private static void SetupMockServerCreateNupkgDuplicateSnupkg(MockServer server,
+                                                              string outputPath,
+                                                              Func<int, HttpStatusCode> responseCodeFunc)
+        {
+            int packageCounter = 0;
+            server.Put.Add("/push", (Func<HttpListenerRequest, object>)((r) =>
+            {
+                packageCounter++;
+                var statusCode = responseCodeFunc(packageCounter);
+                return statusCode;
             }));
         }
 
@@ -429,6 +565,65 @@ namespace NuGet.CommandLine.FuncTest.Commands
                     return HttpStatusCode.Created;
                 }
             };
+        }
+
+        /// <summary>
+        /// Status alternates between Created and Conflict, (divisible by 2 is a Conflict).
+        /// </summary>
+        private static Func<int, HttpStatusCode> FuncStatus_Alternates_CreatedThenDuplicate()
+        {
+            return (count) =>
+            {
+                //Every second run will be treated as duplicate.
+                if (count % 2 == 0)
+                {
+                    return HttpStatusCode.Conflict;
+                }
+                else
+                {
+                    return HttpStatusCode.Created;
+                }
+            };
+        }
+
+        /// <summary>
+        /// Creates a V3 Mock Server that supports Publish and Symbol Server.
+        /// </summary>
+        /// <param name="packageDirectory">Path where this server should write (eg, nuget.config).</param>
+        /// <param name="sourceName">URI for index.json</param>
+        /// <returns></returns>
+        private static MockServer CreateAndStartMockV3Server(string packageDirectory, out string sourceName)
+        {
+            var server = new MockServer();
+            var indexJson = Util.CreateIndexJson();
+
+            Util.AddPublishResource(indexJson, server);
+            server.Get.Add("/", r =>
+            {
+                var path = server.GetRequestUrlAbsolutePath(r);
+                if (path == "/index.json")
+                {
+                    return new Action<HttpListenerResponse>(response =>
+                    {
+                        response.StatusCode = 200;
+                        response.ContentType = "text/javascript";
+                        MockServer.SetResponseContent(response, indexJson.ToString());
+                    });
+                }
+
+                throw new Exception("This test needs to be updated to support: " + path);
+            });
+
+            server.Start();
+
+            var sources = new List<string>();
+            sourceName = $"{server.Uri}index.json";
+            sources.Add(sourceName);
+
+            Util.CreateNuGetConfig(packageDirectory, sources);
+            Util.AddPublishSymbolsResource(indexJson, server);
+
+            return server;
         }
 
         #endregion
