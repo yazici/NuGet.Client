@@ -1056,7 +1056,7 @@ namespace NuGet.CommandLine.FuncTest.Commands
                 }
                 finally
                 {
-                    if (fileSnupkg != null)
+                    if (fileSnupkg != null) 
                     {
                         fileSnupkg.Flush();
                         fileSnupkg.Close();
