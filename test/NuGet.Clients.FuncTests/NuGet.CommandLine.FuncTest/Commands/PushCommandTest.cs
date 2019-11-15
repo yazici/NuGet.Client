@@ -472,12 +472,14 @@ namespace NuGet.CommandLine.FuncTest.Commands
                     //Ignoring filename in File Not Found error since the error should not appear in any case.
                     string genericFileNotFoundError = string.Format(MESSAGE_FILE_DOES_NOT_EXIST, string.Empty);
 
+                    //Nupkg should push, but corresponding snupkg is a duplicate and errors.
                     Assert.False(0 == result.Item1, "Expected to fail push a due to duplicate snupkg.");
                     Assert.Contains(MESSAGE_PACKAGE_PUSHED, result.Item2); //nupkg pushed
                     Assert.Contains(MESSAGE_RESPONSE_NO_SUCCESS, result.AllOutput); //snupkg duplicate
                     Assert.DoesNotContain(genericFileNotFoundError, result.Item3);
 
-                    //TODO: Once SkipDuplicate is passed into the inherit snupkg push, this should succeed and contain MESSAGE_EXISTING_PACKAGE.
+                    //Nupkg should push, and corresponding snupkg is a duplicate.
+                    //TODO: Once SkipDuplicate is passed-through to the inherit snupkg push, this should succeed and contain MESSAGE_EXISTING_PACKAGE.
                     //      False to True for Item1.
                     //      DoesNotContain to Contains MESSAGE_EXISTING_PACKAGE
                     Assert.False(0 == result2.Item1, "Expected to fail push with SkipDuplicate with a duplicate snupkg.");
@@ -488,6 +490,11 @@ namespace NuGet.CommandLine.FuncTest.Commands
                 }
             }
         }
+
+        //When pushing *.Nupkg, (no skip duplicate) a 409 Conflict is returned and halts the secondary symbols push
+        //When pushing Snupkgs, (no skip duplicate) a 409 Conflict is returned and halts the  push
+        //When pushing(with skip duplicate) a 409 Conflict is returned and halts the push(all snupkgs should be attempted)
+
 
         #region Helpers
         /// <summary>
