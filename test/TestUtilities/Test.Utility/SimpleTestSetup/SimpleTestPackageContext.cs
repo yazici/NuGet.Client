@@ -19,13 +19,13 @@ namespace NuGet.Test.Utility
     public class SimpleTestPackageContext
     {
         public SimpleTestPackageContext(string packageId)
-            : this ()
+            : this()
         {
             Id = packageId;
         }
 
         public SimpleTestPackageContext(string packageId, string version)
-            : this (packageId)
+            : this(packageId)
         {
             Version = version;
         }
@@ -75,7 +75,14 @@ namespace NuGet.Test.Utility
 
         public PackageIdentity Identity => new PackageIdentity(Id, NuGetVersion.Parse(Version));
 
-        public string PackageName => IsSymbolPackage ? (IsSnupkgPackage ? $"{Id}.{Version}.{NuGetConstants.SnupkgExtension}" : $"{Id}.{Version}.{NuGetConstants.SymbolsExtension}") : $"{Id}.{Version}.{NuGetConstants.PackageExtension}";
+        public string PackageName
+        {
+            get
+            {
+                string dotExtension = !IsSymbolPackage ? NuGetConstants.PackageExtension : (IsSnupkgPackage ? NuGetConstants.SnupkgExtension : NuGetConstants.SymbolsExtension);
+                return $"{Id}.{Version}{dotExtension}";
+            }
+        }
 
         /// <summary>
         /// Add a file to the zip. Ex: lib/net45/a.dll
