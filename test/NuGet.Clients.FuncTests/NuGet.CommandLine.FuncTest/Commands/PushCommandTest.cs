@@ -430,19 +430,7 @@ namespace NuGet.CommandLine.FuncTest.Commands
                 string snupkgFullPath = Path.Combine(packageDirectory, snupkgFileName);
 
                 //Create snupkg in test directory.
-                FileStream fileSnupkg = null;
-                try
-                {
-                    fileSnupkg = File.Create(snupkgFullPath);
-                }
-                finally
-                {
-                    if (fileSnupkg != null) 
-                    {
-                        fileSnupkg.Flush();
-                        fileSnupkg.Close();
-                    }
-                }
+                WriteSnupkgFile(snupkgFullPath);
 
                 using (var server = CreateAndStartMockV3Server(packageDirectory, out string sourceName))
                 {
@@ -491,7 +479,79 @@ namespace NuGet.CommandLine.FuncTest.Commands
             }
         }
 
-        //When pushing *.Nupkg, (no skip duplicate) a 409 Conflict is returned and halts the secondary symbols push
+        /// <summary>
+        /// When pushing *.Nupkg, (no skip duplicate) a 409 Conflict is returned and halts the secondary symbols push
+        /// TODO: bug fixes will come from https://github.com/NuGet/Home/issues/8148
+        /// </summary>
+        [Fact]
+        public void PushCommand_Server_Nupkg_WildcardFindsMatchingSnupkgs_Conflict()
+        {
+            // Arrange
+            using (var packageDirectory = TestDirectory.Create())
+            {
+                var nuget = Util.GetNuGetExePath();
+
+                string packageId = "packageWithSnupkg";
+                string version = "1.1.0";
+
+                //Create nupkg in test directory.
+                string nupkgFullPath = Util.CreateTestPackage(packageId, version, packageDirectory);
+
+                string nupkgFileName = Util.BuildPackageString(packageId, version, NuGetConstants.PackageExtension);
+                string snupkgFileName = Util.BuildPackageString(packageId, version, NuGetConstants.SnupkgExtension);
+                string snupkgFullPath = Path.Combine(packageDirectory, snupkgFileName);
+
+                //Create snupkg in test directory.
+                WriteSnupkgFile(snupkgFullPath);
+
+                using (var server = CreateAndStartMockV3Server(packageDirectory, out string sourceName))
+                {
+                    //Configure push to alternate returning Created and Conflict responses, which correspond to pushing the nupkg and snupkg, respectively.
+                    SetupMockServerCreateNupkgDuplicateSnupkg(server, packageDirectory, FuncStatus_Alternates_CreatedThenDuplicate());
+
+                    // Act
+
+                    //Since this is V3, this will trigger 2 pushes: one for nupkgs, and one for snupkgs.
+                    var result = CommandRunner.Run(
+                        nuget,
+                        packageDirectory,
+                        $"push {nupkgFullPath} -Source {sourceName} -Timeout 110",
+                        waitForExit: true,
+                        timeOutInMilliseconds: 120000); // 120 seconds
+
+                    //Second run with SkipDuplicate
+                    var result2 = CommandRunner.Run(
+                        nuget,
+                        packageDirectory,
+                        $"push {nupkgFullPath} -Source {sourceName} -Timeout 110 -SkipDuplicate",
+                        waitForExit: true,
+                        timeOutInMilliseconds: 120000); // 120 seconds
+
+                    // Assert
+
+                    //Ignoring filename in File Not Found error since the error should not appear in any case.
+                    string genericFileNotFoundError = string.Format(MESSAGE_FILE_DOES_NOT_EXIST, string.Empty);
+
+                    //Nupkg should push, but corresponding snupkg is a duplicate and errors.
+                    Assert.False(0 == result.Item1, "Expected to fail push a due to duplicate snupkg.");
+                    Assert.Contains(MESSAGE_PACKAGE_PUSHED, result.Item2); //nupkg pushed
+                    Assert.Contains(MESSAGE_RESPONSE_NO_SUCCESS, result.AllOutput); //snupkg duplicate
+                    Assert.DoesNotContain(genericFileNotFoundError, result.Item3);
+
+                    //Nupkg should push, and corresponding snupkg is a duplicate.
+                    //TODO: Once SkipDuplicate is passed-through to the inherit snupkg push, this should succeed and contain MESSAGE_EXISTING_PACKAGE.
+                    //      False to True for Item1.
+                    //      DoesNotContain to Contains MESSAGE_EXISTING_PACKAGE
+                    Assert.False(0 == result2.Item1, "Expected to fail push with SkipDuplicate with a duplicate snupkg.");
+                    Assert.Contains(MESSAGE_PACKAGE_PUSHED, result2.Item2); //nupkg pushed
+                    Assert.DoesNotContain(MESSAGE_EXISTING_PACKAGE, result2.AllOutput); //snupkg duplicate
+
+                    Assert.DoesNotContain(genericFileNotFoundError, result2.Item3);
+                }
+            }
+        }
+
+        
         //When pushing Snupkgs, (no skip duplicate) a 409 Conflict is returned and halts the  push
         //When pushing(with skip duplicate) a 409 Conflict is returned and halts the push(all snupkgs should be attempted)
 
@@ -537,6 +597,25 @@ namespace NuGet.CommandLine.FuncTest.Commands
                 return HttpStatusCode.Created;
             }));
         }
+
+
+        private static void WriteSnupkgFile(string snupkgFullPath)
+        {
+            FileStream fileSnupkg = null;
+            try
+            {
+                fileSnupkg = File.Create(snupkgFullPath);
+            }
+            finally
+            {
+                if (fileSnupkg != null)
+                {
+                    fileSnupkg.Flush();
+                    fileSnupkg.Close();
+                }
+            }
+        }
+
 
         private static void SetupMockServerCreateNupkgDuplicateSnupkg(MockServer server,
                                                               string outputPath,
