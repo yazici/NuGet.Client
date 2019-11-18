@@ -492,17 +492,38 @@ namespace NuGet.CommandLine.FuncTest.Commands
                 var nuget = Util.GetNuGetExePath();
 
                 string packageId = "packageWithSnupkg";
+
+                //*************************************************
+                //Create first nupkg and snupkg package Version.
+                //*************************************************
                 string version = "1.1.0";
 
-                //Create nupkg in test directory.
-                string nupkgFullPath = Util.CreateTestPackage(packageId, version, packageDirectory);
+                //Create a nupkg in test directory.
+                Util.CreateTestPackage(packageId, version, packageDirectory);
 
-                string nupkgFileName = Util.BuildPackageString(packageId, version, NuGetConstants.PackageExtension);
-                string snupkgFileName = Util.BuildPackageString(packageId, version, NuGetConstants.SnupkgExtension);
-                string snupkgFullPath = Path.Combine(packageDirectory, snupkgFileName);
+                //string nupkgFileName = Util.BuildPackageString(packageId, version, NuGetConstants.PackageExtension);
+                //string snupkgFileName = Util.BuildPackageString(packageId, version, NuGetConstants.SnupkgExtension);
+                //string snupkgFullPath = Path.Combine(packageDirectory, snupkgFileName);
+
+                ////Create snupkg in test directory.
+                //WriteSnupkgFile(snupkgFullPath);
+
+                //*************************************************
+                //Create second nupkg and snupkg package Version.
+                //*************************************************
+                version = "2.12.1";
+
+                //Create a nupkgs in test directory.
+                Util.CreateTestPackage(packageId, version, packageDirectory);
+
+                string nupkgFileName2 = Util.BuildPackageString(packageId, version, NuGetConstants.PackageExtension);
+                string snupkgFileName2 = Util.BuildPackageString(packageId, version, NuGetConstants.SnupkgExtension);
+                string snupkgFullPath2 = Path.Combine(packageDirectory, snupkgFileName2);
 
                 //Create snupkg in test directory.
-                WriteSnupkgFile(snupkgFullPath);
+                WriteSnupkgFile(snupkgFullPath2);
+
+                string wildcardPush = "*.nupkg";
 
                 using (var server = CreateAndStartMockV3Server(packageDirectory, out string sourceName))
                 {
@@ -515,7 +536,7 @@ namespace NuGet.CommandLine.FuncTest.Commands
                     var result = CommandRunner.Run(
                         nuget,
                         packageDirectory,
-                        $"push {nupkgFullPath} -Source {sourceName} -Timeout 110",
+                        $"push {wildcardPush} -Source {sourceName} -Timeout 110",
                         waitForExit: true,
                         timeOutInMilliseconds: 120000); // 120 seconds
 
@@ -523,7 +544,7 @@ namespace NuGet.CommandLine.FuncTest.Commands
                     var result2 = CommandRunner.Run(
                         nuget,
                         packageDirectory,
-                        $"push {nupkgFullPath} -Source {sourceName} -Timeout 110 -SkipDuplicate",
+                        $"push {wildcardPush} -Source {sourceName} -Timeout 110 -SkipDuplicate",
                         waitForExit: true,
                         timeOutInMilliseconds: 120000); // 120 seconds
 
