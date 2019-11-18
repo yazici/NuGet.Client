@@ -435,7 +435,7 @@ namespace NuGet.CommandLine.FuncTest.Commands
                 using (var server = CreateAndStartMockV3Server(packageDirectory, out string sourceName))
                 {
                     //Configure push to alternate returning Created and Conflict responses, which correspond to pushing the nupkg and snupkg, respectively.
-                    SetupMockServerCreateNupkgDuplicateSnupkg(server, packageDirectory, FuncStatus_Alternates_CreatedThenDuplicate());
+                    SetupMockServerCreateNupkgDuplicateSnupkg(server, packageDirectory, FuncStatus_Alternates_CreatedAndDuplicate());
 
                     // Act
 
@@ -501,12 +501,12 @@ namespace NuGet.CommandLine.FuncTest.Commands
                 //Create a nupkg in test directory.
                 Util.CreateTestPackage(packageId, version, packageDirectory);
 
-                //string nupkgFileName = Util.BuildPackageString(packageId, version, NuGetConstants.PackageExtension);
-                //string snupkgFileName = Util.BuildPackageString(packageId, version, NuGetConstants.SnupkgExtension);
-                //string snupkgFullPath = Path.Combine(packageDirectory, snupkgFileName);
+                string nupkgFileName = Util.BuildPackageString(packageId, version, NuGetConstants.PackageExtension);
+                string snupkgFileName = Util.BuildPackageString(packageId, version, NuGetConstants.SnupkgExtension);
+                string snupkgFullPath = Path.Combine(packageDirectory, snupkgFileName);
 
-                ////Create snupkg in test directory.
-                //WriteSnupkgFile(snupkgFullPath);
+                //Create snupkg in test directory.
+                WriteSnupkgFile(snupkgFullPath);
 
                 //*************************************************
                 //Create second nupkg and snupkg package Version.
@@ -527,8 +527,8 @@ namespace NuGet.CommandLine.FuncTest.Commands
 
                 using (var server = CreateAndStartMockV3Server(packageDirectory, out string sourceName))
                 {
-                    //Configure push to alternate returning Created and Conflict responses, which correspond to pushing the nupkg and snupkg, respectively.
-                    SetupMockServerCreateNupkgDuplicateSnupkg(server, packageDirectory, FuncStatus_Alternates_CreatedThenDuplicate());
+                    //Configure push to return a Conflict for the first push, then Created for all remaining pushes.
+                    SetupMockServerCreateNupkgDuplicateSnupkg(server, packageDirectory, FuncStatus_Duplicate_ThenAllCreated());
 
                     // Act
 
@@ -553,11 +553,12 @@ namespace NuGet.CommandLine.FuncTest.Commands
                     //Ignoring filename in File Not Found error since the error should not appear in any case.
                     string genericFileNotFoundError = string.Format(MESSAGE_FILE_DOES_NOT_EXIST, string.Empty);
 
-                    //Nupkg should push, but corresponding snupkg is a duplicate and errors.
-                    Assert.False(0 == result.Item1, "Expected to fail push a due to duplicate snupkg.");
-                    Assert.Contains(MESSAGE_PACKAGE_PUSHED, result.Item2); //nupkg pushed
-                    Assert.Contains(MESSAGE_RESPONSE_NO_SUCCESS, result.AllOutput); //snupkg duplicate
+                    //Nupkg should be a conflict, so its snupkg should also not push.
+                    Assert.False(0 == result.Item1, "Expected to fail push a due to duplicate nupkg.");
+                    Assert.DoesNotContain(MESSAGE_PACKAGE_PUSHED, result.Item2); //nothing pushed
+                    Assert.Contains(MESSAGE_RESPONSE_NO_SUCCESS, result.AllOutput); //nupkg duplicate
                     Assert.DoesNotContain(genericFileNotFoundError, result.Item3);
+                    Assert.DoesNotContain(".snupkg", result.Item3); //snupkg not mentioned
 
                     //Nupkg should push, and corresponding snupkg is a duplicate.
                     //TODO: Once SkipDuplicate is passed-through to the inherit snupkg push, this should succeed and contain MESSAGE_EXISTING_PACKAGE.
@@ -565,6 +566,8 @@ namespace NuGet.CommandLine.FuncTest.Commands
                     //      DoesNotContain to Contains MESSAGE_EXISTING_PACKAGE
                     Assert.False(0 == result2.Item1, "Expected to fail push with SkipDuplicate with a duplicate snupkg.");
                     Assert.Contains(MESSAGE_PACKAGE_PUSHED, result2.Item2); //nupkg pushed
+                    //snupkgFileName pushed
+                    //snupkgFileName2 pushed.
                     Assert.DoesNotContain(MESSAGE_EXISTING_PACKAGE, result2.AllOutput); //snupkg duplicate
 
                     Assert.DoesNotContain(genericFileNotFoundError, result2.Item3);
@@ -694,14 +697,35 @@ namespace NuGet.CommandLine.FuncTest.Commands
         }
 
         /// <summary>
-        /// Status alternates between Created and Conflict, (divisible by 2 is a Conflict).
+        /// Status alternates between Created and Conflict, (divisible by 2 is a Conflict by default).
         /// </summary>
-        private static Func<int, HttpStatusCode> FuncStatus_Alternates_CreatedThenDuplicate()
+        private static Func<int, HttpStatusCode> FuncStatus_Alternates_CreatedAndDuplicate(bool startWithCreated = true)
+        {
+            var firstResponse = startWithCreated ? HttpStatusCode.Created : HttpStatusCode.Conflict;
+            var secondResponse = startWithCreated ? HttpStatusCode.Conflict : HttpStatusCode.Created;
+
+            return (count) =>
+            {
+                //Every second run will be the opposite of the previous run.
+                if (count % 2 == 0)
+                {
+                    return secondResponse;
+                }
+                else
+                {
+                    return firstResponse;
+                }
+            };
+        }
+
+        /// <summary>
+        /// Status is first Duplicate followed by all Created.
+        /// </summary>
+        private static Func<int, HttpStatusCode> FuncStatus_Duplicate_ThenAllCreated()
         {
             return (count) =>
             {
-                //Every second run will be treated as duplicate.
-                if (count % 2 == 0)
+                if (count == 1)
                 {
                     return HttpStatusCode.Conflict;
                 }
