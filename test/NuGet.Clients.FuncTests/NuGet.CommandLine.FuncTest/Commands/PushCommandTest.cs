@@ -528,7 +528,7 @@ namespace NuGet.CommandLine.FuncTest.Commands
                 using (var server = CreateAndStartMockV3Server(packageDirectory, out string sourceName))
                 {
                     //Configure push to return a Conflict for the first push, then Created for all remaining pushes.
-                    SetupMockServerCreateNupkgDuplicateSnupkg(server, packageDirectory, FuncStatus_Duplicate_ThenAllCreated());
+                    SetupMockServerCreateNupkgDuplicateSnupkg(server, packageDirectory, FuncStatus_Duplicate_ThenAlwaysCreated());
 
                     // Act
 
@@ -558,17 +558,16 @@ namespace NuGet.CommandLine.FuncTest.Commands
                     Assert.DoesNotContain(MESSAGE_PACKAGE_PUSHED, result.Item2); //nothing pushed
                     Assert.Contains(MESSAGE_RESPONSE_NO_SUCCESS, result.AllOutput); //nupkg duplicate
                     Assert.DoesNotContain(genericFileNotFoundError, result.Item3);
-                    Assert.DoesNotContain(".snupkg", result.Item3); //snupkg not mentioned
+                    Assert.DoesNotContain(".snupkg", result.AllOutput); //snupkg not mentioned
 
                     //Nupkg should push, and corresponding snupkg is a duplicate.
                     //TODO: Once SkipDuplicate is passed-through to the inherit snupkg push, this should succeed and contain MESSAGE_EXISTING_PACKAGE.
                     //      False to True for Item1.
                     //      DoesNotContain to Contains MESSAGE_EXISTING_PACKAGE
-                    Assert.False(0 == result2.Item1, "Expected to fail push with SkipDuplicate with a duplicate snupkg.");
-                    Assert.Contains(MESSAGE_PACKAGE_PUSHED, result2.Item2); //nupkg pushed
-                    //snupkgFileName pushed
-                    //snupkgFileName2 pushed.
-                    Assert.DoesNotContain(MESSAGE_EXISTING_PACKAGE, result2.AllOutput); //snupkg duplicate
+                    Assert.True(0 == result2.Item1, "Expected to successfully push a snupkg when the nupkg is a duplicate.");
+
+                    Assert.Contains(MESSAGE_EXISTING_PACKAGE, result2.AllOutput); //nupkg duplicate
+                    Assert.Contains(MESSAGE_PACKAGE_PUSHED, result2.Item2); //snupkgFileName and snupkgFileName2 pushed
 
                     Assert.DoesNotContain(genericFileNotFoundError, result2.Item3);
                 }
@@ -721,7 +720,7 @@ namespace NuGet.CommandLine.FuncTest.Commands
         /// <summary>
         /// Status is first Duplicate followed by all Created.
         /// </summary>
-        private static Func<int, HttpStatusCode> FuncStatus_Duplicate_ThenAllCreated()
+        private static Func<int, HttpStatusCode> FuncStatus_Duplicate_ThenAlwaysCreated()
         {
             return (count) =>
             {
