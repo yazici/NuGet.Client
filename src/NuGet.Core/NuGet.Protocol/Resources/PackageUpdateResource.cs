@@ -93,11 +93,11 @@ namespace NuGet.Protocol.Core.Types
                 {
                     var symbolApiKey = getSymbolApiKey(symbolSource);
 
-                    LocalFolderUtility.PackagePathResolved()
+                    //LocalFolderUtility.PackagePathResolved()
 
                     await PushSymbols(packagePath, symbolSource, symbolApiKey,
                         noServiceEndpoint, symbolPackageUpdateResource,
-                        requestTimeout, log, tokenSource.Token, ignoreFileNotFound: fileNotFoundForSymbolsThrows);
+                        requestTimeout, log, tokenSource.Token, fileNotFoundThrows: fileNotFoundForSymbolsThrows);
                 }
             }
         }
