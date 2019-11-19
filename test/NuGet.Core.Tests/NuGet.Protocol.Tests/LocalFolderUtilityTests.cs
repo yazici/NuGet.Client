@@ -1036,25 +1036,19 @@ namespace NuGet.Protocol.Tests
         public void LocalFolderUtility_EnsurePackageFileExists_ThrowsWhenEmpty()
         {
             //Arrange
-            List<string> testList = new List<string>();
+            List<string> emptyTestList = new List<string>();
             string packagePath = string.Empty;
 
             //Act
-            try
-            {
-                LocalFolderUtility.EnsurePackageFileExists(packagePath, testList);
-                Assert.True(false, "Did not throw an exception as expected.");
-            }
-            catch (ArgumentException ex)
-            {
-                //Assert
-                //Expected an exception explaining that the file wasn't found.
-                string expectedError = string.Format(CultureInfo.CurrentCulture,
-                                       Strings.UnableToFindFile,
-                                       packagePath);
+            var ex = Assert.Throws<ArgumentException>(() => LocalFolderUtility.EnsurePackageFileExists(packagePath, emptyTestList));
+          
+            //Assert
+            //Expected an exception explaining that the file wasn't found in the list.
+            string expectedError = string.Format(CultureInfo.CurrentCulture,
+                                    Strings.UnableToFindFile,
+                                    packagePath);
 
-                Assert.Equal(expectedError, ex.Message);
-            }
+            Assert.Equal(expectedError, ex.Message);
         }
 
         [Fact]
