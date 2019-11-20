@@ -30,7 +30,7 @@ namespace NuGet.Commands
             bool skipDuplicate,
             ILogger logger)
         {
-            LocalFolderUtility.EnsurePackageFileExists()
+            //LocalFolderUtility.EnsurePackageFileExists()
 
             source = CommandRunnerUtility.ResolveSource(sourceProvider, source);
             symbolSource = CommandRunnerUtility.ResolveSymbolSource(sourceProvider, symbolSource);

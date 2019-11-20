@@ -310,7 +310,7 @@ namespace NuGet.CommandLine.FuncTest.Commands
                     var result = CommandRunner.Run(
                         nuget,
                         packageDirectory,
-                        $"push {snupkgToPush} -Source {sourceName} -Timeout 110",
+                        $"push {snupkgToPush} -Source {sourceName} -Timeout 110 --debug",
                         waitForExit: true,
                         timeOutInMilliseconds: 120000); // 120 seconds
 
@@ -319,9 +319,9 @@ namespace NuGet.CommandLine.FuncTest.Commands
 
                     string expectedFileNotFoundErrorMessage = string.Format(MESSAGE_FILE_DOES_NOT_EXIST, snupkgToPush);
 
-                    Assert.True(1 == result.Item1, "File did not exist and should fail.");
-                    Assert.DoesNotContain(MESSAGE_PACKAGE_PUSHED, result.Item2);
-                    Assert.Contains(expectedFileNotFoundErrorMessage, result.Item3);
+                    Assert.False(result.Success, "File did not exist and should fail.");
+                    Assert.DoesNotContain(MESSAGE_PACKAGE_PUSHED, result.Output);
+                    Assert.Contains(expectedFileNotFoundErrorMessage, result.Errors);
                 }
             }
         }
@@ -355,7 +355,7 @@ namespace NuGet.CommandLine.FuncTest.Commands
                     var result = CommandRunner.Run(
                         nuget,
                         packageDirectory,
-                        $"push {nupkgFullPath} -Source {sourceName} -Timeout 110",
+                        $"push {nupkgFullPath} -Source {sourceName} -Timeout 110 --debug",
                         waitForExit: true,
                         timeOutInMilliseconds: 120000); // 120 seconds
 
