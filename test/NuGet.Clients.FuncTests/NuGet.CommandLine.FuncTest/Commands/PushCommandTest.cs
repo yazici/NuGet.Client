@@ -28,7 +28,8 @@ namespace NuGet.CommandLine.FuncTest.Commands
         private const string TEST_PACKAGE_SHOULD_NOT_PUSH = "The package should not have been pushed";
         private const string TEST_PACKAGE_SHOULD_PUSH = "The package should have been pushed";
         private const string ADVERTISE_SKIPDUPLICATE_OPTION = "To skip already published packages, use the option -SkipDuplicate"; //PushCommandSkipDuplicateAdvertiseNuGetExe
-        private const string MESSAGE_FILE_DOES_NOT_EXIST = "File does not exist ({0})";
+        private const string WITHOUT_FILENAME_MESSAGE_FILE_DOES_NOT_EXIST = "File does not exist";
+        private const string MESSAGE_FILE_DOES_NOT_EXIST = WITHOUT_FILENAME_MESSAGE_FILE_DOES_NOT_EXIST + " ({0})";
 
         /// <summary>
         /// 100 seconds is significant because that is the default timeout on <see cref="HttpClient"/>.
@@ -258,7 +259,6 @@ namespace NuGet.CommandLine.FuncTest.Commands
 
         /// <summary>
         /// When pushing a snupkg filename that doesn't exist, show a File Not Found error.
-        /// TODO: bug fixes will come from https://github.com/NuGet/Home/issues/8148
         /// </summary>
         [Fact]
         public void PushCommand_Server_Snupkg_FilenameDoesNotExist_FileNotFoundError()
@@ -281,12 +281,11 @@ namespace NuGet.CommandLine.FuncTest.Commands
 
                     // Assert
 
-                    //TODO: Fix push so that this error occurs.
-                    //string expectedFileNotFoundErrorMessage = string.Format(MESSAGE_FILE_DOES_NOT_EXIST, snupkgToPush);
+                    string expectedFileNotFoundErrorMessage = string.Format(MESSAGE_FILE_DOES_NOT_EXIST, snupkgToPush);
 
-                    Assert.True(0 == result.Item1, "File did not exist and should fail.");
-                    Assert.DoesNotContain(MESSAGE_PACKAGE_PUSHED, result.Item2);
-                    //TODO: Assert.Contains(expectedFileNotFoundErrorMessage, result.Item3);
+                    Assert.False(result.Success, "File did not exist and should fail.");
+                    Assert.DoesNotContain(MESSAGE_PACKAGE_PUSHED, result.Output);
+                    Assert.Contains(expectedFileNotFoundErrorMessage, result.Errors);
                 }
             }
         }
@@ -310,7 +309,7 @@ namespace NuGet.CommandLine.FuncTest.Commands
                     var result = CommandRunner.Run(
                         nuget,
                         packageDirectory,
-                        $"push {snupkgToPush} -Source {sourceName} -Timeout 110",
+                        $"push {snupkgToPush} -Source {sourceName} -Timeout 110 --debug",
                         waitForExit: true,
                         timeOutInMilliseconds: 120000); // 120 seconds
 
@@ -319,9 +318,9 @@ namespace NuGet.CommandLine.FuncTest.Commands
 
                     string expectedFileNotFoundErrorMessage = string.Format(MESSAGE_FILE_DOES_NOT_EXIST, snupkgToPush);
 
-                    Assert.True(1 == result.Item1, "File did not exist and should fail.");
-                    Assert.DoesNotContain(MESSAGE_PACKAGE_PUSHED, result.Item2);
-                    Assert.Contains(expectedFileNotFoundErrorMessage, result.Item3);
+                    Assert.False(result.Success, "File did not exist and should fail.");
+                    Assert.DoesNotContain(MESSAGE_PACKAGE_PUSHED, result.Output);
+                    Assert.Contains(expectedFileNotFoundErrorMessage, result.Errors);
                 }
             }
         }
@@ -360,20 +359,15 @@ namespace NuGet.CommandLine.FuncTest.Commands
                         timeOutInMilliseconds: 120000); // 120 seconds
 
                     // Assert
-
-                    //Ignoring filename in File Not Found error since the error should not appear in any case.
-                    string genericFileNotFoundError = string.Format(MESSAGE_FILE_DOES_NOT_EXIST, string.Empty);
-
-                    Assert.True(0 == result.Item1, "Expected to successfully push a nupkg without a snupkg.");
-                    Assert.Contains(MESSAGE_PACKAGE_PUSHED, result.Item2);
-                    Assert.DoesNotContain(genericFileNotFoundError, result.Item3);
+                    Assert.True(result.Success, "Expected to successfully push a nupkg without a snupkg.");
+                    Assert.Contains(MESSAGE_PACKAGE_PUSHED, result.Output);
+                    Assert.DoesNotContain(WITHOUT_FILENAME_MESSAGE_FILE_DOES_NOT_EXIST, result.Errors);
                 }
             }
         }
 
         /// <summary>
-        /// When pushing *.nupkg to a symbol server, but no snupkgs are selected with that wildcard, there is (TODO: not) a FileNotFound error about snupkgs.
-        /// TODO: bug fixes will come from https://github.com/NuGet/Home/issues/8148
+        /// When pushing *.nupkg to a symbol server, but no snupkgs are selected with that wildcard, there is not a FileNotFound error about snupkgs.
         /// </summary>
         [Fact]
         public void PushCommand_Server_Nupkg_WildcardSnupkgDoesNotExist_FileNotFoundError()
@@ -397,13 +391,9 @@ namespace NuGet.CommandLine.FuncTest.Commands
                     // Assert
                     server.Stop();
 
-                    string expectedFileNotFoundErrorMessage = string.Format(MESSAGE_FILE_DOES_NOT_EXIST, pushArgument);
-
-                    Assert.False(0 == result.Item1, "File did not exist and should fail.");
-                    Assert.DoesNotContain(MESSAGE_PACKAGE_PUSHED, result.Item2);
-
-                    //TODO: Will become DoesNotContain after bug fixes.
-                    Assert.Contains(expectedFileNotFoundErrorMessage, result.Item3);
+                    Assert.True(result.Success, "Snupkg File did not exist but should not fail a nupkg push.");
+                    Assert.Contains(MESSAGE_PACKAGE_PUSHED, result.Output);
+                    Assert.DoesNotContain(WITHOUT_FILENAME_MESSAGE_FILE_DOES_NOT_EXIST, result.Errors);
                 }
             }
         }

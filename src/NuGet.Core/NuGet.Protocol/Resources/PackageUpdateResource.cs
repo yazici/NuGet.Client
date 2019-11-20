@@ -74,7 +74,7 @@ namespace NuGet.Protocol.Core.Types
                 tokenSource.CancelAfter(requestTimeout);
                 var apiKey = getApiKey(_source);
 
-                bool fileNotFoundForSymbolsThrows = false;
+                bool fileNotFoundForSymbolsThrows = true;
 
                 // if only a snupkg is being pushed, then don't try looking for nupkgs.
                 if (!packagePath.EndsWith(NuGetConstants.SnupkgExtension, StringComparison.OrdinalIgnoreCase))
@@ -83,7 +83,7 @@ namespace NuGet.Protocol.Core.Types
                                       requestTimeout, log, tokenSource.Token, isSnupkgPush: false);
 
                     //Since this was a nupkg push, when we try pushing symbols later, don't error if there are no snupkg files found.
-                    fileNotFoundForSymbolsThrows = true;
+                    fileNotFoundForSymbolsThrows = false;
                 }
                 
                 // symbolSource is only set when:
