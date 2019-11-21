@@ -317,7 +317,7 @@ namespace NuGet.CommandLine.FuncTest.Commands
                     result = CommandRunner.Run(
                         nuget,
                         packageDirectory,
-                        $"push {snupkgToPush} -Source {sourceName} -Timeout 110",
+                        $"push {snupkgToPush} -Source {sourceName} -Timeout 110 --debug",
                         waitForExit: true,
                         timeOutInMilliseconds: 120000); // 120 seconds
                 }
