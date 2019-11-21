@@ -71,7 +71,7 @@ namespace NuGet.Test.Utility
         public string RuntimeJson { get; set; }
 
         public bool IsSymbolPackage { get; set; }
-        public bool IsSnupkgPackage { get; set; } = false;
+        public bool IsSnupkgPackage { get; set; }
 
         public PackageIdentity Identity => new PackageIdentity(Id, NuGetVersion.Parse(Version));
 
