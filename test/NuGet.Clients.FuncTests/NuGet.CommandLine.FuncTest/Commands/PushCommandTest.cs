@@ -304,25 +304,24 @@ namespace NuGet.CommandLine.FuncTest.Commands
                 var nuget = Util.GetNuGetExePath();
                 string snupkgToPush = "*.snupkg";
 
+                CommandRunnerResult result = null;
+
                 using (var server = CreateAndStartMockV3Server(packageDirectory, out string sourceName))
                 {
                     // Act
-                    var result = CommandRunner.Run(
+                    result = CommandRunner.Run(
                         nuget,
                         packageDirectory,
                         $"push {snupkgToPush} -Source {sourceName} -Timeout 110",
                         waitForExit: true,
                         timeOutInMilliseconds: 120000); // 120 seconds
-
-                    // Assert
-                    server.Stop();
-
-                    string expectedFileNotFoundErrorMessage = string.Format(MESSAGE_FILE_DOES_NOT_EXIST, snupkgToPush);
-
-                    Assert.True(1 == result.Item1, "File did not exist and should fail.");
-                    Assert.DoesNotContain(MESSAGE_PACKAGE_PUSHED, result.Item2);
-                    Assert.Contains(expectedFileNotFoundErrorMessage, result.Item3);
                 }
+
+                //Assert
+                string expectedFileNotFoundErrorMessage = string.Format(MESSAGE_FILE_DOES_NOT_EXIST, snupkgToPush);
+                Assert.False(result.Success, "File did not exist and should fail.");
+                Assert.DoesNotContain(MESSAGE_PACKAGE_PUSHED, result.Output);
+                Assert.Contains(expectedFileNotFoundErrorMessage, result.Errors);
             }
         }
 
