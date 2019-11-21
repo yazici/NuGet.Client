@@ -135,19 +135,11 @@ namespace NuGet.CommandLine.FuncTest.Commands
 
                 var sourcePath2 = Util.CreateTestPackage("PackageB", "1.1.0", packageDirectory);
                 var outputPath2 = Path.Combine(packageDirectory, "pushed2.nupkg");
-<<<<<<< HEAD
-<<<<<<< HEAD
 
                 CommandRunnerResult result = null;
                 CommandRunnerResult result2 = null;
                 CommandRunnerResult result3 = null;
 
-=======
-                
->>>>>>> ***NO_CI*** WIP
-=======
-
->>>>>>> ***NO_CI*** WIP
                 using (var server = new MockServer())
                 {
                     SetupMockServerForSkipDuplicate(server,
@@ -296,21 +288,11 @@ namespace NuGet.CommandLine.FuncTest.Commands
 
                 // Assert
 
-<<<<<<< HEAD
-                //TODO: Fix push so that this error occurs.
-                //string expectedFileNotFoundErrorMessage = string.Format(MESSAGE_FILE_DOES_NOT_EXIST, snupkgToPush);
+                string expectedFileNotFoundErrorMessage = string.Format(MESSAGE_FILE_DOES_NOT_EXIST, snupkgToPush);
 
-                Assert.True(result.Success, "File did not exist and should fail.");
+                Assert.False(result.Success, "File did not exist and should fail.");
                 Assert.DoesNotContain(MESSAGE_PACKAGE_PUSHED, result.Output);
-                //TODO: Assert.Contains(expectedFileNotFoundErrorMessage, result.Errors);
-=======
-                    string expectedFileNotFoundErrorMessage = string.Format(MESSAGE_FILE_DOES_NOT_EXIST, snupkgToPush);
-
-                    Assert.False(result.Success, "File did not exist and should fail.");
-                    Assert.DoesNotContain(MESSAGE_PACKAGE_PUSHED, result.Output);
-                    Assert.Contains(expectedFileNotFoundErrorMessage, result.Errors);
-                }
->>>>>>> ***NO_CI*** WIP Starting to fix Todos
+                Assert.Contains(expectedFileNotFoundErrorMessage, result.Errors);
             }
         }
 
@@ -452,22 +434,10 @@ namespace NuGet.CommandLine.FuncTest.Commands
                         timeOutInMilliseconds: 120000); // 120 seconds
                 }
 
-<<<<<<< HEAD
                 // Assert
-
-                //Ignoring filename in File Not Found error since the error should not appear in any case.
-                string genericFileNotFoundError = string.Format(MESSAGE_FILE_DOES_NOT_EXIST, string.Empty);
-
                 Assert.True(result.Success, "Expected to successfully push a nupkg without a snupkg.");
                 Assert.Contains(MESSAGE_PACKAGE_PUSHED, result.Output);
-                Assert.DoesNotContain(genericFileNotFoundError, result.Errors);
-=======
-                    // Assert
-                    Assert.True(result.Success, "Expected to successfully push a nupkg without a snupkg.");
-                    Assert.Contains(MESSAGE_PACKAGE_PUSHED, result.Output);
-                    Assert.DoesNotContain(WITHOUT_FILENAME_MESSAGE_FILE_DOES_NOT_EXIST, result.Errors);
-                }
->>>>>>> ***NO_CI*** WIP Starting to fix Todos
+                Assert.DoesNotContain(WITHOUT_FILENAME_MESSAGE_FILE_DOES_NOT_EXIST, result.Errors);
             }
         }
 
@@ -497,20 +467,9 @@ namespace NuGet.CommandLine.FuncTest.Commands
 
                 // Assert
 
-<<<<<<< HEAD
-                string expectedFileNotFoundErrorMessage = string.Format(MESSAGE_FILE_DOES_NOT_EXIST, pushArgument);
-
-                Assert.False(result.Success, "File did not exist and should fail.");
-                Assert.DoesNotContain(MESSAGE_PACKAGE_PUSHED, result.Output);
-
-                //TODO: Will become DoesNotContain after bug fixes.
-                Assert.Contains(expectedFileNotFoundErrorMessage, result.Errors);
-=======
-                    Assert.True(result.Success, "Snupkg File did not exist but should not fail a nupkg push.");
-                    Assert.Contains(MESSAGE_PACKAGE_PUSHED, result.Output);
-                    Assert.DoesNotContain(WITHOUT_FILENAME_MESSAGE_FILE_DOES_NOT_EXIST, result.Errors);
-                }
->>>>>>> ***NO_CI*** WIP Starting to fix Todos
+                Assert.True(result.Success, "Snupkg File did not exist but should not fail a nupkg push.");
+                Assert.Contains(MESSAGE_PACKAGE_PUSHED, result.Output);
+                Assert.DoesNotContain(WITHOUT_FILENAME_MESSAGE_FILE_DOES_NOT_EXIST, result.Errors);
             }
         }
 
@@ -1218,7 +1177,6 @@ namespace NuGet.CommandLine.FuncTest.Commands
             {
                 packageCounter++;
                 var outputPath = outputPathFunc(packageCounter);
-<<<<<<< HEAD
 
                 MockServer.SavePushedPackage(r, outputPath);
 
@@ -1259,11 +1217,6 @@ namespace NuGet.CommandLine.FuncTest.Commands
                 }
             }
         }
-=======
-
-                MockServer.SavePushedPackage(r, outputPath);
->>>>>>> ***NO_CI*** WIP
-
 
         private static void SetupMockServerCreateNupkgDuplicateSnupkg(MockServer server,
                                                               string outputPath,
@@ -1403,8 +1356,6 @@ namespace NuGet.CommandLine.FuncTest.Commands
         }
 
         /// <summary>
-<<<<<<< HEAD
-=======
         /// Status alternates between Created and Conflict, (divisible by 2 is a Conflict).
         /// </summary>
         private static Func<int, HttpStatusCode> FuncStatus_Alternates_CreatedThenDuplicate()
@@ -1424,7 +1375,6 @@ namespace NuGet.CommandLine.FuncTest.Commands
         }
 
         /// <summary>
->>>>>>> ***NO_CI*** WIP
         /// Creates a V3 Mock Server that supports Publish and Symbol Server.
         /// </summary>
         /// <param name="packageDirectory">Path where this server should write (eg, nuget.config).</param>
@@ -1458,14 +1408,10 @@ namespace NuGet.CommandLine.FuncTest.Commands
             sourceName = $"{server.Uri}index.json";
             sources.Add(sourceName);
 
-<<<<<<< HEAD
             if (!string.IsNullOrWhiteSpace(packageDirectory))
             {
                 Util.CreateNuGetConfig(packageDirectory, sources);
             }
-=======
-            Util.CreateNuGetConfig(packageDirectory, sources);
->>>>>>> ***NO_CI*** WIP
             Util.AddPublishSymbolsResource(indexJson, server);
 
             return server;
