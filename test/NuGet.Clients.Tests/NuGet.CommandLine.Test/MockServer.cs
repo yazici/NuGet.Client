@@ -187,12 +187,7 @@ namespace NuGet.CommandLine.Test
                 of.Write(buffer, 0, buffer.Length);
             }
         }
-
-        public static bool PushedPackageExists(string outputFileName)
-        {
-            return File.Exists(outputFileName);
-        }
-
+        
         /// <summary>
         /// Returns the index of the first occurrence of <paramref name="pattern"/> in
         /// <paramref name="buffer"/>. The search starts at a specified position.
