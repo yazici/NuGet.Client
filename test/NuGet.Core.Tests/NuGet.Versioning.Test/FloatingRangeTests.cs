@@ -12,8 +12,26 @@ namespace NuGet.Versioning.Test
         [Fact]
         public void FloatRange_Float()
         {
-            var range = new VersionRange(NuGetVersion.Parse("2.2.0"), true, null, true, new FloatRange(NuGetVersionFloatBehavior.AbsoluteLatest));
+            var range = new VersionRange(NuGetVersion.Parse("2.2.0"), true, null, false, new FloatRange(NuGetVersionFloatBehavior.AbsoluteLatest));
             
+
+            var versions = new List<NuGetVersion>()
+                {
+                    NuGetVersion.Parse("0.1.0"),
+                    NuGetVersion.Parse("1.0.0-alpha.2"),
+                    NuGetVersion.Parse("2.0.0"),
+                    NuGetVersion.Parse("2.2.0"),
+                    NuGetVersion.Parse("3.0.0-pre"),
+                };
+
+            Assert.Equal(NuGetVersion.Parse("3.0.0-pre"), range.FindBestMatch(versions));
+        }
+
+        [Fact]
+        public void FloatRange_FloatStarDashStare()
+        {
+            var range = new VersionRange(NuGetVersion.Parse("0.0.0-0"), true, null, false, new FloatRange(NuGetVersionFloatBehavior.AbsoluteLatest));
+
 
             var versions = new List<NuGetVersion>()
                 {
