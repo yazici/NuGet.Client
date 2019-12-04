@@ -993,26 +993,20 @@ namespace NuGet.Protocol
         /// <param name="matchingPackagePaths">A list of matching package paths that were previously resolved.</param>
         public static void EnsurePackageFileExists(string packagePath, IEnumerable<string> matchingPackagePaths)
         {
-            if (!PackagePathResolved(matchingPackagePaths))
+            if (!ResolvedAnyPackagePath(matchingPackagePaths))
             {
-                ThrowUnableToFindFile(packagePath);
+                ErrorFileNotFound(packagePath);
             }
         }
 
-        public static void ThrowUnableToFindFile(string packagePath)
+        public static void ErrorFileNotFound(string packagePath)
         {
                 throw new ArgumentException(string.Format(CultureInfo.CurrentCulture,
                     Strings.UnableToFindFile,
                     packagePath));
         }
 
-        public static bool PackagePathResolved(string packagePath, bool isSnupkgPush)
-        {
-            var matchingPackagePaths = ResolvePackageFromPath(packagePath, isSnupkgPush);
-            return PackagePathResolved(matchingPackagePaths);
-        }
-
-        public static bool PackagePathResolved(IEnumerable<string> matchingPackagePaths)
+        public static bool ResolvedAnyPackagePath(IEnumerable<string> matchingPackagePaths)
         {
             return matchingPackagePaths != null && matchingPackagePaths.Any();
         }

@@ -94,10 +94,11 @@ namespace NuGet.Protocol.Core.Types
 
                     await PushSymbols(packagePath, symbolSource, symbolApiKey,
                         noServiceEndpoint, skipDuplicate, symbolPackageUpdateResource,
-                        requestTimeout, log, tokenSource.Token, explicitSnupkgPush);
+                        requestTimeout, log, explicitSnupkgPush, tokenSource.Token);
                 }
             }
         }
+
         [Obsolete("Consolidating to one PackageUpdateResource.Push method which has all parameters defined.")]
         public async Task Push(
             string packagePath,
@@ -166,8 +167,8 @@ namespace NuGet.Protocol.Core.Types
             SymbolPackageUpdateResourceV3 symbolPackageUpdateResource,
             TimeSpan requestTimeout,
             ILogger log,
-            CancellationToken token,
-            bool explicitSymbolsPush)
+            bool explicitSymbolsPush,
+            CancellationToken token)
         {
 
             var isSymbolEndpointSnupkgCapable = symbolPackageUpdateResource != null;
@@ -175,14 +176,14 @@ namespace NuGet.Protocol.Core.Types
             var symbolPackagePath = GetSymbolsPath(packagePath, isSymbolEndpointSnupkgCapable);
 
             var symbolsToPush = LocalFolderUtility.ResolvePackageFromPath(symbolPackagePath, isSnupkg: isSymbolEndpointSnupkgCapable);
-            bool symbolsPathResolved = LocalFolderUtility.PackagePathResolved(symbolsToPush);
+            bool symbolsPathResolved = LocalFolderUtility.ResolvedAnyPackagePath(symbolsToPush);
 
             //No files were resolved.
             if (!symbolsPathResolved)
             {
                 if (explicitSymbolsPush)
                 {
-                    LocalFolderUtility.ThrowUnableToFindFile(symbolPackagePath);
+                    LocalFolderUtility.ErrorFileNotFound(symbolPackagePath);
                 }
             }
             else
@@ -212,11 +213,10 @@ namespace NuGet.Protocol.Core.Types
             CancellationToken token)
         {
             var nupkgsToPush = LocalFolderUtility.ResolvePackageFromPath(packagePath, isSnupkg: false);
-            bool nupkgPathResolved = LocalFolderUtility.PackagePathResolved(nupkgsToPush);
 
-            if (!nupkgPathResolved)
+            if (!LocalFolderUtility.ResolvedAnyPackagePath(nupkgsToPush))
             {
-                LocalFolderUtility.ThrowUnableToFindFile(packagePath);
+                LocalFolderUtility.ErrorFileNotFound(packagePath);
             }
 
             var sourceUri = UriUtility.CreateSourceUri(source);
