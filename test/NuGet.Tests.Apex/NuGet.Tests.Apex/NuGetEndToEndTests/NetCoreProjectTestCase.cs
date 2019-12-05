@@ -1,7 +1,11 @@
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Text;
+using System.Xml.Linq;
 using Microsoft.Test.Apex.VisualStudio.Solution;
 using NuGet.StaFact;
+using NuGet.Test.Utility;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -55,7 +59,7 @@ namespace NuGet.Tests.Apex
         // make sure ClearWindows in ApexTestContext constructor will only clear OutputWindow at the beginning
         [NuGetWpfTheory]
         [MemberData(nameof(GetNetCoreTemplates))]
-        public void CreateNetCoreProject_InstallNonExistingPackageFail(ProjectTemplate projectTemplate)
+        public void CreateNetCoreProject_ChangeTFMWronglyBuildFail(ProjectTemplate projectTemplate)
         {
             // Arrange
             EnsureVisualStudioHost();
@@ -64,15 +68,18 @@ namespace NuGet.Tests.Apex
             {
                 VisualStudio.AssertNoErrors();
 
-                var project3 = testContext.SolutionService.AddProject(ProjectLanguage.CSharp, projectTemplate, ProjectTargetFramework.V46, "TestProject3");
-                project3.Build();
+                var projectFile = Directory.GetFiles(testContext.SolutionRoot, "*.csproj", SearchOption.AllDirectories).First();
 
-                var nugetConsole = GetConsole(project3);
+                using (var stream = File.Open(projectFile, FileMode.Open, FileAccess.ReadWrite))
+                {
+                    var xml = XDocument.Load(stream);
 
-                var packageName = "nonexistPackage";
-                var packageVersion = "1.0.1";
+                    ProjectFileUtils.SetTargetFrameworkForProject(xml, "TargetFramework", "netstandard0.1");
 
-                nugetConsole.InstallPackageFromPMC(packageName, packageVersion);
+                    ProjectFileUtils.WriteXmlToFile(xml, stream);
+                }
+
+                testContext.SolutionService.Build();
 
                 var outputList = VisualStudio.GetOutputWindowsLines();
                 StringBuilder sb = new StringBuilder();
@@ -81,9 +88,8 @@ namespace NuGet.Tests.Apex
                     sb.AppendLine(line);
                 }
   
-                Assert.True(outputList.Count > 0, "install a nonexist package failed, the outputlist of PMC should not be empty.");
-                Assert.True(sb.ToString().Contains("Unable to find package"), sb.ToString());
-
+                Assert.True(outputList.Count > 0, "Build a project with a wrong TFM, the outputlist should not be empty.");
+                Assert.True(sb.ToString().Contains("FAILED"), sb.ToString());
             }
         }
         // There  is a bug with VS or Apex where NetCoreConsoleApp and NetCoreClassLib create netcore 2.1 projects that are not supported by the sdk
