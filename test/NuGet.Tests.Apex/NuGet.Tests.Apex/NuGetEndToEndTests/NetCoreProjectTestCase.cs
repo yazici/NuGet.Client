@@ -56,42 +56,6 @@ namespace NuGet.Tests.Apex
             }
         }
 
-        // make sure ClearWindows in ApexTestContext constructor will only clear OutputWindow at the beginning
-        [NuGetWpfTheory]
-        [MemberData(nameof(GetNetCoreTemplates))]
-        public void CreateNetCoreProject_ChangeTFMWronglyBuildFail(ProjectTemplate projectTemplate)
-        {
-            // Arrange
-            EnsureVisualStudioHost();
-
-            using (var testContext = new ApexTestContext(VisualStudio, projectTemplate, XunitLogger))
-            {
-                VisualStudio.AssertNoErrors();
-
-                var projectFile = Directory.GetFiles(testContext.SolutionRoot, "*.csproj", SearchOption.AllDirectories).First();
-
-                using (var stream = File.Open(projectFile, FileMode.Open, FileAccess.ReadWrite))
-                {
-                    var xml = XDocument.Load(stream);
-
-                    ProjectFileUtils.SetTargetFrameworkForProject(xml, "TargetFramework", "netstandard0.1");
-
-                    ProjectFileUtils.WriteXmlToFile(xml, stream);
-                }
-
-                testContext.SolutionService.Build();
-
-                var outputList = VisualStudio.GetOutputWindowsLines();
-                StringBuilder sb = new StringBuilder();
-                foreach (var line in outputList)
-                {
-                    sb.AppendLine(line);
-                }
-  
-                Assert.True(outputList.Count > 0, "Build a project with a wrong TFM, the outputlist should not be empty.");
-                Assert.True(sb.ToString().Contains("FAILED"), sb.ToString());
-            }
-        }
         // There  is a bug with VS or Apex where NetCoreConsoleApp and NetCoreClassLib create netcore 2.1 projects that are not supported by the sdk
         // Commenting out any NetCoreConsoleApp or NetCoreClassLib template and swapping it for NetStandardClassLib as both are package ref.
 
