@@ -10,6 +10,10 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft;
+using Microsoft.VisualStudio.ComponentModelHost;
+//using VisualStudioShell =  Microsoft.VisualStudio.Shell;
+//using VisualStudioThreading = Microsoft.VisualStudio.Threading;
+//using IComponentModel = Microsoft.VisualStudio.Threading.AsyncLazy<Microsoft.VisualStudio.ComponentModelHost.IComponentModel>;
 using NuGet.Commands;
 using NuGet.Common;
 using NuGet.Configuration;
@@ -33,6 +37,7 @@ namespace NuGet.SolutionRestoreManager
         private readonly IProjectSystemCache _projectSystemCache;
         private readonly ISolutionRestoreWorker _restoreWorker;
         private readonly ILogger _logger;
+        //private readonly VisualStudioThreading.AsyncLazy<IComponentModel> _componentModel;
 
         [ImportingConstructor]
         public VsSolutionRestoreService(
@@ -44,6 +49,16 @@ namespace NuGet.SolutionRestoreManager
             _projectSystemCache = projectSystemCache ?? throw new ArgumentNullException(nameof(projectSystemCache));
             _restoreWorker = restoreWorker ?? throw new ArgumentNullException(nameof(restoreWorker));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+
+            //var joinableTaskContextNode = new VisualStudioThreading.JoinableTaskContextNode(VisualStudioShell.ThreadHelper.JoinableTaskContext);
+            //var _joinableCollection = joinableTaskContextNode.CreateCollection();
+            //var _joinableFactory = joinableTaskContextNode.CreateFactory(_joinableCollection);
+
+            //_componentModel = new VisualStudioThreading.AsyncLazy<IComponentModel>(async () =>
+            //{
+            //    return await VisualStudioShell.AsyncServiceProvider.GlobalProvider.GetServiceAsync<SComponentModel, IComponentModel>();
+            //},
+            //_joinableFactory);
         }
 
         public Task<bool> CurrentRestoreOperation => _restoreWorker.CurrentRestoreOperation;
@@ -119,12 +134,36 @@ namespace NuGet.SolutionRestoreManager
                 var projectNames = ProjectNames.FromFullProjectPath(projectUniqueName);
 
                 var dgSpec = ToDependencyGraphSpec(projectNames, projectRestoreInfo, projectRestoreInfo2);
+                var restoreRequest = SolutionRestoreRequest.OnUpdate();
+
+                if ((_restoreWorker is ISolutionErrorListLogger) && projectUniqueName.Contains("ConsoleCoreApp"))
+                {
+                    ((ISolutionErrorListLogger)_restoreWorker).LogError(restoreRequest.OperationId, "NU23456: Hi there!!!!");
+                    ((ISolutionErrorListLogger)_restoreWorker).LogWarning(restoreRequest.OperationId, "NU1234: Warning 1 ");
+                    ((ISolutionErrorListLogger)_restoreWorker).LogWarning(restoreRequest.OperationId, "NU1234: Warning 2 ");
+
+                    _projectSystemCache.RemoveProject(projectUniqueName);
+                }
+                //else
+                //{
+                //    _projectSystemCache.AddProjectRestoreInfo(projectNames, dgSpec);
+                //}
 
                 _projectSystemCache.AddProjectRestoreInfo(projectNames, dgSpec);
 
+                //_logger.LogError("Hi there!!!!");
+                //bool a = 1 == 1;
+                //if(a)
+                //{
+                //    throw new Exception("MyException");
+                //}
+
+                // _projectSystemCache.AddProjectRestoreInfo(projectNames, dgSpec);
+
                 // returned task completes when scheduled restore operation completes.
+                //_restoreWorker
                 var restoreTask = _restoreWorker.ScheduleRestoreAsync(
-                    SolutionRestoreRequest.OnUpdate(),
+                    restoreRequest,
                     token);
 
                 return restoreTask;
@@ -139,6 +178,28 @@ namespace NuGet.SolutionRestoreManager
                 return Task.FromResult(false);
             }
         }
+
+        //private async Task LogErrorToErrorList(string error, SolutionRestoreRequest request, CancellationToken token)
+        //{
+        //    var componentModel = await _componentModel.GetValueAsync(token);
+        //    using (var logger = componentModel.GetService<RestoreOperationLogger>())
+        //    {
+        //        try
+        //        {
+        //            // Start logging
+        //            await logger.StartAsync(
+        //                request.RestoreSource,
+        //                _errorListTableDataSource,
+        //                _joinableFactory,
+        //                jobCts);
+        //        }
+        //        finally
+        //        {
+        //            // Complete all logging
+        //            await logger.StopAsync();
+        //        }
+        //    }
+        //}
 
         private static DependencyGraphSpec ToDependencyGraphSpec(ProjectNames projectNames, IVsProjectRestoreInfo projectRestoreInfo, IVsProjectRestoreInfo2 projectRestoreInfo2)
         {
@@ -229,6 +290,10 @@ namespace NuGet.SolutionRestoreManager
                 RestoreSettings = new ProjectRestoreSettings() { HideWarningsAndErrors = true }
             };
 
+            if (projectNames.CustomUniqueName.Contains("ConsoleCoreApp"))
+            {
+                packageSpec.Error = "ConsoleCoreApp PackSpec Error";
+            }
             return packageSpec;
         }
     }

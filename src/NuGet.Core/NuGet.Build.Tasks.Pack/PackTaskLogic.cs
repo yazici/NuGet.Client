@@ -405,7 +405,6 @@ namespace NuGet.Build.Tasks.Pack
                 return assemblies;
             }
 
-
             foreach (var assembly in libFiles)
             {
                 var finalOutputPath = assembly.GetProperty("FinalOutputPath");

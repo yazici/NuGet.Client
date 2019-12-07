@@ -41,6 +41,7 @@ namespace NuGet.Commands
         public IEnumerable<GraphNode<RemoteResolveResult>> Graphs { get; }
 
         public ISet<RemoteMatch> Install { get; }
+
         public ISet<GraphItem<RemoteResolveResult>> Flattened { get; }
 
         public ISet<GraphItem<RemoteResolveResult>> FlattenedTransitive { get; }
@@ -67,7 +68,7 @@ namespace NuGet.Commands
                                    IEnumerable<GraphNode<RemoteResolveResult>> graphs,
                                    ISet<RemoteMatch> install,
                                    ISet<GraphItem<RemoteResolveResult>> flattened,
-                                    ISet<GraphItem<RemoteResolveResult>> flattenedTransitive,
+                                  //  ISet<GraphItem<RemoteResolveResult>> flattenedTransitive,
                                    ISet<LibraryRange> unresolved,
                                    AnalyzeResult<RemoteResolveResult> analyzeResult,
                                    ISet<ResolvedDependencyKey> resolvedDependencies)
@@ -85,7 +86,7 @@ namespace NuGet.Commands
 
             Install = install;
             Flattened = flattened;
-            FlattenedTransitive = flattenedTransitive;
+           // FlattenedTransitive = flattenedTransitive;
             AnalyzeResult = analyzeResult;
             Unresolved = unresolved;
             ResolvedDependencies = resolvedDependencies;
@@ -194,7 +195,7 @@ namespace NuGet.Commands
                 graphs,
                 install,
                 flattened,
-                flattenedTransitive,
+               // flattenedTransitive,
                 unresolved,
                 analyzeResult,
                 resolvedDependencies);

@@ -93,7 +93,7 @@ namespace NuGet.ProjectModel
         ///
         /// Information added to the TargetFrameworks as well. Does not need to be here as well 
         /// </summary>
-        public Dictionary<NuGetFramework, List<LibraryDependency>> GlobalDependencies { get; set; } = new Dictionary<NuGetFramework, List<LibraryDependency>>();
+        //public Dictionary<NuGetFramework, List<LibraryDependency>> GlobalDependencies { get; set; } = new Dictionary<NuGetFramework, List<LibraryDependency>>();
 
         public IDictionary<string, IEnumerable<string>> Scripts { get; private set; } = new Dictionary<string, IEnumerable<string>>(StringComparer.OrdinalIgnoreCase);
 
@@ -259,5 +259,7 @@ namespace NuGet.ProjectModel
             }
             return null;
         }
+
+        public string Error { get; set; }
     }
 }

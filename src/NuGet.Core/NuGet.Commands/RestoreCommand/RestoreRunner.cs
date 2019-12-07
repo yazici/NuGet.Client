@@ -62,7 +62,7 @@ namespace NuGet.Commands
             var maxTasks = GetMaxTaskCount(restoreContext);
 
             var log = restoreContext.Log;
-
+            log.LogError("HelloError1");
             if (maxTasks > 1)
             {
                 log.LogVerbose(string.Format(

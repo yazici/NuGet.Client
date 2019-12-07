@@ -33,6 +33,9 @@ namespace NuGet.Build.Tasks.Pack
 
         public override bool Execute()
         {
+#if DEBUG
+            System.Diagnostics.Debugger.Launch();
+#endif
             var assetsFilePath = string.Empty;
             if(!string.IsNullOrEmpty(ProjectAssetsFileAbsolutePath) && File.Exists(ProjectAssetsFileAbsolutePath))
             {

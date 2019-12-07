@@ -486,13 +486,13 @@ namespace NuGet.Commands
                 restoreTime.Stop();
 
                 // Create result
-                foreach( var g in graphs )
-                {
-                    if (g.FlattenedTransitive != null)
-                    {
-                        output.AddRange(g.FlattenedTransitive);
-                    }
-                }
+                //foreach( var g in graphs )
+                //{
+                //    if (g.FlattenedTransitive != null)
+                //    {
+                //        output.AddRange(g.FlattenedTransitive);
+                //    }
+                //}
                 return output;
             }
         }
@@ -974,34 +974,34 @@ namespace NuGet.Commands
             return checkResults;
         }
 
-        /// <summary>
-        /// Transitive dependencies flatten and groued by framework 
-        /// </summary>
-        /// <param name="restoreGraphs"></param>
-        /// <returns></returns>
-        private Dictionary<NuGetFramework, List<GraphItem<RemoteResolveResult>>> GetTransitiveDependencies(List<RestoreTargetGraph> restoreGraphs)
-        {
-            var output = new Dictionary<NuGetFramework, List<GraphItem<RemoteResolveResult>>>(NuGetFramework.FrameworkNameComparer);
+        ///// <summary>
+        ///// Transitive dependencies flatten and groued by framework 
+        ///// </summary>
+        ///// <param name="restoreGraphs"></param>
+        ///// <returns></returns>
+        //private Dictionary<NuGetFramework, List<GraphItem<RemoteResolveResult>>> GetTransitiveDependencies(List<RestoreTargetGraph> restoreGraphs)
+        //{
+        //    var output = new Dictionary<NuGetFramework, List<GraphItem<RemoteResolveResult>>>(NuGetFramework.FrameworkNameComparer);
 
-            // Create result
-            foreach (var g in restoreGraphs)
-            {
-                if (g.FlattenedTransitive != null)
-                {
-                    // Restore graphs should be on Framework so this path should not be necessary 
-                    if (output.ContainsKey(g.Framework))
-                    {
-                        output[g.Framework].AddRange(g.FlattenedTransitive);
-                    }
-                    else
-                    {
-                        output.Add(g.Framework, new List<GraphItem<RemoteResolveResult>>(g.FlattenedTransitive)); 
-                    }
-                }
+        //    // Create result
+        //    foreach (var g in restoreGraphs)
+        //    {
+        //        if (g.FlattenedTransitive != null)
+        //        {
+        //            // Restore graphs should be on Framework so this path should not be necessary 
+        //            if (output.ContainsKey(g.Framework))
+        //            {
+        //                output[g.Framework].AddRange(g.FlattenedTransitive);
+        //            }
+        //            else
+        //            {
+        //                output.Add(g.Framework, new List<GraphItem<RemoteResolveResult>>(g.FlattenedTransitive)); 
+        //            }
+        //        }
                
-            }
-            return output;
-        }
+        //    }
+        //    return output;
+        //}
 
         /// <summary>
         /// ProjectRestoreCommand

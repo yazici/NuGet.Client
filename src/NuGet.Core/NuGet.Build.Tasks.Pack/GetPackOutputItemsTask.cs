@@ -41,6 +41,9 @@ namespace NuGet.Build.Tasks.Pack
 
         public override bool Execute()
         {
+#if DEBUG
+            System.Diagnostics.Debugger.Launch();
+#endif
             NuGetVersion version;
             if (!NuGetVersion.TryParse(PackageVersion, out version))
             {

@@ -149,7 +149,7 @@ namespace NuGet.SolutionRestoreManager
             {
                 if (targetFrameworkInfo is IVsTargetFrameworkInfo3 targetFrameworkInfo3)
                 {
-                    if (targetFrameworkInfo3.GlobalPackageReferences == null)
+                    if (targetFrameworkInfo3.CentralPackageVersions == null)
                     {
                         return targetFrameworkInfo.PackageReferences.Cast<IVsReferenceItem>().Select(x => ToPackageLibraryDependency(x));
                     }
@@ -169,7 +169,7 @@ namespace NuGet.SolutionRestoreManager
 
         private static IEnumerable<LibraryDependency> GetPackageReferences(IVsTargetFrameworkInfo3 targetFrameworkInfo)
         {
-            var globalPackRef = targetFrameworkInfo.GlobalPackageReferences.Cast<IVsReferenceItem>();
+            var globalPackRef = targetFrameworkInfo.CentralPackageVersions.Cast<IVsReferenceItem>();
 
             foreach (var item in targetFrameworkInfo.PackageReferences.Cast<IVsReferenceItem>())
             {

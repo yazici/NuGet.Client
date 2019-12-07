@@ -15,6 +15,8 @@ namespace NuGet.VisualStudio
     /// </summary>
     public sealed class SolutionRestoreRequest
     {
+        Guid _operationId;
+
         /// <summary>
         /// Should the restore discard previous assets and clean the cache.
         /// </summary>
@@ -22,7 +24,7 @@ namespace NuGet.VisualStudio
 
         public RestoreOperationSource RestoreSource { get; }
 
-        public Guid OperationId => Guid.NewGuid();
+        public Guid OperationId => _operationId;
 
         public SolutionRestoreRequest(
             bool forceRestore,
@@ -30,6 +32,7 @@ namespace NuGet.VisualStudio
         {
             ForceRestore = forceRestore;
             RestoreSource = restoreSource;
+            _operationId = Guid.NewGuid();
         }
 
         /// <summary>

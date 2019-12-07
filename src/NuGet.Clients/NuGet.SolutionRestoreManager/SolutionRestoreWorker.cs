@@ -9,8 +9,10 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft;
+using Microsoft.TeamFoundation.SourceControl.WebApi;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.ComponentModelHost;
+using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Threading;
@@ -28,7 +30,7 @@ namespace NuGet.SolutionRestoreManager
     /// </summary>
     [Export(typeof(ISolutionRestoreWorker))]
     [PartCreationPolicy(CreationPolicy.Shared)]
-    internal sealed class SolutionRestoreWorker : SolutionEventsListener, ISolutionRestoreWorker, IDisposable
+    internal sealed class SolutionRestoreWorker : SolutionEventsListener, ISolutionRestoreWorker, IDisposable, ISolutionErrorListLogger
     {
         private const int IdleTimeoutMs = 400;
         private const int RequestQueueLimit = 150;
@@ -67,6 +69,10 @@ namespace NuGet.SolutionRestoreManager
 
         private Lazy<ErrorListTableDataSource> _errorListTableDataSource;
 
+        private ConcurrentDictionary<Guid, ConcurrentQueue<string>>  _externalErrorList;
+        private ConcurrentDictionary<Guid, ConcurrentQueue<string>> _externalWarningList;
+
+
         public Task<bool> CurrentRestoreOperation => _activeRestoreTask;
 
         /// <summary>
@@ -74,9 +80,7 @@ namespace NuGet.SolutionRestoreManager
         /// </summary>
         public bool IsBusy => !_activeRestoreTask.IsCompleted;
 
-        /// <summary>
-        /// True if any operation is running, pending, or waiting.
-        /// </summary>
+        
         public bool IsRunning => !_isCompleteEvent.IsSet;
 
         public JoinableTaskFactory JoinableTaskFactory => _joinableFactory;
@@ -145,7 +149,8 @@ namespace NuGet.SolutionRestoreManager
                 _joinableFactory);
             _solutionLoadedEvent = new AsyncManualResetEvent();
             _isCompleteEvent = new AsyncManualResetEvent();
-
+            _externalErrorList = new ConcurrentDictionary<Guid, ConcurrentQueue<string>>();
+            _externalWarningList = new ConcurrentDictionary<Guid, ConcurrentQueue<string>>();
             Reset();
         }
 
@@ -588,16 +593,28 @@ namespace NuGet.SolutionRestoreManager
                     {
                         try
                         {
+                            var result = true;
                             // Start logging
                             await logger.StartAsync(
                                 request.RestoreSource,
                                 _errorListTableDataSource,
                                 _joinableFactory,
                                 jobCts);
-
-                            // Run restore
-                            var job = componentModel.GetService<ISolutionRestoreJob>();
-                            return await job.ExecuteAsync(request, _restoreJobContext, logger, jobCts.Token);
+                            
+                            if (!HasExternalErrors(request.OperationId))
+                            {
+                                // Run restore
+                                var job = componentModel.GetService<ISolutionRestoreJob>();
+                                result = await job.ExecuteAsync(request, _restoreJobContext, logger, jobCts.Token);
+                            }
+                            await LogWarningsAsync(request.OperationId, logger);
+                            if(HasExternalErrors(request.OperationId))
+                            {
+                                await LogFaultsAsync(request.OperationId, logger);
+                                result = false;
+                            }
+                            
+                            return result;
                         }
                         finally
                         {
@@ -615,6 +632,77 @@ namespace NuGet.SolutionRestoreManager
 
             return VSConstants.S_OK;
         }
+
+        void ISolutionErrorListLogger.LogError(Guid restoreId, string data)
+        {
+            var d = new ConcurrentQueue<string>();
+            d.Enqueue(data);
+
+            _externalErrorList.AddOrUpdate(restoreId, d, (g, currentData) =>
+            {
+                currentData.Enqueue(data);
+                return currentData;
+            });
+        }
+
+        void ISolutionErrorListLogger.LogWarning(Guid restoreId, string data)
+        {
+            var d = new ConcurrentQueue<string>();
+            d.Enqueue(data);
+
+            _externalWarningList.AddOrUpdate(restoreId, d, (g, currentData) =>
+            {
+                currentData.Enqueue(data);
+                return currentData;
+            });
+        }
+
+        private async Task LogFaultsAsync(Guid restoreId, RestoreOperationLogger logger)
+        {
+            if(_externalErrorList.ContainsKey(restoreId))
+            {
+                //while (_externalErrorList[restoreId].TryDequeue(out var warning))
+                //{
+                //    await logger.LogAsync(Common.LogLevel.Warning, warning);
+                //}
+
+                while (_externalErrorList[restoreId].TryDequeue(out var warning))
+                {
+                    await logger.LogAsync(Common.LogLevel.Warning, warning);
+                }
+            }
+            //while (_externalErrorList.ContainsKey(out var error))
+            //{
+            //    await logger.LogAsync(Common.LogLevel.Error, error);
+            //}
+        }
+
+        private async Task LogWarningsAsync(Guid restoreId, RestoreOperationLogger logger)
+        {
+            if (_externalErrorList.ContainsKey(restoreId))
+            {
+                while (_externalWarningList[restoreId].TryDequeue(out var warning))
+                {
+                    await logger.LogAsync(Common.LogLevel.Warning, warning);
+                }
+            }
+
+            //while (_externalWarningList.TryDequeue(out var warning))
+            //{
+            //    await logger.LogAsync(Common.LogLevel.Warning, warning);
+            //}
+        }
+
+        private bool HasExternalErrors(Guid operationId)
+        {
+            if (_externalErrorList.ContainsKey(operationId))
+            {
+                return _externalErrorList[operationId].Count != 0;
+            }
+
+            return false;
+        }
+
 
         private class BackgroundRestoreOperation
             : IEquatable<BackgroundRestoreOperation>, IDisposable
