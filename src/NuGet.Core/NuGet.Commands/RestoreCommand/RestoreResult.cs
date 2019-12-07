@@ -74,7 +74,7 @@ namespace NuGet.Commands
         /// <summary>
         /// NuGet lock file which is either generated or updated to lock down NuGet packages version
         /// </summary>
-        private PackagesLockFile NewPackagesLockFile { get; }
+        internal PackagesLockFile NewPackagesLockFile { get; }
 
         public RestoreResult(
             bool success,

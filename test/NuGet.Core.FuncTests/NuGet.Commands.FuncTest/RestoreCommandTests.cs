@@ -108,7 +108,7 @@ namespace NuGet.Commands.FuncTest
                 referenceSpec = referenceSpec.WithTestRestoreMetadata();
                 projectSpec = projectSpec.WithTestRestoreMetadata().WithTestProjectReference(referenceSpec);
 
-                var request = await ProjectJsonTestHelpers.GetRequestAsync(restoreContext, projectSpec, referenceSpec);
+                var request = await ProjectTestHelpers.GetRequestAsync(restoreContext, projectSpec, referenceSpec);
 
                 var command = new RestoreCommand(request);
 
@@ -247,7 +247,7 @@ namespace NuGet.Commands.FuncTest
                 specB = specB.WithTestRestoreMetadata();
                 specA = specA.WithTestRestoreMetadata().WithTestProjectReference(specB);
 
-                var request = await ProjectJsonTestHelpers.GetRequestAsync(restoreContext, specA, specB);
+                var request = await ProjectTestHelpers.GetRequestAsync(restoreContext, specA, specB);
 
                 // Act
                 var command = new RestoreCommand(request);
