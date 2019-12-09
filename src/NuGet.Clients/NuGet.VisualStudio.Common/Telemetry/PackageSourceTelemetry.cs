@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using NuGet.Common;
 using NuGet.Configuration;
@@ -17,6 +18,8 @@ namespace NuGet.VisualStudio.Telemetry
         private readonly IDictionary<string, PackageSource> _sources;
         private readonly Guid _parentId;
 
+        private readonly IDisposable _diagnosticListenerSubscriber;
+
         internal static readonly string EventName = "PackageSourceDiagnostics";
 
         public PackageSourceTelemetry(IEnumerable<PackageSource> sources, Guid parentId)
@@ -27,7 +30,8 @@ namespace NuGet.VisualStudio.Telemetry
             }
 
             _data = new ConcurrentDictionary<string, Data>();
-            ProtocolDiagnostics.Event += ProtocolDiagnostics_Event;
+            _diagnosticListenerSubscriber = DiagnosticListener.AllListeners.Subscribe(new DiagnosticListenerSubscriber(_data));
+            //ProtocolDiagnostics.Event += ProtocolDiagnostics_Event;
             _parentId = parentId;
 
             // Multiple sources can use the same feed url. We can't know which one protocol events come from, so choose any.
@@ -113,7 +117,8 @@ namespace NuGet.VisualStudio.Telemetry
 
         public void Dispose()
         {
-            ProtocolDiagnostics.Event -= ProtocolDiagnostics_Event;
+            //ProtocolDiagnostics.Event -= ProtocolDiagnostics_Event;
+            _diagnosticListenerSubscriber.Dispose();
         }
 
         public void SendTelemetry()
@@ -464,6 +469,74 @@ namespace NuGet.VisualStudio.Telemetry
                 }
                 internal string Total { get; }
                 internal string Max { get; }
+            }
+        }
+
+        private sealed class DiagnosticListenerSubscriber : IObserver<DiagnosticListener>, IDisposable
+        {
+            private ConcurrentDictionary<string, Data> _data;
+            private IDisposable _subscription;
+
+            public DiagnosticListenerSubscriber(ConcurrentDictionary<string, Data> data)
+            {
+                _data = data;
+            }
+
+            public void OnCompleted()
+            {
+                Unsubscribe();
+            }
+
+            public void OnError(Exception error)
+            {
+            }
+
+            public void OnNext(DiagnosticListener value)
+            {
+                if (_subscription == null && value.Name == "NuGet.Protocol")
+                {
+                    _subscription = value.Subscribe(new DiagnosticListenerSink(_data));
+                }
+            }
+
+            public void Dispose()
+            {
+                Unsubscribe();
+            }
+
+            private void Unsubscribe()
+            {
+                _subscription?.Dispose();
+            }
+
+            private class DiagnosticListenerSink : IObserver<KeyValuePair<string, object>>
+            {
+                private ConcurrentDictionary<string, Data> _data;
+
+                public DiagnosticListenerSink(ConcurrentDictionary<string, Data> data)
+                {
+                    _data = data;
+                }
+
+                public void OnCompleted()
+                {
+                }
+
+                public void OnError(Exception error)
+                {
+                }
+
+                public void OnNext(KeyValuePair<string, object> value)
+                {
+                    if (value.Key == "ProtocolDiagnostic")
+                    {
+                        var pdEvent = value.Value as ProtocolDiagnosticEvent;
+                        if (pdEvent != null)
+                        {
+                            AddAggregateData(pdEvent, _data);
+                        }
+                    }
+                }
             }
         }
     }

@@ -33,3 +33,6 @@ NuGet.Versioning.dll
 Lucene.Net.dll
 Microsoft.Web.XmlTransform.dll
 Newtonsoft.Json.dll
+System.Diagnostics.DiagnosticSource.dll
+System.Numerics.Vectors.dll
+System.Runtime.CompilerServices.Unsafe.dll

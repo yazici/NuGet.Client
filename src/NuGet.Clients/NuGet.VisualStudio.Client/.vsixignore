@@ -84,7 +84,9 @@ Microsoft.VisualStudio.Workspace.dll
 Microsoft.VisualStudio.Workspace.Extensions.dll
 Microsoft.VisualStudio.Workspace.Extensions.VS.dll
 Microsoft.VisualStudio.Workspace.VSIntegration.Contracts.dll
+System.Buffers.dll
 System.IdentityModel.Tokens.Jwt.dll
+System.Memory.dll
 System.Net.Http.Formatting.dll
 System.Resources.Extensions.dll
 System.Web.Http.dll
