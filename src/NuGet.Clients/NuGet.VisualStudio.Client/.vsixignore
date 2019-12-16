@@ -96,6 +96,3 @@ System.Security.Principal.Windows.dll
 System.Threading.Tasks.Extensions.dll
 System.Web.Http.dll
 VSLangProj157.dll
-Microsoft.VisualStudio.Composition.NetFxAttributes.dll
-Microsoft.VisualStudio.Setup.Configuration.Interop.dll
-System.Resources.Extensions.dll
