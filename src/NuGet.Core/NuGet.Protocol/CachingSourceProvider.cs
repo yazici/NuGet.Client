@@ -24,16 +24,22 @@ namespace NuGet.Protocol
         private readonly ConcurrentDictionary<string, SourceRepository> _cachedSources
             = new ConcurrentDictionary<string, SourceRepository>(StringComparer.Ordinal);
 
-        public CachingSourceProvider(IPackageSourceProvider packageSourceProvider)
+        public CachingSourceProvider(IPackageSourceProvider packageSourceProvider,
+            IEnumerable<Lazy<INuGetResourceProvider>> resourceProviders)
         {
             _packageSourceProvider = packageSourceProvider;
 
-            _resourceProviders.AddRange(Repository.Provider.GetCoreV3());
+            _resourceProviders.AddRange(resourceProviders);
 
             _repositories = _packageSourceProvider.LoadPackageSources()
                 .Where(s => s.IsEnabled)
                 .Select(CreateRepository)
                 .ToList();
+        }
+
+        public CachingSourceProvider(IPackageSourceProvider packageSourceProvider)
+            : this(packageSourceProvider, Repository.Provider.GetCoreV3())
+        {
         }
 
         /// <summary>
