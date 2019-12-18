@@ -162,7 +162,6 @@ namespace Dotnet.Integration.Test
         /// </summary>
         internal CommandRunnerResult RunDotnet(string workingDirectory, string args, bool ignoreExitCode=false)
         {
-
             var result = CommandRunner.Run(TestDotnetCli,
                 workingDirectory,
                 args,
