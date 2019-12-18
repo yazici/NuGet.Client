@@ -3,6 +3,8 @@
 
 namespace NuGetVSExtension
 {
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles",
+        Justification = "Following pattern for VS Context Menu IDs")]
     internal static class PkgCmdIDList
     {
         public const int cmdidPowerConsole = 0x0100;
@@ -14,6 +16,7 @@ namespace NuGetVSExtension
         public const int cmdidSourceSettings = 0x0200;
         public const int cmdIdGeneralSettings = 0x0300;
         public const int cmdIdVisualizer = 0x0310;
+        public const int cmdIdUpdateAll = 0x500;
         public const int cmdidDebugConsole = 0x0900;
     }
 }
