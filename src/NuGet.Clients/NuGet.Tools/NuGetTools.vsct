@@ -81,7 +81,6 @@
       </Button>
 
        <Button guid="guidDialogCmdSet" id="cmdIdUpdateAll" priority="0x0150" type="Button">
-        <Parent guid="guidReferenceContext" id="cmdAddReferenceGroup" />
         <Icon guid="guidPackageImages" id="updateAvailableIndicator" />
         <CommandFlag>AllowParams</CommandFlag>
         <CommandFlag>DefaultInvisible</CommandFlag>
@@ -203,16 +202,7 @@
     </CommandPlacement>
     <CommandPlacement guid="guidDialogCmdSet" id="cmdidAddPackages" priority="0xF100">
       <Parent guid="guidSHLMainMenu" id="IDG_VS_CTXT_REFROOT_ADD"/>
-    </CommandPlacement>
-
-    <CommandPlacement guid="guidDialogCmdSet" id="cmdIdUpdateAll" priority="0xF200">
-      <Parent guid="guidSHLMainMenu" id="IDG_VS_CTXT_REFROOT_ADD"/>
-    </CommandPlacement>
-    
-    <CommandPlacement guid="guidDialogCmdSet" id="cmdIdUpdateAll" priority="0xF200">
-      <Parent guid="VsPackageCommandSetSymbol" id="ReferenceContextMenuGroup"/>
-    </CommandPlacement>
-  
+    </CommandPlacement>  
     <CommandPlacement guid="guidDialogCmdSet" id="cmdidAddPackages" priority="0xF100">
       <Parent guid="guidSHLMainMenu" id="IDG_VS_CTXT_PROJECT_ADD"/>
     </CommandPlacement>
@@ -233,6 +223,12 @@
     </CommandPlacement>
     <CommandPlacement guid="guidDialogCmdSet" id="cmdidRestorePackages" priority="0xF101">
       <Parent guid="guidSHLMainMenu" id="IDG_VS_CTXT_SOLUTION_BUILD" />
+    </CommandPlacement>
+     <CommandPlacement guid="guidDialogCmdSet" id="cmdIdUpdateAll" priority="0xF200">
+      <Parent guid="VsPackageCommandSetSymbol" id="ReferenceContextMenuGroup"/>
+    </CommandPlacement>
+   <CommandPlacement guid="guidDialogCmdSet" id="cmdidAddPackages" priority="0xF200">
+      <Parent guid="VsPackageCommandSetSymbol" id="ReferenceContextMenuGroup"/>
     </CommandPlacement>
   </CommandPlacements>
 
@@ -278,7 +274,7 @@
       <IDSymbol name="cmdidRestorePackages" value="0x0300" />
       <IDSymbol name="cmdidUpgradeNuGetProject" value="0x0400" />
       <IDSymbol name="cmdidUpgradePackagesConfig" value="0x0410" />
-      <IDSymbol name="cmdIdUpdateAll" value="0x525"/>
+      <IDSymbol name="cmdIdUpdateAll" value="0x500"/>
     </GuidSymbol>
     <GuidSymbol name="guidVenusCmdId" value="{C7547851-4E3A-4E5B-9173-FA6E9C8BD82C}" >
       <IDSymbol name="IDG_VENUS_CTX_REFERENCE" value="27" />
