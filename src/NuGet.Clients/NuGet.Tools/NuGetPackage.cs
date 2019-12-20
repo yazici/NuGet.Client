@@ -86,6 +86,7 @@ namespace NuGetVSExtension
         private uint _solutionExistsCookie;
         private bool _powerConsoleCommandExecuting;
         private bool _initialized;
+        private ItemFilter? _initialTab;
 
         public NuGetPackage()
         {
@@ -273,7 +274,7 @@ namespace NuGetVSExtension
 
                 // menu command for opening Update... dialog for a Package node
                 var updatePackageCommandID = new CommandID(GuidList.guidNuGetDialogCmdSet, PkgCmdIDList.cmdIdUpdatePackage);
-                _updateAllDialogCommand = new OleMenuCommand(ShowManageLibraryPackageDialog, null, BeforeQueryStatusForAddPackageDialog, updatePackageCommandID);
+                _updateAllDialogCommand = new OleMenuCommand(ShowUpdateLibraryPackageDialog, null, BeforeQueryStatusForAddPackageDialog, updatePackageCommandID);
                 // '$' - This indicates that the input line other than the argument forms a single argument string with no autocompletion
                 //       Autocompletion for filename(s) is supported for option 'p' or 'd' which is not applicable for this command
                 _updateAllDialogCommand.ParametersDescription = "$";
@@ -471,7 +472,8 @@ namespace NuGetVSExtension
             var model = new PackageManagerModel(
                 uiController,
                 isSolution: false,
-                editorFactoryGuid: GuidList.guidNuGetEditorType);
+                editorFactoryGuid: GuidList.guidNuGetEditorType,
+                tabInitialLoadOverride: _initialTab);
 
             var vsWindowSearchHostfactory = await GetServiceAsync(typeof(SVsWindowSearchHostFactory)) as IVsWindowSearchHostFactory;
             var vsShell = await GetServiceAsync(typeof(SVsShell)) as IVsShell4;
@@ -586,58 +588,74 @@ namespace NuGetVSExtension
             return "project:" + projectName;
         }
 
+
+        private void ShowUpdateLibraryPackageDialog(object sender, EventArgs e)
+        {
+            NuGetUIThreadHelper.JoinableTaskFactory.Run(async delegate
+            {
+                _initialTab = ItemFilter.UpdatesAvailable;
+                await ShowManageLibraryPackageDialog(e);
+                _initialTab = null;
+            });
+        }
+
         private void ShowManageLibraryPackageDialog(object sender, EventArgs e)
         {
             NuGetUIThreadHelper.JoinableTaskFactory.Run(async delegate
             {
-                if (ShouldMEFBeInitialized())
-                {
-                    await InitializeMEFAsync();
-                }
-
-                await NuGetUIThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-
-                string parameterString = null;
-                var args = e as OleMenuCmdEventArgs;
-                if (null != args)
-                {
-                    parameterString = args.InValue as string;
-                }
-                var searchText = GetSearchText(parameterString);
-
-                // *** temp code
-                var project = EnvDTEProjectInfoUtility.GetActiveProject(VsMonitorSelection);
-
-                if (project != null
-                    &&
-                    !EnvDTEProjectInfoUtility.IsUnloaded(project)
-                    &&
-                    EnvDTEProjectUtility.IsSupported(project))
-                {
-                    var windowFrame = FindExistingWindowFrame(project);
-                    if (windowFrame == null)
-                    {
-                        windowFrame = await CreateNewWindowFrameAsync(project);
-                    }
-
-                    if (windowFrame != null)
-                    {
-                        Search(windowFrame, searchText);
-                        windowFrame.Show();
-                    }
-                }
-                else
-                {
-                    // show error message when no supported project is selected.
-                    var projectName = project != null ? project.Name : string.Empty;
-
-                    var errorMessage = string.IsNullOrEmpty(projectName)
-                        ? Resources.NoProjectSelected
-                        : string.Format(CultureInfo.CurrentCulture, Resources.DTE_ProjectUnsupported, projectName);
-
-                    MessageHelper.ShowWarningMessage(errorMessage, Resources.ErrorDialogBoxTitle);
-                }
+                await ShowManageLibraryPackageDialog(e);
             });
+        }
+
+        private async Task ShowManageLibraryPackageDialog(EventArgs e)
+        {
+            if (ShouldMEFBeInitialized())
+            {
+                await InitializeMEFAsync();
+            }
+
+            await NuGetUIThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+            string parameterString = null;
+            var args = e as OleMenuCmdEventArgs;
+            if (null != args)
+            {
+                parameterString = args.InValue as string;
+            }
+            var searchText = GetSearchText(parameterString);
+
+            // *** temp code
+            var project = EnvDTEProjectInfoUtility.GetActiveProject(VsMonitorSelection);
+
+            if (project != null
+                &&
+                !EnvDTEProjectInfoUtility.IsUnloaded(project)
+                &&
+                EnvDTEProjectUtility.IsSupported(project))
+            {
+                var windowFrame = FindExistingWindowFrame(project);
+                if (windowFrame == null)
+                {
+                    windowFrame = await CreateNewWindowFrameAsync(project);
+                }
+
+                if (windowFrame != null)
+                {
+                    Search(windowFrame, searchText);
+                    windowFrame.Show();
+                }
+            }
+            else
+            {
+                // show error message when no supported project is selected.
+                var projectName = project != null ? project.Name : string.Empty;
+
+                var errorMessage = string.IsNullOrEmpty(projectName)
+                    ? Resources.NoProjectSelected
+                    : string.Format(CultureInfo.CurrentCulture, Resources.DTE_ProjectUnsupported, projectName);
+
+                MessageHelper.ShowWarningMessage(errorMessage, Resources.ErrorDialogBoxTitle);
+            }
         }
 
         private async Task<IVsWindowFrame> FindExistingSolutionWindowFrameAsync()

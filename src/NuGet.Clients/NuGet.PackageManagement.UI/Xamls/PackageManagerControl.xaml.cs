@@ -344,7 +344,12 @@ namespace NuGet.PackageManagement.UI
 
         private void InitializeFilterList(UserSettings settings)
         {
-            if (settings != null)
+            //Check if an override for the Tab to initially load was specified, which wins over User Settings.
+            if (Model.TabInitialLoadOverride.HasValue)
+            {
+                _topPanel.SelectFilter(Model.TabInitialLoadOverride.Value);
+            }
+            else if (settings != null)
             {
                 _topPanel.SelectFilter(settings.SelectedFilter);
             }

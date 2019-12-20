@@ -21,17 +21,18 @@ namespace NuGet.PackageManagement.UI
     {
         private readonly Guid _editorFactoryGuid;
 
-        public PackageManagerModel(INuGetUI uiController, bool isSolution, Guid editorFactoryGuid)
+        public PackageManagerModel(INuGetUI uiController, bool isSolution, Guid editorFactoryGuid, ItemFilter? tabInitialLoadOverride = null)
         {
             if (uiController == null)
             {
                 throw new ArgumentNullException(nameof(uiController));
             }
-
+            
             UIController = uiController;
             IsSolution = isSolution;
 
             _editorFactoryGuid = editorFactoryGuid;
+            TabInitialLoadOverride = tabInitialLoadOverride;
         }
 
         public INuGetUIContext Context => UIController.UIContext;
@@ -45,6 +46,8 @@ namespace NuGet.PackageManagement.UI
         /// Indicates whether the model is used for a solution, or for a project.
         /// </summary>
         public bool IsSolution { get; }
+
+        public ItemFilter? TabInitialLoadOverride = null;
 
         public INuGetUI UIController { get; }
 
