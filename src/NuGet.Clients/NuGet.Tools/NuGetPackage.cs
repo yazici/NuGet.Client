@@ -271,9 +271,9 @@ namespace NuGetVSExtension
                 _managePackageDialogCommand.ParametersDescription = "$";
                 _mcs.AddCommand(_managePackageDialogCommand);
 
-                // menu command for opening Update All... dialog
-                var updateAllCommandID = new CommandID(GuidList.guidNuGetDialogCmdSet, PkgCmdIDList.cmdIdUpdateAll);
-                _updateAllDialogCommand = new OleMenuCommand(ShowManageLibraryPackageDialog, null, BeforeQueryStatusForAddPackageDialog, updateAllCommandID);
+                // menu command for opening Update... dialog for a Package node
+                var updatePackageCommandID = new CommandID(GuidList.guidNuGetDialogCmdSet, PkgCmdIDList.cmdIdUpdatePackage);
+                _updateAllDialogCommand = new OleMenuCommand(ShowManageLibraryPackageDialog, null, BeforeQueryStatusForAddPackageDialog, updatePackageCommandID);
                 // '$' - This indicates that the input line other than the argument forms a single argument string with no autocompletion
                 //       Autocompletion for filename(s) is supported for option 'p' or 'd' which is not applicable for this command
                 _updateAllDialogCommand.ParametersDescription = "$";
