@@ -208,7 +208,10 @@
     <CommandPlacement guid="guidDialogCmdSet" id="cmdIdUpdateAll" priority="0xF200">
       <Parent guid="guidSHLMainMenu" id="IDG_VS_CTXT_REFROOT_ADD"/>
     </CommandPlacement>
-
+    
+    <CommandPlacement guid="guidPackageNodeCmdSet" id="cmdIdUpdateAll" priority="0xF200">
+      <Parent guid="VsPackageCommandSetSymbol" id="ReferenceContextMenuGroup"/>
+    </CommandPlacement>
   
     <CommandPlacement guid="guidDialogCmdSet" id="cmdidAddPackages" priority="0xF100">
       <Parent guid="guidSHLMainMenu" id="IDG_VS_CTXT_PROJECT_ADD"/>
@@ -277,6 +280,9 @@
       <IDSymbol name="cmdidUpgradePackagesConfig" value="0x0410" />
       <IDSymbol name="cmdIdUpdateAll" value="0x500"/>
     </GuidSymbol>
+    <GuidSymbol name="guidPackageNodeCmdSet" value="{9e545b2d-3892-4ffa-a47a-f8d456c5fb4a}">
+      <IDSymbol name="cmdIdUpdateAll" value="0x500"/>
+    </GuidSymbol>
     <GuidSymbol name="guidVenusCmdId" value="{C7547851-4E3A-4E5B-9173-FA6E9C8BD82C}" >
       <IDSymbol name="IDG_VENUS_CTX_REFERENCE" value="27" />
       <IDSymbol name="IDG_CTX_REFERENCE" value="0x102" />
@@ -296,6 +302,9 @@
       <IDSymbol name="DownloadIndicator" value="4" />
       <IDSymbol name="InstalledIndicator" value="5" />
       <IDSymbol name="MigratorHelpIcon" value="6" />
+    </GuidSymbol>
+    <GuidSymbol name="VsPackageCommandSetSymbol" value="{6caecd10-b51c-485c-997f-8c3d73c8aec5}">
+      <IDSymbol name="ReferenceContextMenuGroup" value="0x2001" />
     </GuidSymbol>
 
   </Symbols>
