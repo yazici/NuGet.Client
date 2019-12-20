@@ -35,8 +35,8 @@ phases:
     inputs:
       scriptType: "inlineScript"
       inlineScript: |
-        gci $env:BUILDCOUNTERFILE
         gci $env:DROPROOT
+        gci $env:BUILDCOUNTERFILE
 
   - task: PowerShell@1
     displayName: "Update Build Number"
@@ -44,6 +44,7 @@ phases:
     inputs:
       scriptType: "inlineScript"
       inlineScript: |
+        gci $env:DROPROOT
         gci $env:BUILDCOUNTERFILE
         $revision = Get-Content $env:BUILDCOUNTERFILE
         $newBuildCounter = [System.Decimal]::Parse($revision)
