@@ -37,6 +37,8 @@ phases:
       inlineScript: |
         gci $env:DROPROOT
         gci $env:BUILDCOUNTERFILE
+        cat $env:BUILDCOUNTERFILE
+        echo $env:UserName $env:UserDomain $env:ComputerName
 
   - task: PowerShell@1
     displayName: "Update Build Number"
