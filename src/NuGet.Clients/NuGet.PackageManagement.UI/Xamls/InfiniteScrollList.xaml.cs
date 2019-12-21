@@ -163,12 +163,16 @@ namespace NuGet.PackageManagement.UI
             if (selectedItem != null)
             {
                 // select the the previously selected item if it still exists.
-                selectedItem = PackageItems
+                var foundItem = PackageItems
                     .FirstOrDefault(item => item.Id.Equals(selectedItem.Id, StringComparison.OrdinalIgnoreCase));
+                //_list.SelectedItem = selectedItem;
+                foundItem.Selected = true;
             }
-
-            // select the first item if none was selected before
-            _list.SelectedItem = selectedItem ?? PackageItems.FirstOrDefault();
+            else
+            {
+                // select the first item if none was selected before
+                _list.SelectedItem = selectedItem ?? PackageItems.FirstOrDefault();
+            }
         }
 
         private void LoadItems(PackageItemListViewModel selectedPackageItem, CancellationToken token)
@@ -188,6 +192,12 @@ namespace NuGet.PackageManagement.UI
                     await LoadItemsCoreAsync(currentLoader, loadCts.Token);
 
                     await _joinableTaskFactory.Value.SwitchToMainThreadAsync();
+
+                    var packageExactMatch = PackageItems.FirstOrDefault(item => item.Id.Equals("Castle.Core", StringComparison.OrdinalIgnoreCase));
+                    if (packageExactMatch != null)
+                    {
+                        selectedPackageItem = packageExactMatch;
+                    }
 
                     if (selectedPackageItem != null)
                     {
