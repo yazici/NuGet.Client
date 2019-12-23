@@ -198,10 +198,10 @@ namespace NuGet.PackageManagement.UI
 
                     await _joinableTaskFactory.Value.SwitchToMainThreadAsync();
 
-                    var packageExactMatch = PackageItems.FirstOrDefault(item => item.Id.Equals("Castle.Core", StringComparison.OrdinalIgnoreCase));
-                    if (packageExactMatch != null)
+                    var autoSelectPackage = PackageItems.FirstOrDefault(item => item.Id.Equals("Castle.Core", StringComparison.OrdinalIgnoreCase));
+                    if (autoSelectPackage != null)
                     {
-                        selectedPackageItem = packageExactMatch;
+                        selectedPackageItem = autoSelectPackage;
                     }
 
                     if (selectedPackageItem != null)
