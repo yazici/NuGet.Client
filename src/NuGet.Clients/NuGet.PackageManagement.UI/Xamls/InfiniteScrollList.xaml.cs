@@ -165,8 +165,13 @@ namespace NuGet.PackageManagement.UI
                 // select the the previously selected item if it still exists.
                 var foundItem = PackageItems
                     .FirstOrDefault(item => item.Id.Equals(selectedItem.Id, StringComparison.OrdinalIgnoreCase));
-                //_list.SelectedItem = selectedItem;
-                foundItem.Selected = true;
+
+                _list.SelectedItem = foundItem;
+
+                if (foundItem != null)
+                {
+                    foundItem.Selected = true;
+                }
             }
             else
             {
