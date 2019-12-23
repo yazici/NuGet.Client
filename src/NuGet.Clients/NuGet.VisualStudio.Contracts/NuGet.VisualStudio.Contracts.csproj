@@ -1,0 +1,18 @@
+<Project>
+  <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), 'README.md'))\build\common.props" />
+  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
+
+  <PropertyGroup>
+    <TargetFramework>$(NETFXTargetFramework)</TargetFramework>
+    <PackProject>true</PackProject>
+    <Shipping>true</Shipping>
+    <IncludeInVsix>true</IncludeInVsix>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <RootNamespace>NuGet.VisualStudio.Contracts</RootNamespace>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+  </PropertyGroup>
+
+  <Import Project="$(BuildCommonDirectory)common.targets" />
+  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+</Project>

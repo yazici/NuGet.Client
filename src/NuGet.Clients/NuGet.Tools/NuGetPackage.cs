@@ -2,7 +2,6 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
-using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.ComponentModel.Design;
 using System.Globalization;
@@ -11,6 +10,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using EnvDTE;
+using Microsoft.ServiceHub.Framework;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.OLE.Interop;
@@ -30,6 +30,8 @@ using ISettings = NuGet.Configuration.ISettings;
 using Resx = NuGet.PackageManagement.UI.Resources;
 using Task = System.Threading.Tasks.Task;
 using UI = NuGet.PackageManagement.UI;
+
+using ProvideBrokeredServiceAttribute = Microsoft.VisualStudio.Shell.ProvideBrokeredServiceAttribute;
 
 namespace NuGetVSExtension
 {
@@ -65,6 +67,7 @@ namespace NuGetVSExtension
         NuGetConsole.GuidList.GuidPackageManagerConsoleFontAndColorCategoryString,
         "{" + GuidList.guidNuGetPkgString + "}")]
     [Guid(GuidList.guidNuGetPkgString)]
+    [ProvideBrokeredService(ServiceName,"1.0", Audience = ServiceAudience.Process)]
     public sealed class NuGetPackage : AsyncPackage, IVsPackageExtensionProvider, IVsPersistSolutionOpts
     {
         // It is displayed in the Help - About box of Visual Studio
@@ -121,6 +124,9 @@ namespace NuGetVSExtension
         [Import]
         private Lazy<INuGetUIFactory> UIFactory { get; set; }
 
+        //[Import]
+        //private Lazy<IVsPackageInstaller> IVSPackageInstaller { get; set; }
+
         private IDisposable ProjectRetargetingHandler { get; set; }
 
         private IDisposable ProjectUpgradeHandler { get; set; }
@@ -163,8 +169,41 @@ namespace NuGetVSExtension
                     return vsMonitorSelection;
                 },
                 ThreadHelper.JoinableTaskFactory);
+
+//            await InitializeMEFAsync();
+
+            IBrokeredServiceContainer brokeredServiceContainer = await this.GetServiceAsync<SVsBrokeredServiceContainer, IBrokeredServiceContainer>();
+            brokeredServiceContainer.Proffer(Descriptor, (mk, options, sb, ct) => new ValueTask<object>(new AsyncInstaller()));
         }
 
+        private class AsyncInstaller : IVsAsyncPackageInstaller
+        {
+            string _name;
+            public AsyncInstaller()
+            {
+                _name = Guid.NewGuid().ToString();
+            }
+            public Task<bool> InstallLatestPackageAsync(string source, string project, string packageId, bool includePrerelease, bool ignoreDependencies)
+            {
+                throw new NotImplementedException();
+            }
+
+            public Task<bool> InstallPackageAsync(string source, string project, string packageId, string version, bool ignoreDependencies)
+            {
+                throw new NotImplementedException();
+            }
+
+            public override string ToString()
+            {
+                return _name;
+            }
+        }
+
+        internal const string ServiceName = "IVsAsyncPackageInstaller";
+        internal static ServiceRpcDescriptor Descriptor { get; } = new ServiceJsonRpcDescriptor(
+            new ServiceMoniker(ServiceName, new Version(1, 0)),
+            ServiceJsonRpcDescriptor.Formatters.MessagePack,
+            ServiceJsonRpcDescriptor.MessageDelimiters.BigEndianInt32LengthHeader);
         /// <summary>
         /// Initialize all MEF imports for this package and also add required event handlers.
         /// </summary>
