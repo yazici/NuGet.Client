@@ -131,6 +131,7 @@ namespace NuGetVSExtension
 
         private IDisposable ProjectUpgradeHandler { get; set; }
 
+        private IDisposable IVsAsyncPackageInstallerDisposable { get; set; }
         /// <summary>
         /// Initialization of the package; this method is called right after the package is sited, so this is the place
         /// where you can put all the initialization code that rely on services provided by VisualStudio.
@@ -170,10 +171,13 @@ namespace NuGetVSExtension
                 },
                 ThreadHelper.JoinableTaskFactory);
 
-//            await InitializeMEFAsync();
-
             IBrokeredServiceContainer brokeredServiceContainer = await this.GetServiceAsync<SVsBrokeredServiceContainer, IBrokeredServiceContainer>();
-            brokeredServiceContainer.Proffer(Descriptor, (mk, options, sb, ct) => new ValueTask<object>(new AsyncInstaller()));
+            IVsAsyncPackageInstallerDisposable = brokeredServiceContainer.Proffer(Descriptor, factory: GetIVsAsyncPackageInstallerFactory());
+        }
+
+        private BrokeredServiceFactory GetIVsAsyncPackageInstallerFactory()
+        {
+            return (mk, options, sb, ct) => new ValueTask<object>(new AsyncInstaller());
         }
 
         private class AsyncInstaller : IVsAsyncPackageInstaller
@@ -204,6 +208,28 @@ namespace NuGetVSExtension
             new ServiceMoniker(ServiceName, new Version(1, 0)),
             ServiceJsonRpcDescriptor.Formatters.MessagePack,
             ServiceJsonRpcDescriptor.MessageDelimiters.BigEndianInt32LengthHeader);
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                IVsAsyncPackageInstallerDisposable?.Dispose();
+            }
+            base.Dispose(disposing);
+        }
+
+        public void Dispose()
+        {
+            try
+            {
+                Dispose(true);
+            }
+            finally
+            {
+                GC.SuppressFinalize(this);
+            }
+        }
+
         /// <summary>
         /// Initialize all MEF imports for this package and also add required event handlers.
         /// </summary>
