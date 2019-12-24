@@ -10,7 +10,6 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using EnvDTE;
-using Microsoft.ServiceHub.Framework;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.OLE.Interop;
@@ -32,6 +31,8 @@ using Task = System.Threading.Tasks.Task;
 using UI = NuGet.PackageManagement.UI;
 
 using ProvideBrokeredServiceAttribute = Microsoft.VisualStudio.Shell.ProvideBrokeredServiceAttribute;
+using Microsoft.ServiceHub.Framework.Services;
+using Microsoft.ServiceHub.Framework;
 
 namespace NuGetVSExtension
 {
@@ -67,7 +68,7 @@ namespace NuGetVSExtension
         NuGetConsole.GuidList.GuidPackageManagerConsoleFontAndColorCategoryString,
         "{" + GuidList.guidNuGetPkgString + "}")]
     [Guid(GuidList.guidNuGetPkgString)]
-    [ProvideBrokeredService(ServiceName,"1.0", Audience = ServiceAudience.Process)]
+    [ProvideBrokeredService(BrokerServices.IVsAsyncPackageInstallerServiceName, BrokerServices.IVsAsyncPackageInstallerServiceVersion, Audience = ServiceAudience.Process)]
     public sealed class NuGetPackage : AsyncPackage, IVsPackageExtensionProvider, IVsPersistSolutionOpts
     {
         // It is displayed in the Help - About box of Visual Studio
@@ -172,29 +173,42 @@ namespace NuGetVSExtension
                 ThreadHelper.JoinableTaskFactory);
 
             IBrokeredServiceContainer brokeredServiceContainer = await this.GetServiceAsync<SVsBrokeredServiceContainer, IBrokeredServiceContainer>();
-            IVsAsyncPackageInstallerDisposable = brokeredServiceContainer.Proffer(Descriptor, factory: GetIVsAsyncPackageInstallerFactory());
+            //IVsAsyncPackageInstallerDisposable = brokeredServiceContainer.Proffer(BrokerServices.IVsAsyncPackageInstallerServiceDescriptor, factory: GetIVsAsyncPackageInstallerFactory());
+            IVsAsyncPackageInstallerDisposable = brokeredServiceContainer.Proffer(BrokerServices.IVsAsyncPackageInstallerServiceDescriptor, async (mk, options, sb, ct) => await CreateAsync(this, options, sb, ct));
+        }
+        // TODO NK - This immediately executes. A bit of a problem. The initialization would need some creativity.
+        // Maybe just a defferred service.
+
+        public static async ValueTask<IVsAsyncPackageInstaller> CreateAsync(AsyncPackage package, ServiceActivationOptions serviceActivationOptions, IServiceBroker serviceBroker, CancellationToken cancellationToken)
+        {
+            await package.GetServiceAsync<SVsBrokeredServiceContainer, IBrokeredServiceContainer>();
+            return new AsyncInstaller();
         }
 
         private BrokeredServiceFactory GetIVsAsyncPackageInstallerFactory()
         {
-            return (mk, options, sb, ct) => new ValueTask<object>(new AsyncInstaller());
+            var service = new AsyncInstaller();
+            return (mk, options, sb, ct) => new ValueTask<object>(service);
         }
 
         private class AsyncInstaller : IVsAsyncPackageInstaller
         {
-            string _name;
-            public AsyncInstaller()
+            readonly string _name = Guid.NewGuid().ToString();
+
+            // TODO NK - This doesn't really work.
+            [Import]
+            IVsPackageInstaller Installer { get; set; }
+
+            public async Task<bool> InstallLatestPackageAsync(string source, string project, string packageId, bool includePrerelease, bool ignoreDependencies)
             {
-                _name = Guid.NewGuid().ToString();
-            }
-            public Task<bool> InstallLatestPackageAsync(string source, string project, string packageId, bool includePrerelease, bool ignoreDependencies)
-            {
-                throw new NotImplementedException();
+                var vsPackageInstaller = (VsPackageInstaller)Installer;
+                return await vsPackageInstaller.InstallLatestPackageAsync(source, project, packageId, includePrerelease, ignoreDependencies);
             }
 
-            public Task<bool> InstallPackageAsync(string source, string project, string packageId, string version, bool ignoreDependencies)
+            public async Task<bool> InstallPackageAsync(string source, string project, string packageId, string version, bool ignoreDependencies)
             {
-                throw new NotImplementedException();
+                var vsPackageInstaller = (VsPackageInstaller)Installer;
+                return await vsPackageInstaller.InstallPackageAsync(source, project, packageId, version, ignoreDependencies);
             }
 
             public override string ToString()
@@ -202,12 +216,6 @@ namespace NuGetVSExtension
                 return _name;
             }
         }
-
-        internal const string ServiceName = "IVsAsyncPackageInstaller";
-        internal static ServiceRpcDescriptor Descriptor { get; } = new ServiceJsonRpcDescriptor(
-            new ServiceMoniker(ServiceName, new Version(1, 0)),
-            ServiceJsonRpcDescriptor.Formatters.MessagePack,
-            ServiceJsonRpcDescriptor.MessageDelimiters.BigEndianInt32LengthHeader);
 
         protected override void Dispose(bool disposing)
         {

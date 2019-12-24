@@ -39,6 +39,7 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BrokerServices.cs" />
     <Compile Include="Commands\ShowErrorsCommand.cs" />
     <Compile Include="DataStreamFromComStream.cs" />
     <Compile Include="FontAndColorsRegistrationAttribute.cs" />
