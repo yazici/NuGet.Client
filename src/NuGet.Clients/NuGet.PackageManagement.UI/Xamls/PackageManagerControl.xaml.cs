@@ -29,6 +29,7 @@ using Task = System.Threading.Tasks.Task;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.Shell;
 using NuGet.Protocol;
+using Microsoft.VisualStudio.Services.Common;
 
 namespace NuGet.PackageManagement.UI
 {

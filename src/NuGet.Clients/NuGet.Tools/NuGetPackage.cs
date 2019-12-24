@@ -87,6 +87,7 @@ namespace NuGetVSExtension
         private bool _powerConsoleCommandExecuting;
         private bool _initialized;
         private ItemFilter? _initialTab;
+        private string _autoSelectPackageID;
 
         public NuGetPackage()
         {
@@ -473,7 +474,8 @@ namespace NuGetVSExtension
                 uiController,
                 isSolution: false,
                 editorFactoryGuid: GuidList.guidNuGetEditorType,
-                tabInitialLoadOverride: _initialTab);
+                tabInitialLoadOverride: _initialTab,
+                autoSelectPackageID: _autoSelectPackageID);
 
             var vsWindowSearchHostfactory = await GetServiceAsync(typeof(SVsWindowSearchHostFactory)) as IVsWindowSearchHostFactory;
             var vsShell = await GetServiceAsync(typeof(SVsShell)) as IVsShell4;
@@ -594,8 +596,11 @@ namespace NuGetVSExtension
             NuGetUIThreadHelper.JoinableTaskFactory.Run(async delegate
             {
                 _initialTab = ItemFilter.UpdatesAvailable;
+                //TODO: pass this in
+                //_autoSelectPackageID = "Castle.Core";
                 await ShowManageLibraryPackageDialog(e);
                 _initialTab = null;
+                _autoSelectPackageID = null;
             });
         }
 

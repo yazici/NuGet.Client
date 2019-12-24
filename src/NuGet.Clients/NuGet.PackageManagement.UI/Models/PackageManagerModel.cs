@@ -2,8 +2,12 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.Windows.Documents;
 using Microsoft.VisualStudio;
+using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Shell.Interop;
 using NuGet.PackageManagement.VisualStudio;
 
@@ -21,7 +25,7 @@ namespace NuGet.PackageManagement.UI
     {
         private readonly Guid _editorFactoryGuid;
 
-        public PackageManagerModel(INuGetUI uiController, bool isSolution, Guid editorFactoryGuid, ItemFilter? tabInitialLoadOverride = null)
+        public PackageManagerModel(INuGetUI uiController, bool isSolution, Guid editorFactoryGuid, ItemFilter? tabInitialLoadOverride = null, string autoSelectPackageID = null)
         {
             if (uiController == null)
             {
@@ -33,6 +37,12 @@ namespace NuGet.PackageManagement.UI
 
             _editorFactoryGuid = editorFactoryGuid;
             TabInitialLoadOverride = tabInitialLoadOverride;
+
+            if (autoSelectPackageID != null)
+            {
+                AutoSelectPackageIDs = new List<string>();
+                AutoSelectPackageIDs.Add(autoSelectPackageID);
+            }
         }
 
         public INuGetUIContext Context => UIController.UIContext;
@@ -48,6 +58,7 @@ namespace NuGet.PackageManagement.UI
         public bool IsSolution { get; }
 
         public ItemFilter? TabInitialLoadOverride = null;
+        public List<string> AutoSelectPackageIDs { get; private set; }
 
         public INuGetUI UIController { get; }
 
