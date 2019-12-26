@@ -40,8 +40,7 @@ namespace NuGet.PackageManagement.UI
 
             if (autoSelectPackageID != null)
             {
-                AutoSelectPackageIDs = new List<string>();
-                AutoSelectPackageIDs.Add(autoSelectPackageID);
+                AutoSelectPackageID = autoSelectPackageID;
             }
         }
 
@@ -58,7 +57,7 @@ namespace NuGet.PackageManagement.UI
         public bool IsSolution { get; }
 
         public ItemFilter? TabInitialLoadOverride = null;
-        public List<string> AutoSelectPackageIDs { get; private set; }
+        public string AutoSelectPackageID { get; private set; }
 
         public INuGetUI UIController { get; }
 

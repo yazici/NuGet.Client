@@ -176,6 +176,12 @@ namespace NuGet.PackageManagement.UI
 
             Unloaded += PackageManagerUnloaded;
 
+            if (Model.AutoSelectPackageID != null)
+            {
+                PackageList.BeforeItemsLoaded += PackageList_BeforeItemsLoaded;
+                PackageList.AfterItemsLoaded += PackageList_AfterItemsLoaded;
+            }
+
             if (IsUILegalDisclaimerSuppressed())
             {
                 _legalDisclaimer.Visibility = Visibility.Collapsed;
@@ -887,6 +893,18 @@ namespace NuGet.PackageManagement.UI
                 .FileAndForget(TelemetryUtility.CreateFileAndForgetEventName(nameof(PackageManagerControl), nameof(PackageList_SelectionChanged)));
         }
 
+        private void PackageList_BeforeItemsLoaded(object sender, EventArgs e)
+        {
+            PackageList.BeforeItemsLoaded -= PackageList_BeforeItemsLoaded;
+            PackageList.AutoSelectPackageID = Model.AutoSelectPackageID;
+        }
+
+        private void PackageList_AfterItemsLoaded(object sender, EventArgs e)
+        {
+            PackageList.AfterItemsLoaded -= PackageList_AfterItemsLoaded;
+            PackageList.AutoSelectPackageID = null;
+        }
+
         /// <summary>
         /// Updates the detail pane based on the selected package
         /// </summary>
@@ -1192,6 +1210,9 @@ namespace NuGet.PackageManagement.UI
 
             Model.Context.SourceProvider.PackageSourceProvider.PackageSourcesChanged -= Sources_PackageSourcesChanged;
 
+            PackageList.BeforeItemsLoaded -= PackageList_BeforeItemsLoaded;
+            PackageList.AfterItemsLoaded -= PackageList_AfterItemsLoaded;
+
             // make sure to cancel currently running load or refresh tasks
             _loadCts?.Cancel();
             _refreshCts?.Cancel();
@@ -1379,5 +1400,6 @@ namespace NuGet.PackageManagement.UI
                                 nameof(PackageManagerControl),
                                 nameof(UpgradeButton_Click)));
         }
+
     }
 }

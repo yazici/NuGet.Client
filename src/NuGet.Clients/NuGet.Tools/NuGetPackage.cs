@@ -595,9 +595,11 @@ namespace NuGetVSExtension
         {
             NuGetUIThreadHelper.JoinableTaskFactory.Run(async delegate
             {
+
+                var name = GetSelectedPackageName(VsMonitorSelection);
+
                 _initialTab = ItemFilter.UpdatesAvailable;
-                //TODO: pass this in
-                //_autoSelectPackageID = "Castle.Core";
+                _autoSelectPackageID = name;
                 await ShowManageLibraryPackageDialog(e);
                 _initialTab = null;
                 _autoSelectPackageID = null;
@@ -1146,5 +1148,60 @@ namespace NuGetVSExtension
         }
 
         #endregion IVsPersistSolutionOpts
+
+        public static string GetSelectedPackageName(IVsMonitorSelection vsMonitorSelection)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+
+            IntPtr ppHier = IntPtr.Zero;
+            uint pitemid = VSConstants.VSITEMID_NIL;
+            IVsMultiItemSelect ppMIS;
+            IntPtr ppSC = IntPtr.Zero;
+
+            try
+            {
+                vsMonitorSelection.GetCurrentSelection(out ppHier, out pitemid, out ppMIS, out ppSC);
+
+                if (ppHier == IntPtr.Zero)
+                {
+                    return null;
+                }
+
+                // multiple items are selected.
+                if (pitemid == (uint)VSConstants.VSITEMID.Selection)
+                {
+                    return null;
+                }
+
+                IVsHierarchy hierarchy = Marshal.GetTypedObjectForIUnknown(ppHier, typeof(IVsHierarchy)) as IVsHierarchy;
+                if (hierarchy != null)
+                {
+                    object name;
+                    if (hierarchy.GetProperty(pitemid, (int)__VSHPROPID.VSHPROPID_Name, out name) >= 0)
+                    {
+                        var packageName = name?.ToString();
+                        if (!string.IsNullOrWhiteSpace(packageName))
+                        {
+                            //TODO: Find a better way of extracting Package Name than trimming off the Version.
+                            packageName = packageName.Substring(0, Math.Max(packageName.IndexOf(' '), 0));
+                        }
+                        return packageName;
+                    }
+                }
+
+                return null;
+            }
+            finally
+            {
+                if (ppHier != IntPtr.Zero)
+                {
+                    Marshal.Release(ppHier);
+                }
+                if (ppSC != IntPtr.Zero)
+                {
+                    Marshal.Release(ppSC);
+                }
+            }
+        }
     }
 }

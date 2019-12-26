@@ -41,43 +41,20 @@ namespace NuGet.PackageManagement.UI
 
         // This exists only to facilitate unit testing.
         internal event EventHandler LoadItemsCompleted;
+        public event EventHandler BeforeItemsLoaded;
+        public event EventHandler AfterItemsLoaded;
 
         private CancellationTokenSource _loadCts;
         private IPackageItemLoader _loader;
         private INuGetUILogger _logger;
         private Task<SearchResult<IPackageSearchMetadata>> _initialSearchResultTask;
         private readonly Lazy<JoinableTaskFactory> _joinableTaskFactory;
-        public List<string> AutoSelectPackageIDs { get; set; }
+        public string AutoSelectPackageID { get; set; }
 
         private const string LogEntrySource = "NuGet Package Manager";
 
         // The count of packages that are selected
         private int _selectedCount;
-
-        //TODO: Remove or use this...
-        //public static readonly DependencyProperty AutoSelectItemProperty =
-        //        DependencyProperty.Register(
-        //        "AutoSelectItem", typeof(string),
-        //        typeof(InfiniteScrollList)
-        //        );
-        //public string AutoSelectItem
-        //{
-        //    get { return (string)GetValue(AutoSelectItemProperty); }
-        //    set { SetValue(AutoSelectItemProperty, value); }
-        //}
-
-        //TODO: Remove or use this...
-        //SelectedItem="{Binding AutoSelectItem, Mode=OneWay}"
-        //public ObservableCollection<PackageItemListViewModel> AutoSelectItem
-        //{
-        //    get
-        //    {
-        //        return new ObservableCollection<PackageItemListViewModel>()
-        //        {
-        //            PackageItems.FirstOrDefault(item => item.Id.Equals("Castle.Core", StringComparison.OrdinalIgnoreCase))
-        //        };
-        //    }
-        //}
 
         public InfiniteScrollList()
             : this(new Lazy<JoinableTaskFactory>(() => NuGetUIThreadHelper.JoinableTaskFactory))
@@ -220,27 +197,26 @@ namespace NuGet.PackageManagement.UI
             {
                 await TaskScheduler.Default;
 
+                BeforeItemsLoaded?.Invoke(this, EventArgs.Empty);
+
                 try
                 {
                     await LoadItemsCoreAsync(currentLoader, loadCts.Token);
 
                     await _joinableTaskFactory.Value.SwitchToMainThreadAsync();
-
-                    //TODO: Where can I pass these in?
-                    AutoSelectPackageIDs = new List<string>()
+                                    
+                    if (!string.IsNullOrWhiteSpace(AutoSelectPackageID))
                     {
-                        "Castle.Core"
-                    };
-
-                    if (AutoSelectPackageIDs?.Count > 0)
-                    {
-                        PackageItems.Where(package => AutoSelectPackageIDs.Contains(package.Id))
-                            .ForEach(vm => UpdateSelectedItem(vm));
+                        //TODO: Could this possibly return multiple? If no, remove ForEach.
+                        PackageItems.Where(package => AutoSelectPackageID.Equals(package.Id, StringComparison.OrdinalIgnoreCase))
+                                                    .ForEach(vm => UpdateSelectedItem(vm));
                     }
                     else if (selectedPackageItem != null)
                     {
                         UpdateSelectedItem(selectedPackageItem);
                     }
+
+                    AfterItemsLoaded?.Invoke(this, EventArgs.Empty);
                 }
                 catch (OperationCanceledException) when (!loadCts.IsCancellationRequested)
                 {
