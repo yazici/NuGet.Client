@@ -352,14 +352,22 @@ namespace NuGet.PackageManagement.UI
         private void InitializeFilterList(UserSettings settings)
         {
             //Check if an override for the Tab to initially load was specified, which wins over User Settings.
-            if (Model.TabInitialLoadOverride.HasValue)
-            {
-                _topPanel.SelectFilter(Model.TabInitialLoadOverride.Value);
-            }
-            else if (settings != null)
+            if (!SelectInitialOverrideFilter() && settings != null)
             {
                 _topPanel.SelectFilter(settings.SelectedFilter);
             }
+        }
+
+        public bool SelectInitialOverrideFilter()
+        {
+            if (Model.TabInitialLoadOverride.HasValue)
+            {
+                _topPanel.SelectFilter(Model.TabInitialLoadOverride.Value);
+               
+                return true;
+            }
+
+            return false;
         }
 
         private void PackageManagerLoaded(object sender, RoutedEventArgs e)

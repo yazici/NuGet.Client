@@ -56,8 +56,8 @@ namespace NuGet.PackageManagement.UI
         /// </summary>
         public bool IsSolution { get; }
 
-        public ItemFilter? TabInitialLoadOverride = null;
-        public string AutoSelectPackageID { get; private set; }
+        public ItemFilter? TabInitialLoadOverride { get; set; } = null;
+        public string AutoSelectPackageID { get; set; }
 
         public INuGetUI UIController { get; }
 

@@ -163,26 +163,21 @@ namespace NuGet.PackageManagement.UI
             LoadItems(selectedPackageItem, token);
         }
 
-        internal void UpdateSelectedItem(PackageItemListViewModel selectedItem)
+        internal void UpdateSelectedItem(PackageItemListViewModel selectedItem, bool setSelectedFlag = false)
         {
             if (selectedItem != null)
             {
                 // select the the previously selected item if it still exists.
-                var foundItem = PackageItems
-                    .FirstOrDefault(item => item.Id.Equals(selectedItem.Id, StringComparison.OrdinalIgnoreCase));
-
-                _list.SelectedItem = foundItem;
-
-                if (foundItem != null)
-                {
-                    foundItem.Selected = true;
-                }
+                selectedItem = PackageItems.FirstOrDefault(item => item.Id.Equals(selectedItem.Id, StringComparison.OrdinalIgnoreCase));
             }
-            else
+
+            if (setSelectedFlag && selectedItem != null)
             {
-                // select the first item if none was selected before
-                _list.SelectedItem = selectedItem ?? PackageItems.FirstOrDefault();
+                selectedItem.Selected = true;
             }
+
+            // select the first item if none was selected before
+            _list.SelectedItem = selectedItem ?? PackageItems.FirstOrDefault();
         }
 
         private void LoadItems(PackageItemListViewModel selectedPackageItem, CancellationToken token)
@@ -209,7 +204,7 @@ namespace NuGet.PackageManagement.UI
                     {
                         //TODO: Could this possibly return multiple? If no, remove ForEach.
                         PackageItems.Where(package => AutoSelectPackageID.Equals(package.Id, StringComparison.OrdinalIgnoreCase))
-                                                    .ForEach(vm => UpdateSelectedItem(vm));
+                                                    .ForEach(vm => UpdateSelectedItem(vm, true));
                     }
                     else if (selectedPackageItem != null)
                     {
