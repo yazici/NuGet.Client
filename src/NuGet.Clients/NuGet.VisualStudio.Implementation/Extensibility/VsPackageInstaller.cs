@@ -21,6 +21,7 @@ using NuGet.ProjectManagement;
 using NuGet.Protocol.Core.Types;
 using NuGet.Resolver;
 using NuGet.Versioning;
+using NuGet.VisualStudio.Contracts;
 using NuGet.VisualStudio.Implementation.Resources;
 using Task = System.Threading.Tasks.Task;
 
@@ -329,8 +330,6 @@ namespace NuGet.VisualStudio
                 });
         }
 
-#region NEWAPI
-
         public async Task<bool> InstallPackageAsync(string source, string project, string packageId, string version, bool ignoreDependencies)
         {
             NuGetVersion nugetVersion = null;
@@ -347,8 +346,6 @@ namespace NuGet.VisualStudio
             await InstallPackageAsync(source, project, packageId, version: null, includePrerelease: includePrerelease, ignoreDependencies: ignoreDependencies);
             return true;
         }
-
-        #endregion
 
         private static List<PackageIdentity> GetIdentitiesFromDict(IDictionary<string, string> packageVersions)
         {

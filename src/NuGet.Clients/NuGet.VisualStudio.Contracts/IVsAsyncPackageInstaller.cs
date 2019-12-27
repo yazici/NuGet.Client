@@ -4,7 +4,7 @@
 using System;
 using System.Threading.Tasks;
 
-namespace NuGet.VisualStudio
+namespace NuGet.VisualStudio.Contracts
 {
     /// <summary>
     /// Contains methods to install packages into a project within the current solution.
@@ -68,10 +68,5 @@ namespace NuGet.VisualStudio
             string packageId,
             bool includePrerelease,
             bool ignoreDependencies);
-    }
-
-    public class Stuff
-    {
-        public string Wohoo = "Woohhoo";
     }
 }

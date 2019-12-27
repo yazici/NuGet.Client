@@ -16,6 +16,7 @@ using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Threading;
+using NuGetVSExtension.BrokeredServices;
 using NuGet.Options;
 using NuGet.PackageManagement;
 using NuGet.PackageManagement.UI;
@@ -29,10 +30,7 @@ using ISettings = NuGet.Configuration.ISettings;
 using Resx = NuGet.PackageManagement.UI.Resources;
 using Task = System.Threading.Tasks.Task;
 using UI = NuGet.PackageManagement.UI;
-
 using ProvideBrokeredServiceAttribute = Microsoft.VisualStudio.Shell.ProvideBrokeredServiceAttribute;
-using Microsoft.ServiceHub.Framework.Services;
-using Microsoft.ServiceHub.Framework;
 
 namespace NuGetVSExtension
 {
@@ -68,8 +66,8 @@ namespace NuGetVSExtension
         NuGetConsole.GuidList.GuidPackageManagerConsoleFontAndColorCategoryString,
         "{" + GuidList.guidNuGetPkgString + "}")]
     [Guid(GuidList.guidNuGetPkgString)]
-    [ProvideBrokeredService(BrokerServices.IVsAsyncPackageInstallerServiceName, BrokerServices.IVsAsyncPackageInstallerServiceVersion, Audience = ServiceAudience.Process)]
-    public sealed class NuGetPackage : AsyncPackage, IVsPackageExtensionProvider, IVsPersistSolutionOpts
+    [ProvideBrokeredService(ServicesUtility.IVsAsyncPackageInstallerServiceName, ServicesUtility.IVsAsyncPackageInstallerServiceVersion, Audience = ServiceAudience.Process)]
+    public sealed partial class NuGetPackage : AsyncPackage, IVsPackageExtensionProvider, IVsPersistSolutionOpts
     {
         // It is displayed in the Help - About box of Visual Studio
         public const string ProductVersion = "5.5.0";
@@ -132,7 +130,6 @@ namespace NuGetVSExtension
 
         private IDisposable ProjectUpgradeHandler { get; set; }
 
-        private IDisposable IVsAsyncPackageInstallerDisposable { get; set; }
         /// <summary>
         /// Initialization of the package; this method is called right after the package is sited, so this is the place
         /// where you can put all the initialization code that rely on services provided by VisualStudio.
@@ -172,70 +169,9 @@ namespace NuGetVSExtension
                 },
                 ThreadHelper.JoinableTaskFactory);
 
+            // Set up brokered services
             IBrokeredServiceContainer brokeredServiceContainer = await this.GetServiceAsync<SVsBrokeredServiceContainer, IBrokeredServiceContainer>();
-            //IVsAsyncPackageInstallerDisposable = brokeredServiceContainer.Proffer(BrokerServices.IVsAsyncPackageInstallerServiceDescriptor, factory: GetIVsAsyncPackageInstallerFactory());
-            IVsAsyncPackageInstallerDisposable = brokeredServiceContainer.Proffer(BrokerServices.IVsAsyncPackageInstallerServiceDescriptor, async (mk, options, sb, ct) => await CreateAsync(this, options, sb, ct));
-        }
-        // TODO NK - This immediately executes. A bit of a problem. The initialization would need some creativity.
-        // Maybe just a defferred service.
-
-        public static async ValueTask<IVsAsyncPackageInstaller> CreateAsync(AsyncPackage package, ServiceActivationOptions serviceActivationOptions, IServiceBroker serviceBroker, CancellationToken cancellationToken)
-        {
-            await package.GetServiceAsync<SVsBrokeredServiceContainer, IBrokeredServiceContainer>();
-            return new AsyncInstaller();
-        }
-
-        private BrokeredServiceFactory GetIVsAsyncPackageInstallerFactory()
-        {
-            var service = new AsyncInstaller();
-            return (mk, options, sb, ct) => new ValueTask<object>(service);
-        }
-
-        private class AsyncInstaller : IVsAsyncPackageInstaller
-        {
-            readonly string _name = Guid.NewGuid().ToString();
-
-            // TODO NK - This doesn't really work.
-            [Import]
-            IVsPackageInstaller Installer { get; set; }
-
-            public async Task<bool> InstallLatestPackageAsync(string source, string project, string packageId, bool includePrerelease, bool ignoreDependencies)
-            {
-                var vsPackageInstaller = (VsPackageInstaller)Installer;
-                return await vsPackageInstaller.InstallLatestPackageAsync(source, project, packageId, includePrerelease, ignoreDependencies);
-            }
-
-            public async Task<bool> InstallPackageAsync(string source, string project, string packageId, string version, bool ignoreDependencies)
-            {
-                var vsPackageInstaller = (VsPackageInstaller)Installer;
-                return await vsPackageInstaller.InstallPackageAsync(source, project, packageId, version, ignoreDependencies);
-            }
-
-            public override string ToString()
-            {
-                return _name;
-            }
-        }
-
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing)
-            {
-                IVsAsyncPackageInstallerDisposable?.Dispose();
-            }
-            base.Dispose(disposing);
-        }
-
-        public void Dispose()
-        {
-            try
-            {
-                Dispose(true);
-            }
-            finally
-            {
-                GC.SuppressFinalize(this);
-            }
+            brokeredServiceContainer.Proffer(ServicesUtility.IVsAsyncPackageInstallerServiceDescriptor, factory: ServicesUtility.GetIVsAsyncPackageInstallerFactory());
         }
 
         /// <summary>
@@ -920,13 +856,13 @@ namespace NuGetVSExtension
             {
                 if (ShouldMEFBeInitialized())
                 {
-                  await InitializeMEFAsync();
+                    await InitializeMEFAsync();
                 }
 
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
                 var command = (OleMenuCommand)sender;
-                
+
                 var isConsoleBusy = false;
                 if (ConsoleStatus != null)
                 {

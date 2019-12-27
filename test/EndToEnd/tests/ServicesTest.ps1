@@ -333,6 +333,76 @@ function Test-InstallLatestStablePackageAPI
     Assert-Package $p TestPackage.ListedStable 2.0.6
 }
 
+function Test-InstallLatestPackageAsyncFromBackgroundThreadAPI
+{
+    param($context)
+
+    # Arrange
+    $p = New-ClassLibrary
+
+    # Act
+    [API.Test.InternalAPITestHook]::InstallLatestPackageAsyncApi("TestPackage.ListedStable", $false, $false)
+
+    # Assert
+    Assert-Package $p TestPackage.ListedStable 2.0.6
+}
+
+function Test-InstallLatestPackageAsyncOnUIThreadAPI
+{
+    param($context)
+
+    # Arrange
+    $p = New-ClassLibrary
+
+    # Act
+    [API.Test.InternalAPITestHook]::InstallLatestPackageAsyncApi("TestPackage.ListedStable", $false, $true)
+
+    # Assert
+    Assert-Package $p TestPackage.ListedStable 2.0.6
+}
+
+function Test-InstallPackageAsyncAPI
+{
+    param($context)
+
+    # Arrange
+    $p = New-ClassLibrary
+
+    # Act
+    [API.Test.InternalAPITestHook]::InstallPackageAsyncApi($null, "owin","1.0.0", $false)
+
+    # Assert
+    Assert-Package $p owin 1.0.0
+}
+
+function Test-InstallPackageAsyncAPIEmptyVersion
+{
+    param($context)
+
+    # Arrange
+    $p = New-ClassLibrary
+
+    # Act
+    [API.Test.InternalAPITestHook]::InstallPackageAsyncApi($null, "owin","", $false)
+
+    # Assert
+    Assert-Package $p owin 1.0.0
+}
+
+function Test-InstallPackageAsyncAPIAllSource
+{
+    param($context)
+
+    # Arrange
+    $p = New-ClassLibrary
+
+    # Act
+    [API.Test.InternalAPITestHook]::InstallPackageAsyncApi("All", "owin", "1.0.0", $false)
+
+    # Assert
+    Assert-Package $p owin 1.0.0
+}
+
 function Test-InstallLatestStablePackageAPIForOnlyPrerelease
 {
     param($context)

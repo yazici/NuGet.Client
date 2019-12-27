@@ -39,7 +39,8 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="BrokerServices.cs" />
+    <Compile Include="BrokeredServices\AsyncVSPackageInstallerProxy.cs" />
+    <Compile Include="BrokeredServices\ServicesUtility.cs" />
     <Compile Include="Commands\ShowErrorsCommand.cs" />
     <Compile Include="DataStreamFromComStream.cs" />
     <Compile Include="FontAndColorsRegistrationAttribute.cs" />
