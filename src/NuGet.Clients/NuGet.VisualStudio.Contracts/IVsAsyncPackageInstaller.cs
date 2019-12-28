@@ -27,16 +27,11 @@ namespace NuGet.VisualStudio.Contracts
         /// The version of the package to install. <c>null</c> can be provided to
         /// install the latest version of the package.
         /// </param>
-        /// <param name="ignoreDependencies">
-        /// A boolean indicating whether or not to ignore the package's dependencies
-        /// during installation.
-        /// </param>
         Task<bool> InstallPackageAsync(
             string source,
             string project,
             string packageId,
-            string version,
-            bool ignoreDependencies);
+            string version);
 
         /// <summary>
         /// Installs the latest version of a single package from the specified package source.
@@ -54,10 +49,6 @@ namespace NuGet.VisualStudio.Contracts
         /// Whether or not to consider prerelease versions when finding the latest version
         /// to install.
         /// </param>
-        /// <param name="ignoreDependencies">
-        /// A boolean indicating whether or not to ignore the package's dependencies
-        /// during installation.
-        /// </param>
         /// <exception cref="InvalidOperationException">
         /// Thrown when <see paramref="includePrerelease"/> is <c>false</c> and no stable version
         /// of the package exists.
@@ -66,7 +57,6 @@ namespace NuGet.VisualStudio.Contracts
             string source,
             string project,
             string packageId,
-            bool includePrerelease,
-            bool ignoreDependencies);
+            bool includePrerelease);
     }
 }

@@ -51,7 +51,7 @@ namespace API.Test
                     var service = await GetIVsPackageInstallerClientAsync();
                     foreach (var projectName in projectUniqueNames)
                     {
-                        await service.InstallLatestPackageAsync(null, projectName, id, prerelease, false);
+                        await service.InstallLatestPackageAsync(null, projectName, id, prerelease);
                         return;
                     }
                 });
@@ -81,7 +81,7 @@ namespace API.Test
                     var service = await GetIVsPackageInstallerClientAsync();
                     foreach (var projectName in projectUniqueNames)
                     {
-                        await service.InstallPackageAsync(source, projectName, id, version, false);
+                        await service.InstallPackageAsync(source, projectName, id, version);
                         return;
                     }
                 });

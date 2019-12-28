@@ -330,20 +330,20 @@ namespace NuGet.VisualStudio
                 });
         }
 
-        public async Task<bool> InstallPackageAsync(string source, string project, string packageId, string version, bool ignoreDependencies)
+        public async Task<bool> InstallPackageAsync(string source, string project, string packageId, string version)
         {
             NuGetVersion nugetVersion = null;
             if (version != null)
             {
                 NuGetVersion.TryParse(version, out nugetVersion);
             }
-            await InstallPackageAsync(source, project, packageId, nugetVersion, includePrerelease: true, ignoreDependencies: ignoreDependencies);
+            await InstallPackageAsync(source, project, packageId, nugetVersion, includePrerelease: true, ignoreDependencies: false);
             return true;
         }
 
-        public async Task<bool> InstallLatestPackageAsync(string source, string project, string packageId, bool includePrerelease, bool ignoreDependencies)
+        public async Task<bool> InstallLatestPackageAsync(string source, string project, string packageId, bool includePrerelease)
         {
-            await InstallPackageAsync(source, project, packageId, version: null, includePrerelease: includePrerelease, ignoreDependencies: ignoreDependencies);
+            await InstallPackageAsync(source, project, packageId, version: null, includePrerelease: includePrerelease, ignoreDependencies: false);
             return true;
         }
 

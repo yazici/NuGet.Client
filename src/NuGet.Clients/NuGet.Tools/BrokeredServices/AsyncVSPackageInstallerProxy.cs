@@ -30,7 +30,7 @@ namespace NuGetVSExtension.BrokeredServices
             _initialized = true;
         }
 
-        public async Task<bool> InstallLatestPackageAsync(string source, string project, string packageId, bool includePrerelease, bool ignoreDependencies)
+        public async Task<bool> InstallLatestPackageAsync(string source, string project, string packageId, bool includePrerelease)
         {
             if (!_initialized)
             {
@@ -38,10 +38,10 @@ namespace NuGetVSExtension.BrokeredServices
             }
 
             var vsPackageInstaller = (IVsAsyncPackageInstaller)Installer.Value;
-            return await vsPackageInstaller.InstallLatestPackageAsync(source, project, packageId, includePrerelease, ignoreDependencies);
+            return await vsPackageInstaller.InstallLatestPackageAsync(source, project, packageId, includePrerelease);
         }
 
-        public async Task<bool> InstallPackageAsync(string source, string project, string packageId, string version, bool ignoreDependencies)
+        public async Task<bool> InstallPackageAsync(string source, string project, string packageId, string version)
         {
             if (!_initialized)
             {
@@ -49,7 +49,7 @@ namespace NuGetVSExtension.BrokeredServices
             }
 
             var vsPackageInstaller = (IVsAsyncPackageInstaller)Installer.Value;
-            return await vsPackageInstaller.InstallPackageAsync(source, project, packageId, version, ignoreDependencies);
+            return await vsPackageInstaller.InstallPackageAsync(source, project, packageId, version);
         }
     }
 }
