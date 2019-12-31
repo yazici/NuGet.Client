@@ -262,13 +262,13 @@ namespace NuGet.Commands
             log.LogInformation(Strings.Log_Committing);
             await result.CommitAsync(log, token);
 
-            if (result.Success)
+            if (summaryRequest.Request.ProjectStyle == ProjectStyle.DotnetToolReference)
             {
                 log.LogMinimal(string.Format(
                     CultureInfo.CurrentCulture,
-                    summaryRequest.Request.ProjectStyle == ProjectStyle.DotnetToolReference ?
+                    result.Success ?
                     Strings.Log_RestoreCompleteDotnetTool :
-                    Strings.Log_RestoreComplete,
+                    Strings.Log_RestoreFailedDotnetTool,
                     DatetimeUtility.ToReadableTimeFormat(result.ElapsedTime),
                     summaryRequest.InputPath));
             }
@@ -276,10 +276,9 @@ namespace NuGet.Commands
             {
                 log.LogMinimal(string.Format(
                     CultureInfo.CurrentCulture,
-                    summaryRequest.Request.ProjectStyle == ProjectStyle.DotnetToolReference ?
-                    Strings.Log_RestoreFailedDotnetTool :
+                    result.Success ?
+                    Strings.Log_RestoreComplete :
                     Strings.Log_RestoreFailed,
-                    DatetimeUtility.ToReadableTimeFormat(result.ElapsedTime),
                     summaryRequest.InputPath));
             }
 
