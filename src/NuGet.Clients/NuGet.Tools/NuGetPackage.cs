@@ -78,7 +78,8 @@ namespace NuGetVSExtension
         private DTEEvents _dteEvents;
         private OleMenuCommand _managePackageDialogCommand;
         private OleMenuCommand _managePackageForSolutionDialogCommand;
-        private OleMenuCommand _updateAllDialogCommand;
+        private OleMenuCommand _updateTabPackageDialogCommand;
+        private OleMenuCommand _updatePackageDialogCommand;
         private OleMenuCommandService _mcs;
 
         private uint _solutionExistsAndFullyLoadedContextCookie;
@@ -273,13 +274,21 @@ namespace NuGetVSExtension
                 _managePackageDialogCommand.ParametersDescription = "$";
                 _mcs.AddCommand(_managePackageDialogCommand);
 
-                // menu command for opening Update... dialog for a Package node
-                var updatePackageCommandID = new CommandID(GuidList.guidNuGetDialogCmdSet, PkgCmdIDList.cmdIdUpdatePackage);
-                _updateAllDialogCommand = new OleMenuCommand(ShowUpdateLibraryPackageDialog, null, BeforeQueryStatusForAddPackageDialog, updatePackageCommandID);
+                // menu command for opening Update... dialog for a Packages node.
+                var updatePackagesDialogCommandID = new CommandID(GuidList.guidNuGetDialogCmdSet, PkgCmdIDList.cmdIdUpdatePackages);
+                _updateTabPackageDialogCommand = new OleMenuCommand(ShowUpdatePackageDialog, null, BeforeQueryStatusForAddPackageDialog, updatePackagesDialogCommandID);
                 // '$' - This indicates that the input line other than the argument forms a single argument string with no autocompletion
                 //       Autocompletion for filename(s) is supported for option 'p' or 'd' which is not applicable for this command
-                _updateAllDialogCommand.ParametersDescription = "$";
-                _mcs.AddCommand(_updateAllDialogCommand);
+                _updateTabPackageDialogCommand.ParametersDescription = "$";
+                _mcs.AddCommand(_updateTabPackageDialogCommand);
+
+                // menu command for opening Update... dialog for a Packages->(Package Name) node.
+                var updatePackageDialogCommandID = new CommandID(GuidList.guidNuGetDialogCmdSet, PkgCmdIDList.cmdIdUpdatePackage);
+                _updatePackageDialogCommand = new OleMenuCommand(ShowUpdatePackageDialogWithSelection, null, BeforeQueryStatusForAddPackageDialog, updatePackageDialogCommandID);
+                // '$' - This indicates that the input line other than the argument forms a single argument string with no autocompletion
+                //       Autocompletion for filename(s) is supported for option 'p' or 'd' which is not applicable for this command
+                _updatePackageDialogCommand.ParametersDescription = "$";
+                _mcs.AddCommand(_updatePackageDialogCommand);
 
                 // menu command for opening "Manage NuGet packages for solution" dialog
                 var managePackageForSolutionDialogCommandID = new CommandID(GuidList.guidNuGetDialogCmdSet, PkgCmdIDList.cmdidAddPackageDialogForSolution);
@@ -591,7 +600,7 @@ namespace NuGetVSExtension
         }
 
 
-        private void ShowUpdateLibraryPackageDialog(object sender, EventArgs e)
+        private void ShowUpdatePackageDialogWithSelection(object sender, EventArgs e)
         {
             NuGetUIThreadHelper.JoinableTaskFactory.Run(async delegate
             {
@@ -600,6 +609,17 @@ namespace NuGetVSExtension
 
                 _initialTab = ItemFilter.UpdatesAvailable;
                 _autoSelectPackageID = name;
+                await ShowManageLibraryPackageDialog(e);
+                _initialTab = null;
+                _autoSelectPackageID = null;
+            });
+        }
+
+        private void ShowUpdatePackageDialog(object sender, EventArgs e)
+        {
+            NuGetUIThreadHelper.JoinableTaskFactory.Run(async delegate
+            {
+                _initialTab = ItemFilter.UpdatesAvailable;
                 await ShowManageLibraryPackageDialog(e);
                 _initialTab = null;
                 _autoSelectPackageID = null;
