@@ -123,9 +123,6 @@ namespace NuGetVSExtension
         [Import]
         private Lazy<INuGetUIFactory> UIFactory { get; set; }
 
-        //[Import]
-        //private Lazy<IVsPackageInstaller> IVSPackageInstaller { get; set; }
-
         private IDisposable ProjectRetargetingHandler { get; set; }
 
         private IDisposable ProjectUpgradeHandler { get; set; }
