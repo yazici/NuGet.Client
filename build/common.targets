@@ -15,7 +15,12 @@
     <DefineConstants>$(DefineConstants);NETCORE5_0</DefineConstants>
   </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard2.1' OR '$(TargetFramework)' == '$(NETFXTargetFramework)' OR '$(TargetFramework)' == 'netcoreapp5.0'">
+  <PropertyGroup>
+    <SigningNotSupported Condition=" '$(TargetFramework)' == 'netstandard2.0' OR '$(TargetFramework)' == 'netcoreapp2.1'">true</SigningNotSupported>
+    <SigningNotSupported Condition=" '$(SigningNotSupported)' != 'true'">false</SigningNotSupported>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(SigningNotSupported)' != 'true' ">
     <DefineConstants>$(DefineConstants);IS_SIGNING_SUPPORTED</DefineConstants>
   </PropertyGroup>
 
