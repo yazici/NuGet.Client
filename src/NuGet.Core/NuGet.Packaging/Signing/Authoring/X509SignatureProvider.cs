@@ -152,7 +152,7 @@ namespace NuGet.Packaging.Signing
 
         private static PrimarySignature CreateRepositoryCountersignature(CmsSigner cmsSigner, PrimarySignature primarySignature, CngKey privateKey)
         {
-            using (var primarySignatureNativeCms = ICamFactory.CreateICms(primarySignature.GetBytes()))
+            using (var primarySignatureNativeCms = CmsFactory.CreateICms(primarySignature.GetBytes()))
             {
                 primarySignatureNativeCms.AddCountersignature(cmsSigner, privateKey);
 

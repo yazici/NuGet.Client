@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace NuGet.Packaging.Signing
 {
-    public class ICamFactory
+    public class CmsFactory
     {
         internal static ICms CreateICms(byte[] input)
         {
