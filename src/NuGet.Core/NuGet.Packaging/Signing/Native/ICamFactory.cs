@@ -12,12 +12,12 @@ namespace NuGet.Packaging.Signing
         internal static ICms CreateICms(byte[] input)
         {
             ICms cms = null;
-#if IS_DESKTOP
+#if IS_SIGNING_SUPPORTED && IS_DESKTOP
             NativeCms nativeCms = NativeCms.Decode(input);
             cms = new NativeCmsWrapper(nativeCms);
 #endif
 
-#if NETSTANDARD2_1
+#if IS_SIGNING_SUPPORTED && IS_CORECLR
             SignedCms signedCms = new SignedCms();
             signedCms.Decode(input);
             cms = new SignedCmsWrapper(signedCms);

@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-#if IS_SIGNING_SUPPORTED && NETSTANDARD2_1
+#if IS_SIGNING_SUPPORTED && IS_CORECLR
 using System.Net.Http;
 using System.Net.Http.Headers;
 #endif
@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace NuGet.Packaging.Signing
 {
-#if IS_SIGNING_SUPPORTED && NETSTANDARD2_1
+#if IS_SIGNING_SUPPORTED && IS_CORECLR
     public class Rfc3161TimestampRequestNetstandard21Wrapper : IRfc3161TimestampRequest
     {
         private System.Security.Cryptography.Pkcs.Rfc3161TimestampRequest _rfc3161TimestampRequest;

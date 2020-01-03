@@ -16,7 +16,7 @@ namespace NuGet.Packaging.Signing
             byte[] encoded)
         {
             IRfc3161TimestampToken iRfc3161TimestampToken = null;
-#if IS_DESKTOP
+#if IS_SIGNING_SUPPORTED && IS_DESKTOP
             iRfc3161TimestampToken = new Rfc3161TimestampTokenNet472Wrapper(
                                             tstInfo,
                                             signerCertificate,
@@ -24,7 +24,7 @@ namespace NuGet.Packaging.Signing
                                             encoded);
 #endif
 
-#if NETSTANDARD2_1
+#if IS_SIGNING_SUPPORTED && IS_CORECLR
             iRfc3161TimestampToken = new Rfc3161TimestampTokenNetstandard21Wrapper(
                                             tstInfo,
                                             signerCertificate,

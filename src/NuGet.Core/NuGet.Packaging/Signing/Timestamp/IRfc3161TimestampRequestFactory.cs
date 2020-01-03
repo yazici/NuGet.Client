@@ -19,7 +19,7 @@ namespace NuGet.Packaging.Signing
             X509ExtensionCollection extensions)
         {
             IRfc3161TimestampRequest iRfc3161TimestampRequest = null;
-#if IS_DESKTOP
+#if IS_SIGNING_SUPPORTED && IS_DESKTOP
             iRfc3161TimestampRequest = new Rfc3161TimestampRequestNet472Wrapper(
                 messageHash,
                 hashAlgorithm,
@@ -29,7 +29,7 @@ namespace NuGet.Packaging.Signing
                 extensions);
 #endif
 
-#if NETSTANDARD2_1
+#if IS_SIGNING_SUPPORTED && IS_CORECLR
             iRfc3161TimestampRequest = new Rfc3161TimestampRequestNetstandard21Wrapper(
                 messageHash,
                 hashAlgorithm,

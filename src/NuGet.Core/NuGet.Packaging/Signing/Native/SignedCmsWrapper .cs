@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace NuGet.Packaging.Signing
 {
-#if IS_SIGNING_SUPPORTED && NETSTANDARD2_1
+#if IS_SIGNING_SUPPORTED && IS_CORECLR
     internal class SignedCmsWrapper : ICms
     {
         private SignedCms _signedCms;

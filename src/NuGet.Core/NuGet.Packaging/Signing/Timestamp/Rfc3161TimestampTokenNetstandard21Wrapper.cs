@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace NuGet.Packaging.Signing
 {
-#if IS_SIGNING_SUPPORTED && NETSTANDARD2_1
+#if IS_SIGNING_SUPPORTED && IS_CORECLR
     public class Rfc3161TimestampTokenNetstandard21Wrapper : IRfc3161TimestampToken
     {
 
