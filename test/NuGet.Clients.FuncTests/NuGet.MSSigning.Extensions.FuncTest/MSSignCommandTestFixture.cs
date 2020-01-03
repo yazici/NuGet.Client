@@ -104,6 +104,8 @@ namespace NuGet.MSSigning.Extensions.FuncTest.Commands
             var intermediateCa = rootCa.CreateIntermediateCertificateAuthority();
             var rootCertificate = new X509Certificate2(rootCa.Certificate.GetEncoded());
 
+            // According to https://github.com/dotnet/runtime/blob/master/docs/design/features/cross-platform-cryptography.md#x509store  
+            // use different approaches for Windows, Mac and Linux.
             _trustedTimestampRoot = TrustedTestCert.Create(
                 rootCertificate,
                 StoreName.Root,

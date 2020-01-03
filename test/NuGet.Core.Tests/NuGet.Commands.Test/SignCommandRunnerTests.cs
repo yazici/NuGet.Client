@@ -108,6 +108,8 @@ namespace NuGet.Commands.Test
             using (var test = await Test.CreateAsync(_fixture.GetDefaultCertificate()))
             {
                 test.Args.CertificateSubjectName = "Root";
+                // According to https://github.com/dotnet/runtime/blob/master/docs/design/features/cross-platform-cryptography.md#x509store  
+                // use different approaches for Windows, Mac and Linux.
                 if (RuntimeEnvironmentHelper.IsWindows || RuntimeEnvironmentHelper.IsMacOSX)
                 {
                     test.Args.CertificateStoreLocation = StoreLocation.LocalMachine;
