@@ -33,7 +33,8 @@ using Microsoft.VisualStudio.Shell;
 [assembly: ProvideCodeBase(CodeBase = @"$PackageFolder$\NuGet.Tools.dll")]
 [assembly: ProvideCodeBase(CodeBase = @"$PackageFolder$\NuGet.Versioning.dll")]
 [assembly: ProvideCodeBase(CodeBase = @"$PackageFolder$\NuGet.VisualStudio.dll")]
-[assembly: ProvideCodeBase(CodeBase = @"$PackageFolder$\NuGet.VisualStudio.Contracts.dll")]
+[assembly: ProvideBindingRedirection(CodeBase = @"$PackageFolder$\NuGet.VisualStudio.Contracts.dll",
+    PublicKeyToken = "b03f5f7f11d50a3a", OldVersionLowerBound = "0.0.0.0", OldVersionUpperBound = "5.0.0.0")]
 [assembly: ProvideCodeBase(CodeBase = @"$PackageFolder$\NuGet.VisualStudio.Common.dll")]
 [assembly: ProvideCodeBase(CodeBase = @"$PackageFolder$\NuGet.VisualStudio.Implementation.dll")]
 [assembly: ProvideCodeBase(CodeBase = @"$PackageFolder$\NuGet.VisualStudio.Interop.dll")]
