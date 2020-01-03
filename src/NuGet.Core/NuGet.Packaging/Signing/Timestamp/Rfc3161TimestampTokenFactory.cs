@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace NuGet.Packaging.Signing
 {
-    public class IRfc3161TimestampTokenFactory
+    public class Rfc3161TimestampTokenFactory
     {
         public static IRfc3161TimestampToken CreateIRfc3161TimestampToken(
             IRfc3161TimestampTokenInfo tstInfo,

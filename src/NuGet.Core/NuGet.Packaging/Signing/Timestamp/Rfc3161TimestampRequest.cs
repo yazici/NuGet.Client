@@ -254,7 +254,7 @@ namespace NuGet.Packaging.Signing
                         }
                     }
 
-                    return IRfc3161TimestampTokenFactory.CreateIRfc3161TimestampToken(
+                    return Rfc3161TimestampTokenFactory.CreateIRfc3161TimestampToken(
                         tstInfo,
                         signerCert,
                         additionalCertsColl,
