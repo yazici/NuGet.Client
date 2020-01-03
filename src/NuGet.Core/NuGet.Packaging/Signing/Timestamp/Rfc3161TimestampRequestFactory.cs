@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace NuGet.Packaging.Signing
 {
-    public class IRfc3161TimestampRequestFactory
+    public class Rfc3161TimestampRequestFactory
     {
         public static IRfc3161TimestampRequest CreateIRfc3161TimestampRequest(
             byte[] messageHash,

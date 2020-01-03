@@ -87,7 +87,7 @@ namespace NuGet.Packaging.Signing
 
             // Allows us to track the request.
             var nonce = GenerateNonce();
-            var rfc3161TimestampRequest = IRfc3161TimestampRequestFactory.CreateIRfc3161TimestampRequest(
+            var rfc3161TimestampRequest = Rfc3161TimestampRequestFactory.CreateIRfc3161TimestampRequest(
                 request.HashedMessage,
                 request.HashAlgorithm.ConvertToSystemSecurityHashAlgorithmName(),
                 requestedPolicyId: null,
