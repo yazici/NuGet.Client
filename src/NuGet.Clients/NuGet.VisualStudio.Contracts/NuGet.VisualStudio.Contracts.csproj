@@ -10,8 +10,6 @@
     <IncludeInVsix>true</IncludeInVsix>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <RootNamespace>NuGet.VisualStudio.Contracts</RootNamespace>
-    <AssemblyVersion>5.0.0.0</AssemblyVersion>
-    <FileVersion>5.0.0.0</FileVersion>
   </PropertyGroup>
 
   <Import Project="$(BuildCommonDirectory)common.targets" />
