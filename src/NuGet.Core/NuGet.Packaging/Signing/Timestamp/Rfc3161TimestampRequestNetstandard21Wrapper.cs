@@ -1,13 +1,10 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
 #if IS_SIGNING_SUPPORTED && IS_CORECLR
 using System.Net.Http;
 using System.Net.Http.Headers;
 #endif
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace NuGet.Packaging.Signing
