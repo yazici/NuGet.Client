@@ -359,7 +359,13 @@ namespace Dotnet.Integration.Test
 
         public void Dispose()
         {
+            try { 
             RunDotnet(Path.GetDirectoryName(TestDotnetCli), "build-server shutdown");
+            }
+            catch(Exception e)
+            {
+                throw new Exception(e.Message + Environment.NewLine + $"TestDotnetCLI{TestDotnetCli}");
+            }
             KillDotnetExe(TestDotnetCli);
             _cliDirectory.Dispose();
             _templateDirectory.Dispose();
