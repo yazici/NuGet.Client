@@ -8,24 +8,24 @@ using System.Security.Cryptography.Pkcs;
 namespace NuGet.Packaging.Signing
 {
 #if IS_SIGNING_SUPPORTED && IS_DESKTOP
-    internal class NativeCmsWrapper : ICms
+    internal sealed class NativeCmsWrapper : ICms
     {
-        private NativeCms _nativeCms;
+        private readonly NativeCms _nativeCms;
 
         public NativeCmsWrapper(NativeCms nativeCms)
         {
             _nativeCms = nativeCms;
         }
+
         public byte[] GetPrimarySignatureSignatureValue()
         {
             return _nativeCms.GetPrimarySignatureSignatureValue();
         }
+
         public byte[] GetRepositoryCountersignatureSignatureValue()
         {
             return _nativeCms.GetRepositoryCountersignatureSignatureValue();
         }
-
-        //static NativeCms Decode(byte[] input);
 
         public void AddCertificates(IEnumerable<byte[]> encodedCertificates)
         {

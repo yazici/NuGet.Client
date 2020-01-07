@@ -18,10 +18,9 @@ namespace NuGet.Packaging.Signing
 #if IS_SIGNING_SUPPORTED && IS_CORECLR
             SignedCms signedCms = new SignedCms();
             signedCms.Decode(input);
-            cms = new SignedCmsWrapper(signedCms);
+            cms = new ManagedCmsWrapper(signedCms);
 #endif
             return cms;
         }
-
     }
 }

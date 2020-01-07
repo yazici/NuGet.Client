@@ -11,6 +11,7 @@ namespace NuGet.Packaging.Signing
     internal interface ICms : IDisposable
     {
         byte[] GetPrimarySignatureSignatureValue();
+
         byte[] GetRepositoryCountersignatureSignatureValue();
 
         void AddCertificates(IEnumerable<byte[]> encodedCertificates);
@@ -22,6 +23,5 @@ namespace NuGet.Packaging.Signing
         void AddTimestamp(SignedCms timestamp);
 
         byte[] Encode();
-
     }
 }

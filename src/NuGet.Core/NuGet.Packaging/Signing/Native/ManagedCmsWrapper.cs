@@ -9,11 +9,11 @@ using System.Security.Cryptography.X509Certificates;
 namespace NuGet.Packaging.Signing
 {
 #if IS_SIGNING_SUPPORTED && IS_CORECLR
-    internal class SignedCmsWrapper : ICms
+    internal sealed class ManagedCmsWrapper : ICms
     {
-        private SignedCms _signedCms;
+        private readonly SignedCms _signedCms;
 
-        public SignedCmsWrapper(SignedCms signedCms)
+        public ManagedCmsWrapper(SignedCms signedCms)
         {
             _signedCms = signedCms;
         }
@@ -22,6 +22,7 @@ namespace NuGet.Packaging.Signing
         {
             return _signedCms.SignerInfos[0].GetSignature();
         }
+
         public byte[] GetRepositoryCountersignatureSignatureValue()
         {
             return _signedCms.SignerInfos[0].CounterSignerInfos[0].GetSignature();
@@ -33,7 +34,6 @@ namespace NuGet.Packaging.Signing
             {
                 _signedCms.AddCertificate(new X509Certificate2(encodedCertificate));
             }
-            
         }
 
         public void AddCountersignature(CmsSigner cmsSigner, CngKey privateKey)

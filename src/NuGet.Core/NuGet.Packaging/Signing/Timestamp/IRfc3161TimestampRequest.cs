@@ -9,6 +9,5 @@ namespace NuGet.Packaging.Signing
     internal interface IRfc3161TimestampRequest
     {
         Task<IRfc3161TimestampToken> SubmitRequestAsync(Uri timestampUri, TimeSpan timeout);
-
     }
 }
