@@ -26,7 +26,7 @@ Or maybe VS 2015. Or is it maybe a product tracked in our repo like NuGetizer or
 1. If this is a product related issue, which functionality does it tackle? 
 Restore,List, list package? Pack? Symbols? 
 
-1. Any more specific sub areas. (TODO NK - do we need a min threshold about what needs a specific area.)
+1. Any more specific sub areas. These labels are very subjective, so we'll keep it simple and discuss internally when we need to add new ones. 
 
 1. Does this issue fall under a specific tenet? 
 Performance, Reliability, Security? 
@@ -45,115 +45,120 @@ The package management style is relevant for restore/pack (install/uninstall due
 
 ### Issue type
 
-Type:Bug
-Type:DCR
-Type:DataAnalysis
-Type:Docs
-Type:Feature
-Type:Spec
-Area:Test => Type:Test
-Test Failure => Type:TestFailure (vendor failures, should we label them as such?)
-Type:Engineering (new label, infrastructure, or simple refactorings etc.)
+- Type:Bug
+- Type:DCR
+- Type:DataAnalysis
+- Type:Docs
+- Area:Contributing => Type:DeveloperDocs
+- Type:Feature
+- Type:Spec
+- Area:Test => Type:Test
+- Test Failure => Type:TestFailure (vendor failures, should we label them as such?) (consider unifying these.)
+- Type:Engineering (new label, infrastructure, or simple refactorings etc.)
+- Area:Release Process => Type:Docs (or developer docs, either way, no need for a special label)
 
 ### Product
 
-Area:CommandLine => Product:NuGetCommandline
-Area:Dotnet CLI => Product:DotnetCLI
-Area:MSBuildSDKResolver Product:MSBuildSDKResolver
-Area:NuGetizer => Product:NuGetizer
-Area:VS.PMConsole => Product => VS.PMConsole
-Area:VS.Client => Product:VS.Client
-Visual Studio 2015 => Product:VS2015
-Area:Build Task => Product:BuildTasks
+- Area:CommandLine => Product:NuGetCommandline
+- Area:Dotnet CLI => Product:DotnetCLI
+- Area:MSBuildSDKResolver Product:MSBuildSDKResolver
+- Area:NuGetizer => Product:NuGetizer
+- Area:VS.PMConsole => Product => VS.PMConsole
+- Area:VS.Client => Product:VS.Client
+- Visual Studio 2015 => Product:VS2015
+- Area:Build Task => Product:BuildTasks
 
 ### Functionality
 
-Area:Install => Functionality:Install
-Area:List(Search) => Functionality:List(Search)
-Area:ListPackageCommand => Functionality:ListPackage
-Area:Locals => Functionality:Locals
-Area:PCtoPRMigrator => Functionality:PCtoPRMigrator
-Area:Pack => Functionality:Pack
-Area:PackageSigning => Functionality:Signing
-Area:Push => Functionality:Push
-Area:Restore => Functionality:Restore
-Area:Updates => Functionality:Update
-NuGet Visual Studio UI => Functionality:NuGetVisualStudioUI
-Symbols => Functionality:Symbols
-Search => Functionality:Search
+- Area:Install => Functionality:Install
+- Area:List(Search) => Functionality:List(Search)
+- Area:ListPackageCommand => Functionality:ListPackage
+- Area:Locals => Functionality:Locals
+- Area:PCtoPRMigrator => Functionality:PCtoPRMigrator
+- Area:Pack => Functionality:Pack
+- Area:PackageSigning => Functionality:Signing
+- Area:Push => Functionality:Push
+- Area:Restore => Functionality:Restore
+- Area:Updates => Functionality:Update
+- NuGet Visual Studio UI => Functionality:NuGetVisualStudioUI
+- Symbols => Functionality:Symbols
+- Search => Functionality:Search
 
 ### Area - sub area, sub part of a functionality/product
 
-Area:Auth => Area:Authentication
-Area:ContentFiles => Area:ContentFiles
-Area:Error Handling => Area:ErrorHandling
-Area:HttpCaching => Area:HttpCaching
-Area:HttpCommunication => Area:HttpCommunication
-Area:Logging => Area:Logging
-Area:NewFrameworks => Area:NewFrameworks
-Area:PackageDefinition => Area:PackageDefinition
-Area:RepeatableBuild => Area:RepeatableBuild
-Area:RestoreNoOp => Area:RestoreNoOp
-Area:ToolRestore => Area:ToolRestore
-Area:Plugin => Area:Plugin
-Area:Settings => Area:Config
-Area:SDK => Area:SDK (TODO NK - Issue here is that there are lots of issues that will be affected, Might require some work to actually call the GitHub APIs)
-NuGet API => Area:SDK
+- Area:Auth => Area:Authentication
+- Area:ContentFiles => Area:ContentFiles
+- Area:Error Handling => Area:ErrorHandling
+- Area:HttpCaching => Area:HttpCaching
+- Area:HttpCommunication => Area:HttpCommunication
+- Area:Logging => Area:Logging
+- Area:NewFrameworks => Area:NewFrameworks
+- Area:PackageDefinition => Area:PackageDefinition
+- Area:RepeatableBuild => Area:RepeatableBuild
+- Area:RestoreNoOp => Area:RestoreNoOp
+- Area:ToolRestore => Area:ToolRestore
+- Area:Plugin => Area:Plugin
+- Area:Settings => Area:Config
+- Area:SDK => Area:SDK (Challenge here is that there are lots of issues that will be affected, Might require some work to actually call the GitHub APIs)
+- NuGet API => Area:SDK
+- Area:Engineering Improvements => Area:Engineering improvements (refactorings, process changes, what makes the NuGet dev better)
+- Area:Infrastructure => new labels, infrastructure, tests failing, machines broken, RPS failing
 
 ### Tenet
 
-Area:Accessibility => Tenet:Accessibility
-Area:Acquisition => Tenet:Acquisition
-Security => Tenet:Security
-Area:Compliance => Tenet:Compliance
-Area:Perf => Tenet:Performance
-Area:Reliability => Tenet:Reliability
+- Area:Accessibility => Tenet:Accessibility
+- Area:Acquisition => Tenet:Acquisition
+- Security => Tenet:Security
+- Area:Compliance => Tenet:Compliance
+- Area:Perf => Tenet:Performance
+- Area:Reliability => Tenet:Reliability
+- Needs loc => Tenet:WorldReady
 
 ### Platform 
 
-Area:Docker => Platform:Docker
-Area:Mono => Platform:Mono
-XPLAT => Platform:XPLAT
+- Area:Docker => Platform:Docker
+- Area:Mono => Platform:Mono
+- XPLAT => Platform:XPLAT
 
 ### PackageManagement style (Applies to install, restore, pack )
 
-Style:PackageReference => Style:PackageReference
-Style:Packages.Config => Style:Packages.Config
-Style:Project.json => Style:Project.json
+- Style:PackageReference => Style:PackageReference
+- Style:Packages.Config => Style:Packages.Config
+- Style:Project.json => Style:Project.json
 
 ### Partners
 
-Partner:VS-Other
-Partner:1ES
-Partner:AzureDevOps
-Partner:C++
-Partner:CLI-SDK
-Partner:MSBuild
-Partner:Project-System
-Partner:Roslyn
-Partner:Runtime
-Partner:VS4Mac
-Partner:VSPlatform
-Partner:Xamarin
+- Partner:VS-Other
+- Partner:1ES
+- Partner:AzureDevOps
+- Partner:C++
+- Partner:CLI-SDK
+- Partner:MSBuild
+- Partner:Project-System
+- Partner:Roslyn
+- Partner:Runtime
+- Partner:VS4Mac
+- Partner:VSPlatform
+- Partner:Xamarin
 
 ### Resolution labels
 
-Resolution:BlockedByExternal
-Resolution:ByDesign
-Resolution:Duplicate
-Resolution:External
-Resolution:Invalid
-Resolution:NotABug
-Resolution:NotEnoughInfo
-Resolution:NotRepro
-Resolution:Question
-Resolution:WontFix
+- Resolution:BlockedByExternal
+- Resolution:ByDesign
+- Resolution:Duplicate
+- Resolution:External
+- Resolution:Invalid
+- Resolution:NotABug
+- Resolution:NotEnoughInfo
+- Resolution:NotRepro
+- Resolution:Question
+- Resolution:WontFix
 
 ### Triaging
 
-Priority:0
-Priority:1
-Priority:2
+- Priority:0
+- Priority:1
+- Priority:2
 
 ### Sprint tracking
 
@@ -163,36 +168,30 @@ Sprint165
 
 ### Release Tracking 
 
-Preview1
-Preview2
-Preview3
-Preview4
-Preview5
-RTM
+- Preview1
+- Preview2
+- Preview3
+- Preview4
+- Preview5
+- RTM
 
 ### CLA related labels.
 
-cla-already-signed
-cla-not-required
-cla-required
-cla-signed
+- cla-already-signed
+- cla-not-required
+- cla-required
+- cla-signed
 
-### TODO
 
-Area:Contributing => TODO, docs inside the repo :) 
-Area:Engineering Improvements => TODO, we need 2 categories, Engineering Improvements, that include refactoring, process changes anything that makes the NUGet dev better, and Infrastructure, like tests failing, RPS failing etc.
-Area:Release Process => TODO
+### Status labels
 
-### TODO - Random, need  to unify them somehow :)
-
-Discussions
-Epic
-Investigate
-Needs loc
-NeedsMoreDetails
-NeedsRepro
-NeedsTriageDiscussion
-RegressionDuringThisVersion
-RegressionFromPreviousRTM
-Up for Grabs
-WaitingForCustomer
+- Discussions
+- Epic
+- Investigate
+- NeedsMoreDetails
+- NeedsRepro
+- NeedsTriageDiscussion
+- RegressionDuringThisVersion
+- RegressionFromPreviousRTM
+- Up for Grabs
+- WaitingForCustomer
