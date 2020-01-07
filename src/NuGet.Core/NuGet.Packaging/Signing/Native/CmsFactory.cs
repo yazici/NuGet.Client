@@ -5,7 +5,7 @@ using System.Security.Cryptography.Pkcs;
 
 namespace NuGet.Packaging.Signing
 {
-    public class CmsFactory
+    internal static class CmsFactory
     {
         internal static ICms CreateICms(byte[] input)
         {

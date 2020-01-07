@@ -382,7 +382,6 @@ namespace NuGet.Packaging
         {
 #if IS_SIGNING_SUPPORTED
             return true;
-            //return RuntimeEnvironmentHelper.IsWindows && !RuntimeEnvironmentHelper.IsMono;
 #else
             return false;
 #endif
