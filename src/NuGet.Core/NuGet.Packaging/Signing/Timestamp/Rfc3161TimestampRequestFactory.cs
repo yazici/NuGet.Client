@@ -6,7 +6,7 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace NuGet.Packaging.Signing
 {
-    public class Rfc3161TimestampRequestFactory
+    internal sealed class Rfc3161TimestampRequestFactory
     {
         public static IRfc3161TimestampRequest CreateIRfc3161TimestampRequest(
             byte[] messageHash,

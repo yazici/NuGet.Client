@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 namespace NuGet.Packaging.Signing
 {
 #if IS_SIGNING_SUPPORTED && IS_DESKTOP
-    public class Rfc3161TimestampRequestNet472Wrapper : IRfc3161TimestampRequest
+    internal class Rfc3161TimestampRequestNet472Wrapper : IRfc3161TimestampRequest
     {
         private NuGet.Packaging.Signing.Rfc3161TimestampRequest _rfc3161TimestampRequest;
 

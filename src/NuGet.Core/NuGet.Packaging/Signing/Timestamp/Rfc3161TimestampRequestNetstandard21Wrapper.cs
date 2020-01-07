@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 namespace NuGet.Packaging.Signing
 {
 #if IS_SIGNING_SUPPORTED && IS_CORECLR
-    public class Rfc3161TimestampRequestNetstandard21Wrapper : IRfc3161TimestampRequest
+    internal class Rfc3161TimestampRequestNetstandard21Wrapper : IRfc3161TimestampRequest
     {
         private System.Security.Cryptography.Pkcs.Rfc3161TimestampRequest _rfc3161TimestampRequest;
         public Rfc3161TimestampRequestNetstandard21Wrapper(

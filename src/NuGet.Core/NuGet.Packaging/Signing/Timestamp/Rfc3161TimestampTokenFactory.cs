@@ -5,7 +5,7 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace NuGet.Packaging.Signing
 {
-    public class Rfc3161TimestampTokenFactory
+    internal sealed class Rfc3161TimestampTokenFactory
     {
         public static IRfc3161TimestampToken CreateIRfc3161TimestampToken(
             IRfc3161TimestampTokenInfo tstInfo,

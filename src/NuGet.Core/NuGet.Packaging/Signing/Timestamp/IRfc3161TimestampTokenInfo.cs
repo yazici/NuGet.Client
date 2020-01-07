@@ -6,7 +6,7 @@ using System.Security.Cryptography;
 
 namespace NuGet.Packaging.Signing
 {
-    public interface IRfc3161TimestampTokenInfo
+    internal interface IRfc3161TimestampTokenInfo
     {
 #if IS_SIGNING_SUPPORTED
         string PolicyId { get; }

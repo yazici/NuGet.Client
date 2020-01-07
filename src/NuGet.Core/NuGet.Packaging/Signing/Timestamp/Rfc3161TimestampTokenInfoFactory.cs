@@ -3,7 +3,7 @@
 
 namespace NuGet.Packaging.Signing
 {
-    public class Rfc3161TimestampTokenInfoFactory
+    internal sealed class Rfc3161TimestampTokenInfoFactory
     {
         public static IRfc3161TimestampTokenInfo CreateIRfc3161TimestampTokenInfo(byte[] bytes)
         {
