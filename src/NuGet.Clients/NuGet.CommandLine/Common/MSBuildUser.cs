@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -31,28 +31,9 @@ namespace NuGet.Common
             }
 
             _msbuildDirectory = msbuildDirectory;
-            var msbuildAssemblyPath = Path.Combine(msbuildDirectory, "Microsoft.Build.dll");
-            var msbuildFrameworkAssemblyPath = Path.Combine(msbuildDirectory, "Microsoft.Build.Framework.dll");
-            try
-            {
-                _msbuildAssembly = Assembly.LoadFile(msbuildAssemblyPath);
-            }
-            catch (Exception e)
-            {
-                var allPaths = new DirectoryInfo(Path.GetDirectoryName(msbuildAssemblyPath)).GetFiles()
-                    .Select(file => file.FullName);
-                throw new Exception(e.Message + $"Path: {msbuildAssemblyPath}, All paths: {string.Join(Environment.NewLine, allPaths)}", e);
-            }
-            try
-            {
-                _frameworkAssembly = Assembly.LoadFile(msbuildFrameworkAssemblyPath);
-            }
-            catch (Exception e)
-            {
-                var allPaths = new DirectoryInfo(Path.GetDirectoryName(msbuildFrameworkAssemblyPath)).GetFiles()
-    .Select(file => file.FullName);
-                throw new Exception(e.Message + $"Path: {msbuildFrameworkAssemblyPath}, All paths: {string.Join(Environment.NewLine, allPaths)}", e);
-            }
+            _msbuildAssembly = Assembly.LoadFile(Path.Combine(msbuildDirectory, "Microsoft.Build.dll"));
+            _frameworkAssembly = Assembly.LoadFile(Path.Combine(msbuildDirectory, "Microsoft.Build.Framework.dll"));
+
             LoadTypes();
         }
 
@@ -88,7 +69,7 @@ namespace NuGet.Common
                 resourceDir = new[] {
                     Path.Combine(_msbuildDirectory, CultureInfo.CurrentCulture.TwoLetterISOLanguageName),
                     Path.Combine(_msbuildDirectory, "en") }
-                    .FirstOrDefault(d => Directory.Exists(d));
+                    .FirstOrDefault(d => Directory.Exists(d));                
             }
             else
             {
