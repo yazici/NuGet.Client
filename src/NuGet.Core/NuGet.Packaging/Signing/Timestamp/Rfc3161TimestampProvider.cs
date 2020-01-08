@@ -53,7 +53,7 @@ namespace NuGet.Packaging.Signing
         /// </summary>
         public async Task<PrimarySignature> TimestampSignatureAsync(PrimarySignature primarySignature, TimestampRequest request, ILogger logger, CancellationToken token)
         {
-            var timestampCms = await GetTimestampAsync(request, logger, token);
+            SignedCms timestampCms = await GetTimestampAsync(request, logger, token);
             using (var signatureNativeCms = CmsFactory.CreateICms(primarySignature.GetBytes()))
             {
                 if (request.Target == SignaturePlacement.Countersignature)
@@ -97,7 +97,7 @@ namespace NuGet.Packaging.Signing
 
             // Request a timestamp
             // The response status need not be checked here as lower level api will throw if the response is invalid
-            var timestampToken = await rfc3161TimestampRequest.SubmitRequestAsync(
+            IRfc3161TimestampToken timestampToken = await rfc3161TimestampRequest.SubmitRequestAsync(
                 _timestamperUrl,
                 RequestTimeout);
 

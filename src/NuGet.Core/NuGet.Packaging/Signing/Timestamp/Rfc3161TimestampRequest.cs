@@ -238,7 +238,7 @@ namespace NuGet.Packaging.Signing
                 byte[] encoded = new byte[content.cbEncoded];
                 Marshal.Copy(content.pbEncoded, encoded, 0, content.cbEncoded);
 
-                IRfc3161TimestampTokenInfo tstInfo = new Rfc3161TimestampTokenInfoNet472Wrapper(new Rfc3161TimestampTokenInfo(pTsContext));
+                var tstInfo = new Rfc3161TimestampTokenInfoNet472Wrapper(new Rfc3161TimestampTokenInfo(pTsContext));
                 X509Certificate2 signerCert = new X509Certificate2(pTsSigner);
 
                 using (X509Store extraCerts = new X509Store(hStore))
