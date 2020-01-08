@@ -8,7 +8,7 @@ namespace NuGet.Packaging.Signing
 {
     internal sealed class Rfc3161TimestampRequestFactory
     {
-        public static IRfc3161TimestampRequest CreateIRfc3161TimestampRequest(
+        public static IRfc3161TimestampRequest Create(
             byte[] messageHash,
             HashAlgorithmName hashAlgorithm,
             Oid requestedPolicyId,
