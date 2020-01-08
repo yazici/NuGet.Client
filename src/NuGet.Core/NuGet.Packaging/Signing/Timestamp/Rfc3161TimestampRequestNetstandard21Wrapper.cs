@@ -16,7 +16,7 @@ namespace NuGet.Packaging.Signing
 #if IS_SIGNING_SUPPORTED && IS_CORECLR
     internal class Rfc3161TimestampRequestNetstandard21Wrapper : IRfc3161TimestampRequest
     {
-        private System.Security.Cryptography.Pkcs.Rfc3161TimestampRequest _rfc3161TimestampRequest;
+        private readonly System.Security.Cryptography.Pkcs.Rfc3161TimestampRequest _rfc3161TimestampRequest;
         public Rfc3161TimestampRequestNetstandard21Wrapper(
                 byte[] messageHash,
                 HashAlgorithmName hashAlgorithm,
