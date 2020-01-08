@@ -11,7 +11,6 @@ namespace NuGet.Packaging.Signing
         IRfc3161TimestampTokenInfo TokenInfo { get; }
 
         SignedCms AsSignedCms();
-
 #endif
     }
 }

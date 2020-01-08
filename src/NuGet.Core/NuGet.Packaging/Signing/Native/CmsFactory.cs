@@ -7,17 +7,17 @@ namespace NuGet.Packaging.Signing
 {
     internal static class CmsFactory
     {
-        internal static ICms CreateICms(byte[] input)
+        internal static ICms CreateICms(byte[] cmsBytes)
         {
             ICms cms = null;
 #if IS_SIGNING_SUPPORTED && IS_DESKTOP
-            NativeCms nativeCms = NativeCms.Decode(input);
+            NativeCms nativeCms = NativeCms.Decode(cmsBytes);
             cms = new NativeCmsWrapper(nativeCms);
 #endif
 
 #if IS_SIGNING_SUPPORTED && IS_CORECLR
             SignedCms signedCms = new SignedCms();
-            signedCms.Decode(input);
+            signedCms.Decode(cmsBytes);
             cms = new ManagedCmsWrapper(signedCms);
 #endif
             return cms;
