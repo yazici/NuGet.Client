@@ -16,7 +16,9 @@ namespace NuGet.Packaging.Signing
 #if IS_SIGNING_SUPPORTED && IS_CORECLR
     internal class Rfc3161TimestampRequestNetstandard21Wrapper : IRfc3161TimestampRequest
     {
+        private static readonly HttpClient HttpClient = new HttpClient();
         private readonly System.Security.Cryptography.Pkcs.Rfc3161TimestampRequest _rfc3161TimestampRequest;
+
         public Rfc3161TimestampRequestNetstandard21Wrapper(
                 byte[] messageHash,
                 HashAlgorithmName hashAlgorithm,
@@ -50,35 +52,36 @@ namespace NuGet.Packaging.Signing
                 throw new ArgumentException(
                     Strings.HTTPOrHTTPSIsRequired, nameof(timestampUri));
             }
-                
-            var client = new HttpClient();
-            var content = new ReadOnlyMemoryContent(_rfc3161TimestampRequest.Encode());
 
-            content.Headers.ContentType = new MediaTypeHeaderValue("application/timestamp-query");
-            var httpResponse = await client.PostAsync(timestampUri, content);
-
-            if (!httpResponse.IsSuccessStatusCode)
+            using (var content = new ReadOnlyMemoryContent(_rfc3161TimestampRequest.Encode()))
             {
-                throw new CryptographicException
-                    (string.Format(
-                            CultureInfo.CurrentCulture,
-                            Strings.TimestampServiceRespondedError,
-                            (int)httpResponse.StatusCode,
-                            httpResponse.ReasonPhrase));
-            }
+                content.Headers.ContentType = new MediaTypeHeaderValue("application/timestamp-query");
+                using (HttpResponseMessage httpResponse = await HttpClient.PostAsync(timestampUri, content))
+                {
+                    if (!httpResponse.IsSuccessStatusCode)
+                    {
+                        throw new CryptographicException
+                            (string.Format(
+                                    CultureInfo.CurrentCulture,
+                                    Strings.TimestampServiceRespondedError,
+                                    (int)httpResponse.StatusCode,
+                                    httpResponse.ReasonPhrase));
+                    }
 
-            if (httpResponse.Content.Headers.ContentType.MediaType != "application/timestamp-response")
-            {
-                throw new CryptographicException(Strings.TimestampServiceRespondedInvalidFormat);
-            }
+                    if (httpResponse.Content.Headers.ContentType.MediaType != "application/timestamp-response")
+                    {
+                        throw new CryptographicException(Strings.TimestampServiceRespondedInvalidFormat);
+                    }
 
-            var data = await httpResponse.Content.ReadAsByteArrayAsync();   
+                    var data = await httpResponse.Content.ReadAsByteArrayAsync();
 
-            var response = _rfc3161TimestampRequest.ProcessResponse(data, out int bytesConsumed);
+                    System.Security.Cryptography.Pkcs.Rfc3161TimestampToken response = _rfc3161TimestampRequest.ProcessResponse(data, out int _bytesConsumed);
 
-            IRfc3161TimestampToken timestampToken = new Rfc3161TimestampTokenNetstandard21Wrapper(response);
+                    var timestampToken = new Rfc3161TimestampTokenNetstandard21Wrapper(response);
 
-            return timestampToken;
+                    return timestampToken;
+                }
+            }     
         }
     }
 #endif
