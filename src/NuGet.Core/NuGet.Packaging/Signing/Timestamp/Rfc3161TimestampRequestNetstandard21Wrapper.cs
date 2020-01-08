@@ -38,10 +38,18 @@ namespace NuGet.Packaging.Signing
             if (timestampUri == null)
                 throw new ArgumentNullException(nameof(timestampUri));
             if (!timestampUri.IsAbsoluteUri)
-                throw new ArgumentException("Absolute URI required", nameof(timestampUri));
-            if (timestampUri.Scheme != Uri.UriSchemeHttp && timestampUri.Scheme != Uri.UriSchemeHttps)
-                throw new ArgumentException("HTTP/HTTPS required", nameof(timestampUri));
+            {
+                throw new ArgumentException(
+                    Strings.AnAbsoluteURIIsRequired, nameof(timestampUri));
+            }
 
+
+            if (timestampUri.Scheme != Uri.UriSchemeHttp && timestampUri.Scheme != Uri.UriSchemeHttps)
+            {
+                throw new ArgumentException(
+                    Strings.HTTPOrHTTPSIsRequired, nameof(timestampUri));
+            }
+                
             var client = new HttpClient();
             var content = new ReadOnlyMemoryContent(_rfc3161TimestampRequest.Encode());
 

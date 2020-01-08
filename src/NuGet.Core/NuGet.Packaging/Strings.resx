@@ -829,4 +829,10 @@ Valid from:</comment>
     <value>Path: {0}</value>
     <comment>0 - folder path</comment>
   </data>
+  <data name="AnAbsoluteURIIsRequired" xml:space="preserve">
+    <value>An absolute URI is required.</value>
+  </data>
+  <data name="HTTPOrHTTPSIsRequired" xml:space="preserve">
+    <value>HTTP or HTTPS is required.</value>
+  </data>
 </root>
