@@ -26,7 +26,7 @@ namespace NuGet.Packaging.Signing
     {
         // Url to an RFC 3161 timestamp server
         private readonly Uri _timestamperUrl;
-        private const int RequestTimeoutSeconds = 10;
+        private static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(10);
 
         public Rfc3161TimestampProvider(Uri timeStampServerUrl)
         {
@@ -99,7 +99,7 @@ namespace NuGet.Packaging.Signing
             // The response status need not be checked here as lower level api will throw if the response is invalid
             var timestampToken = await rfc3161TimestampRequest.SubmitRequestAsync(
                 _timestamperUrl,
-                TimeSpan.FromSeconds(RequestTimeoutSeconds));
+                RequestTimeout);
 
             // quick check for response validity
             ValidateTimestampResponse(nonce, request.HashedMessage, timestampToken);
