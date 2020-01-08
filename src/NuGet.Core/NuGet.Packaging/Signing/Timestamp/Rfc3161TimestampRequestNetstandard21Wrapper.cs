@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
+using System.Globalization;
 #if IS_SIGNING_SUPPORTED && IS_CORECLR
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -58,8 +59,12 @@ namespace NuGet.Packaging.Signing
 
             if (!httpResponse.IsSuccessStatusCode)
             {
-                throw new CryptographicException(
-                    $"There was a error from the timestamp authority. It responded with {httpResponse.StatusCode} {(int)httpResponse.StatusCode}: {httpResponse.Content}");
+                throw new CryptographicException
+                    (string.Format(
+                            CultureInfo.CurrentCulture,
+                            Strings.TimestampServiceRespondedError,
+                            (int)httpResponse.StatusCode,
+                            httpResponse.ReasonPhrase));
             }
 
             if (httpResponse.Content.Headers.ContentType.MediaType != "application/timestamp-response")

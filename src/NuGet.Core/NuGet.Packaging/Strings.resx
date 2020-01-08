@@ -835,4 +835,8 @@ Valid from:</comment>
   <data name="HTTPOrHTTPSIsRequired" xml:space="preserve">
     <value>HTTP or HTTPS is required.</value>
   </data>
+  <data name="TimestampServiceRespondedError" xml:space="preserve">
+    <value>The timestamp service responded with HTTP status code '{0}' ('{1}').</value>
+    <comment>{0} is the httpResponse.StatusCode, {1} is the httpResponse.ReasonPhrase.</comment>
+  </data>
 </root>
