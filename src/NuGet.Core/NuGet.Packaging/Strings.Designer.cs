@@ -1600,6 +1600,15 @@ namespace NuGet.Packaging {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The reply from the time stamp server was in a invalid format..
+        /// </summary>
+        internal static string TimestampServiceRespondedInvalidFormat {
+            get {
+                return ResourceManager.GetString("TimestampServiceRespondedInvalidFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The timestamp signature has an unsupported digest algorithm ({0}). The following algorithms are supported: {1}..
         /// </summary>
         internal static string TimestampSignatureUnsupportedDigestAlgorithm {
