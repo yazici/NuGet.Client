@@ -5,7 +5,7 @@ namespace NuGet.Packaging.Signing
 {
     internal sealed class Rfc3161TimestampTokenInfoFactory
     {
-        public static IRfc3161TimestampTokenInfo CreateIRfc3161TimestampTokenInfo(byte[] bytes)
+        public static IRfc3161TimestampTokenInfo Create(byte[] bytes)
         {
             IRfc3161TimestampTokenInfo iRfc3161TimestampTokenInfo = null;
 #if IS_SIGNING_SUPPORTED && IS_DESKTOP

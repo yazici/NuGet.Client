@@ -39,7 +39,7 @@ namespace NuGet.Packaging.Signing
             tstInfo = null;
             if (timestampCms.ContentInfo.ContentType.Value.Equals(Oids.TSTInfoContentType))
             {
-                tstInfo = Rfc3161TimestampTokenInfoFactory.CreateIRfc3161TimestampTokenInfo(timestampCms.ContentInfo.Content);
+                tstInfo = Rfc3161TimestampTokenInfoFactory.Create(timestampCms.ContentInfo.Content);
                 return true;
             }
             // return false if the signedCms object does not contain the right ContentType
