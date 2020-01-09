@@ -158,7 +158,7 @@ namespace NuGet.Packaging.FuncTest
                 );
 
                 // Act
-                Action timestampAction = async() => await timestampProvider.GetTimestampAsync(null, logger, CancellationToken.None);
+                Action timestampAction = async () => await timestampProvider.GetTimestampAsync(null, logger, CancellationToken.None);
 
                 // Assert
                 timestampAction.ShouldThrow<ArgumentNullException>()
@@ -189,7 +189,7 @@ namespace NuGet.Packaging.FuncTest
                 );
 
                 // Act
-                Action timestampAction = async() => await timestampProvider.GetTimestampAsync(request, null, CancellationToken.None);
+                Action timestampAction = async () => await timestampProvider.GetTimestampAsync(request, null, CancellationToken.None);
 
                 // Assert
                 timestampAction.ShouldThrow<ArgumentNullException>()
@@ -221,7 +221,7 @@ namespace NuGet.Packaging.FuncTest
                );
 
                 // Act
-                Action timestampAction = async() => await timestampProvider.GetTimestampAsync(request, logger, new CancellationToken(canceled: true));
+                Action timestampAction = async () => await timestampProvider.GetTimestampAsync(request, logger, new CancellationToken(canceled: true));
 
                 // Assert
                 timestampAction.ShouldThrow<OperationCanceledException>()
