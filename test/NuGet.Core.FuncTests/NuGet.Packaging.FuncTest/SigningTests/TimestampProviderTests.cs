@@ -274,12 +274,12 @@ namespace NuGet.Packaging.FuncTest
             VerifyTimestampData(
                 testServer,
                 timestampService,
-                (timestampProvider, request) =>
+                async (timestampProvider, request) =>
                 {
-                    var exception = Assert.ThrowsAsync<TimestampException>(
-                        async () => await timestampProvider.GetTimestampAsync(request, NullLogger.Instance, CancellationToken.None));
+                    var exception = await Assert.ThrowsAsync<TimestampException>(
+                        () => timestampProvider.GetTimestampAsync(request, NullLogger.Instance, CancellationToken.None));
 
-                    Assert.Equal("Certificate chain validation failed.", exception.Result.Message);
+                    Assert.Equal("Certificate chain validation failed.", exception.Message);
                 });
         }
 
@@ -294,14 +294,14 @@ namespace NuGet.Packaging.FuncTest
             VerifyTimestampData(
                 testServer,
                 timestampService,
-                (timestampProvider, request) =>
+                async (timestampProvider, request) =>
                 {
-                    var exception = Assert.ThrowsAsync<CryptographicException>(
-                        async () => await timestampProvider.GetTimestampAsync(request, NullLogger.Instance, CancellationToken.None));
+                    var exception = await Assert.ThrowsAsync<CryptographicException>(
+                        () => timestampProvider.GetTimestampAsync(request, NullLogger.Instance, CancellationToken.None));
 
                     Assert.StartsWith(
                         "The timestamp signature and/or certificate could not be verified or is malformed.",
-                        exception.Result.Message);
+                        exception.Message);
                 });
         }
 
@@ -316,12 +316,12 @@ namespace NuGet.Packaging.FuncTest
             VerifyTimestampData(
                 testServer,
                 timestampService,
-                (timestampProvider, request) =>
+                async (timestampProvider, request) =>
                 {
-                    var exception = Assert.ThrowsAsync<CryptographicException>(
-                        async () => await timestampProvider.GetTimestampAsync(request, NullLogger.Instance, CancellationToken.None));
+                    var exception = await Assert.ThrowsAsync<CryptographicException>(
+                        () => timestampProvider.GetTimestampAsync(request, NullLogger.Instance, CancellationToken.None));
 
-                    Assert.StartsWith("Cannot find object or property.", exception.Result.Message);
+                    Assert.StartsWith("Cannot find object or property.", exception.Message);
                 });
         }
 
@@ -336,14 +336,14 @@ namespace NuGet.Packaging.FuncTest
             VerifyTimestampData(
                 testServer,
                 timestampService,
-                (timestampProvider, request) =>
+                async (timestampProvider, request) =>
                 {
-                    var exception = Assert.ThrowsAsync<TimestampException>(
-                        async () => await timestampProvider.GetTimestampAsync(request, NullLogger.Instance, CancellationToken.None));
+                    var exception = await Assert.ThrowsAsync<TimestampException>(
+                        () => timestampProvider.GetTimestampAsync(request, NullLogger.Instance, CancellationToken.None));
 
                     Assert.Equal(
                         "The timestamp signature has an unsupported digest algorithm (SHA1). The following algorithms are supported: SHA256, SHA384, SHA512.",
-                        exception.Result.Message);
+                        exception.Message);
                 });
         }
 
@@ -361,14 +361,14 @@ namespace NuGet.Packaging.FuncTest
             VerifyTimestampData(
                 testServer,
                 timestampService,
-                (timestampProvider, request) =>
+                async (timestampProvider, request) =>
                 {
-                    var exception = Assert.ThrowsAsync<TimestampException>(
-                        async () => await timestampProvider.GetTimestampAsync(request, NullLogger.Instance, CancellationToken.None));
+                    var exception = await Assert.ThrowsAsync<TimestampException>(
+                        () => timestampProvider.GetTimestampAsync(request, NullLogger.Instance, CancellationToken.None));
 
                     Assert.Equal(
                         "The timestamp certificate has an unsupported signature algorithm (SHA1RSA). The following algorithms are supported: SHA256RSA, SHA384RSA, SHA512RSA.",
-                        exception.Result.Message);
+                        exception.Message);
                 });
         }
 
@@ -390,15 +390,15 @@ namespace NuGet.Packaging.FuncTest
             VerifyTimestampData(
                 testServer,
                 timestampService,
-                (timestampProvider, request) =>
+                async (timestampProvider, request) =>
                 {
-                    var exception = Assert.ThrowsAsync<TimestampException>(
-                          async () => await timestampProvider.GetTimestampAsync(request, NullLogger.Instance, CancellationToken.None));
+                    var exception = await Assert.ThrowsAsync<TimestampException>(
+                          () => timestampProvider.GetTimestampAsync(request, NullLogger.Instance, CancellationToken.None));
 
-                    Assert.Equal(NuGetLogCode.NU3036, exception.Result.Code);
+                    Assert.Equal(NuGetLogCode.NU3036, exception.Code);
                     Assert.Contains(
                         "The timestamp's generalized time is outside the timestamping certificate's validity period.",
-                        exception.Result.Message);
+                        exception.Message);
                 });
         }
 
