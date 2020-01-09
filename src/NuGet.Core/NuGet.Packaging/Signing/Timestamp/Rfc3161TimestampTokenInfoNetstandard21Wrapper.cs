@@ -18,12 +18,18 @@ namespace NuGet.Packaging.Signing
                 new ReadOnlyMemory<byte>(timestampTokenInfo),
                 out _rfc3161TimestampTokenInfo,
                 out int bytesConsumed);
+
+            if (!success)
+            {
+                throw new CryptographicException(Strings.InvalidAsn1);
+            }
         }
 
         public Rfc3161TimestampTokenInfoNetstandard21Wrapper(System.Security.Cryptography.Pkcs.Rfc3161TimestampTokenInfo timestampTokenInfo)
         {
             _rfc3161TimestampTokenInfo = timestampTokenInfo;
         }
+
         public string PolicyId
         {
             get
@@ -47,6 +53,7 @@ namespace NuGet.Packaging.Signing
                 return _rfc3161TimestampTokenInfo.AccuracyInMicroseconds;
             }
         }
+
         public Oid HashAlgorithmId
         {
             get
