@@ -41,7 +41,6 @@ namespace Test.Utility.Signing
         /// Linux could not read/write LocalMachine\Root , but could only read/write CurrentUser\Root
         public TrustedTestCert<TestCertificate> WithTrust()
         {
-
             if (RuntimeEnvironmentHelper.IsLinux)
             {
                 return new TrustedTestCert<TestCertificate>(this, e => PublicCert, StoreName.Root, StoreLocation.CurrentUser);

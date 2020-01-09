@@ -260,9 +260,7 @@ namespace NuGet.Packaging.Signing
                 signingSpecifications,
                 includeChain);
         }
-#endif
 
-#if IS_SIGNING_SUPPORTED
         public static bool HasRepositoryCountersignature(PrimarySignature primarySignature)
         {
             if (primarySignature == null)

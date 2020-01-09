@@ -6,7 +6,6 @@ using System.Configuration;
 using System.IO;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
-using NuGet.CommandLine.Test;
 using NuGet.Common;
 using Test.Utility.Signing;
 
