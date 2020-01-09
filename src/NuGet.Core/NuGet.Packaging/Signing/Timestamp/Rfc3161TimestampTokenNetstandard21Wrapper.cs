@@ -11,7 +11,7 @@ namespace NuGet.Packaging.Signing
     internal class Rfc3161TimestampTokenNetstandard21Wrapper : IRfc3161TimestampToken
     {
 
-        private System.Security.Cryptography.Pkcs.Rfc3161TimestampToken _rfc3161TimestampToken = null;
+        private readonly System.Security.Cryptography.Pkcs.Rfc3161TimestampToken _rfc3161TimestampToken;
 
         public Rfc3161TimestampTokenNetstandard21Wrapper(
             IRfc3161TimestampTokenInfo tstInfo,
