@@ -9,7 +9,7 @@ namespace NuGet.Packaging.Signing
 #if IS_SIGNING_SUPPORTED && IS_DESKTOP
     internal class Rfc3161TimestampTokenNet472Wrapper : IRfc3161TimestampToken
     {
-        private NuGet.Packaging.Signing.Rfc3161TimestampToken _rfc3161TimestampToken;
+        private Rfc3161TimestampToken _rfc3161TimestampToken;
 
         public Rfc3161TimestampTokenNet472Wrapper(
             IRfc3161TimestampTokenInfo tstInfo,

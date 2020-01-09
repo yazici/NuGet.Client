@@ -9,14 +9,14 @@ namespace NuGet.Packaging.Signing
 #if IS_SIGNING_SUPPORTED && IS_DESKTOP
     internal class Rfc3161TimestampTokenInfoNet472Wrapper : IRfc3161TimestampTokenInfo
     {
-        private NuGet.Packaging.Signing.Rfc3161TimestampTokenInfo _rfc3161TimestampTokenInfo;
+        private Rfc3161TimestampTokenInfo _rfc3161TimestampTokenInfo;
 
         public Rfc3161TimestampTokenInfoNet472Wrapper(byte[] timestampTokenInfo)
         {
             _rfc3161TimestampTokenInfo = new Rfc3161TimestampTokenInfo(timestampTokenInfo);
         }
 
-        public Rfc3161TimestampTokenInfoNet472Wrapper(NuGet.Packaging.Signing.Rfc3161TimestampTokenInfo timestampTokenInfo)
+        public Rfc3161TimestampTokenInfoNet472Wrapper(Rfc3161TimestampTokenInfo timestampTokenInfo)
         {
             _rfc3161TimestampTokenInfo = timestampTokenInfo;
         }
