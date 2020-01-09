@@ -13,16 +13,15 @@ namespace NuGet.Packaging.Signing
             X509Certificate2Collection additionalCerts,
             byte[] encoded)
         {
+#if IS_SIGNING_SUPPORTED
             IRfc3161TimestampToken iRfc3161TimestampToken = null;
-#if IS_SIGNING_SUPPORTED && IS_DESKTOP
+#if IS_DESKTOP
             iRfc3161TimestampToken = new Rfc3161TimestampTokenNet472Wrapper(
                 tstInfo,
                 signerCertificate,
                 additionalCerts,
                 encoded);
-#endif
-
-#if IS_SIGNING_SUPPORTED && IS_CORECLR
+#else
             iRfc3161TimestampToken = new Rfc3161TimestampTokenNetstandard21Wrapper(
                 tstInfo,
                 signerCertificate,
@@ -30,6 +29,9 @@ namespace NuGet.Packaging.Signing
                 encoded);
 #endif
             return iRfc3161TimestampToken;
+#else
+            throw new NotSupportedException();
+#endif
         }
     }
 }

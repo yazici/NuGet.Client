@@ -7,15 +7,18 @@ namespace NuGet.Packaging.Signing
     {
         public static IRfc3161TimestampTokenInfo Create(byte[] bytes)
         {
-            IRfc3161TimestampTokenInfo iRfc3161TimestampTokenInfo = null;
-#if IS_SIGNING_SUPPORTED && IS_DESKTOP
-            iRfc3161TimestampTokenInfo = new Rfc3161TimestampTokenInfoNet472Wrapper(bytes);
-#endif
 
-#if IS_SIGNING_SUPPORTED && IS_CORECLR
+#if IS_SIGNING_SUPPORTED
+            IRfc3161TimestampTokenInfo iRfc3161TimestampTokenInfo = null;
+#if IS_DESKTOP
+            iRfc3161TimestampTokenInfo = new Rfc3161TimestampTokenInfoNet472Wrapper(bytes);
+#else
             iRfc3161TimestampTokenInfo = new Rfc3161TimestampTokenInfoNetstandard21Wrapper(bytes);
 #endif
             return iRfc3161TimestampTokenInfo;
+#else
+            throw new NotSupportedException();
+#endif
         }
     }
 }
