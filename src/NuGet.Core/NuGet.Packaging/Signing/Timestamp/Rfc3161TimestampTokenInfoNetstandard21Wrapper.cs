@@ -58,11 +58,11 @@ namespace NuGet.Packaging.Signing
         public bool HasMessageHash(byte[] hash)
         {
             if (hash == null)
+            {
                 return false;
+            }
 
-            //var value = Decoded.MessageImprint.HashedMessage;
             var value = _rfc3161TimestampTokenInfo.GetMessageHash().ToArray();
-
 
             if (hash.Length != value.Length)
             {
@@ -74,12 +74,12 @@ namespace NuGet.Packaging.Signing
 
         public byte[] GetNonce()
         {
-            var nonce = _rfc3161TimestampTokenInfo.GetNonce();
+            ReadOnlyMemory<byte>? nonce = _rfc3161TimestampTokenInfo.GetNonce();
             if (nonce.HasValue)
             {
                 return nonce.Value.ToArray();
             }
-            return new byte[0];
+            return Array.Empty<byte>();
         }
     }
 #endif

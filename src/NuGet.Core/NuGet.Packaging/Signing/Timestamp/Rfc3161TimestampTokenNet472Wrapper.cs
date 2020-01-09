@@ -22,7 +22,6 @@ namespace NuGet.Packaging.Signing
                 signerCertificate,
                 additionalCerts,
                 encoded);
-
         }
 
         public IRfc3161TimestampTokenInfo TokenInfo
