@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
+using System.Security.Cryptography;
 using System.Security.Cryptography.Pkcs;
 using System.Security.Cryptography.X509Certificates;
 
@@ -24,6 +25,10 @@ namespace NuGet.Packaging.Signing
                 out _rfc3161TimestampToken,
                 out int bytesConsumed);
 
+            if (!success)
+            {
+                throw new CryptographicException(Strings.InvalidAsn1);
+            }
         }
 
         public Rfc3161TimestampTokenNetstandard21Wrapper(
@@ -36,8 +41,8 @@ namespace NuGet.Packaging.Signing
         {
             get
             {
-                Rfc3161TimestampTokenInfoNetstandard21Wrapper TokenInfo = new Rfc3161TimestampTokenInfoNetstandard21Wrapper(_rfc3161TimestampToken.TokenInfo);
-                return TokenInfo;
+                var tokenInfo = new Rfc3161TimestampTokenInfoNetstandard21Wrapper(_rfc3161TimestampToken.TokenInfo);
+                return tokenInfo;
             }
         }
 
