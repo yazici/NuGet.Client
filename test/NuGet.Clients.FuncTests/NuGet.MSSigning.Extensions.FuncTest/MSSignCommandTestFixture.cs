@@ -6,7 +6,6 @@ using System.Configuration;
 using System.IO;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
-using NuGet.Common;
 using Test.Utility.Signing;
 
 namespace NuGet.MSSigning.Extensions.FuncTest.Commands
@@ -102,13 +101,12 @@ namespace NuGet.MSSigning.Extensions.FuncTest.Commands
             var rootCa = CertificateAuthority.Create(testServer.Url);
             var intermediateCa = rootCa.CreateIntermediateCertificateAuthority();
             var rootCertificate = new X509Certificate2(rootCa.Certificate.GetEncoded());
+            var storeLocation = CertificateStoreUtilities.GetTrustedCertificateStoreLocation();
 
-            // According to https://github.com/dotnet/runtime/blob/master/docs/design/features/cross-platform-cryptography.md#x509store  
-            // use different approaches for Windows, Mac and Linux.
             _trustedTimestampRoot = TrustedTestCert.Create(
                 rootCertificate,
                 StoreName.Root,
-                (RuntimeEnvironmentHelper.IsWindows || RuntimeEnvironmentHelper.IsMacOSX) ? StoreLocation.LocalMachine : StoreLocation.CurrentUser);
+                storeLocation);
             
             var ca = intermediateCa;
 

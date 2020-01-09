@@ -41,12 +41,9 @@ namespace Test.Utility.Signing
         /// Linux could not read/write LocalMachine\Root , but could only read/write CurrentUser\Root
         public TrustedTestCert<TestCertificate> WithTrust()
         {
-            if (RuntimeEnvironmentHelper.IsLinux)
-            {
-                return new TrustedTestCert<TestCertificate>(this, e => PublicCert, StoreName.Root, StoreLocation.CurrentUser);
-            }
+            var storeLocation = CertificateStoreUtilities.GetTrustedCertificateStoreLocation();
            
-            return new TrustedTestCert<TestCertificate>(this, e => PublicCert, StoreName.Root, StoreLocation.LocalMachine);
+            return new TrustedTestCert<TestCertificate>(this, e => PublicCert, StoreName.Root, storeLocation);
         }
 
         /// <summary>
@@ -55,12 +52,9 @@ namespace Test.Utility.Signing
         /// <remarks>Dispose of the object returned!</remarks>
         public TrustedTestCert<TestCertificate> WithPrivateKeyAndTrust(StoreName storeName = StoreName.TrustedPeople)
         {
-            if (RuntimeEnvironmentHelper.IsLinux)
-            {
-                return new TrustedTestCert<TestCertificate>(this, e => PublicCertWithPrivateKey, storeName, StoreLocation.CurrentUser);
-            }
+            var storeLocation = CertificateStoreUtilities.GetTrustedCertificateStoreLocation();
 
-            return  new TrustedTestCert<TestCertificate>(this, e => PublicCertWithPrivateKey, storeName, StoreLocation.LocalMachine);
+            return  new TrustedTestCert<TestCertificate>(this, e => PublicCertWithPrivateKey, storeName, storeLocation);
         }
 
         public static string GenerateCertificateName()

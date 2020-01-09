@@ -44,12 +44,12 @@ namespace NuGet.Packaging.FuncTest
                 responders.Add(testServer.RegisterResponder(intermediateCa));
                 responders.Add(testServer.RegisterResponder(rootCa));
 
-                // According to https://github.com/dotnet/runtime/blob/master/docs/design/features/cross-platform-cryptography.md#x509store  
-                // use different approaches for Windows, Mac and Linux.
+                var storeLocation = CertificateStoreUtilities.GetTrustedCertificateStoreLocation();
+
                 using (var trustedServerRoot = TrustedTestCert.Create(
                     new X509Certificate2(rootCa.Certificate.GetEncoded()),
                     StoreName.Root,
-                    (RuntimeEnvironmentHelper.IsWindows || RuntimeEnvironmentHelper.IsMacOSX) ? StoreLocation.LocalMachine: StoreLocation.CurrentUser))
+                    storeLocation))
                 {
                     var timestampService = TimestampService.Create(intermediateCa);
 

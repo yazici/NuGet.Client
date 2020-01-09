@@ -2301,13 +2301,12 @@ namespace NuGet.Packaging.FuncTest
         private static IDisposable TrustRootCertificate(IX509CertificateChain certificateChain)
         {
             var rootCertificate = certificateChain.Last();
-            
-            // According to https://github.com/dotnet/runtime/blob/master/docs/design/features/cross-platform-cryptography.md#x509store  
-            // use different approaches for Windows, Mac and Linux.
+            var storeLocation = CertificateStoreUtilities.GetTrustedCertificateStoreLocation();
+
             return TrustedTestCert.Create(
                 new X509Certificate2(rootCertificate),
                 StoreName.Root,
-                (RuntimeEnvironmentHelper.IsWindows || RuntimeEnvironmentHelper.IsMacOSX)? StoreLocation.LocalMachine : StoreLocation.CurrentUser,
+                storeLocation,
                 maximumValidityPeriod: TimeSpan.MaxValue);
         }
     }
