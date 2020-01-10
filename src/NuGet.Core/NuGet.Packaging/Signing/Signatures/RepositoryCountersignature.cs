@@ -78,9 +78,9 @@ namespace NuGet.Packaging.Signing
 
         public override byte[] GetSignatureValue()
         {
-            using (var nativeCms = CmsFactory.Create(_primarySignature.GetBytes()))
+            using (ICms cms = CmsFactory.Create(_primarySignature.GetBytes()))
             {
-                return nativeCms.GetRepositoryCountersignatureSignatureValue();
+                return cms.GetRepositoryCountersignatureSignatureValue();
             }
         }
 

@@ -54,17 +54,17 @@ namespace NuGet.Packaging.Signing
         public async Task<PrimarySignature> TimestampSignatureAsync(PrimarySignature primarySignature, TimestampRequest request, ILogger logger, CancellationToken token)
         {
             SignedCms timestampCms = await GetTimestampAsync(request, logger, token);
-            using (var signatureNativeCms = CmsFactory.Create(primarySignature.GetBytes()))
+            using (ICms signatureCms = CmsFactory.Create(primarySignature.GetBytes()))
             {
                 if (request.Target == SignaturePlacement.Countersignature)
                 {
-                    signatureNativeCms.AddTimestampToRepositoryCountersignature(timestampCms);
+                    signatureCms.AddTimestampToRepositoryCountersignature(timestampCms);
                 }
                 else
                 {
-                    signatureNativeCms.AddTimestamp(timestampCms);
+                    signatureCms.AddTimestamp(timestampCms);
                 }
-                return PrimarySignature.Load(signatureNativeCms.Encode());
+                return PrimarySignature.Load(signatureCms.Encode());
             }
         }
 
@@ -126,16 +126,16 @@ namespace NuGet.Packaging.Signing
         }
 
         private static SignedCms EnsureCertificatesInCertificatesCollection(
-            SignedCms timestampCms,
+            SignedCms timestamp,
             IReadOnlyList<X509Certificate2> chain)
         {
-            using (ICms timestampCMS = CmsFactory.Create(timestampCms.Encode()))
+            using (ICms timestampCms = CmsFactory.Create(timestamp.Encode()))
             {
-                timestampCMS.AddCertificates(
-                    chain.Where(certificate => !timestampCms.Certificates.Contains(certificate))
+                timestampCms.AddCertificates(
+                    chain.Where(certificate => !timestamp.Certificates.Contains(certificate))
                          .Select(certificate => certificate.RawData));
 
-                var bytes = timestampCMS.Encode();
+                var bytes = timestampCms.Encode();
                 var updatedCms = new SignedCms();
 
                 updatedCms.Decode(bytes);
