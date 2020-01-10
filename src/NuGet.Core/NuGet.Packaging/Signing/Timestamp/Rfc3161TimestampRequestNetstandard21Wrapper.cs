@@ -20,12 +20,12 @@ namespace NuGet.Packaging.Signing
         private readonly System.Security.Cryptography.Pkcs.Rfc3161TimestampRequest _rfc3161TimestampRequest;
 
         public Rfc3161TimestampRequestNetstandard21Wrapper(
-                byte[] messageHash,
-                HashAlgorithmName hashAlgorithm,
-                Oid requestedPolicyId,
-                byte[] nonce,
-                bool requestSignerCertificates,
-                X509ExtensionCollection extensions)
+            byte[] messageHash,
+            HashAlgorithmName hashAlgorithm,
+            Oid requestedPolicyId,
+            byte[] nonce,
+            bool requestSignerCertificates,
+            X509ExtensionCollection extensions)
         {
             _rfc3161TimestampRequest = System.Security.Cryptography.Pkcs.Rfc3161TimestampRequest.CreateFromHash(
                 new ReadOnlyMemory<byte>(messageHash),
@@ -39,7 +39,10 @@ namespace NuGet.Packaging.Signing
         public async Task<IRfc3161TimestampToken> SubmitRequestAsync(Uri timestampUri, TimeSpan timeout)
         {
             if (timestampUri == null)
+            {
                 throw new ArgumentNullException(nameof(timestampUri));
+            }
+
             if (!timestampUri.IsAbsoluteUri)
             {
                 throw new ArgumentException(
@@ -59,12 +62,12 @@ namespace NuGet.Packaging.Signing
                 {
                     if (!httpResponse.IsSuccessStatusCode)
                     {
-                        throw new CryptographicException
-                            (string.Format(
-                                    CultureInfo.CurrentCulture,
-                                    Strings.TimestampServiceRespondedError,
-                                    (int)httpResponse.StatusCode,
-                                    httpResponse.ReasonPhrase));
+                        throw new CryptographicException(
+                            string.Format(
+                                CultureInfo.CurrentCulture,
+                                Strings.TimestampServiceRespondedError,
+                                (int)httpResponse.StatusCode,
+                                httpResponse.ReasonPhrase));
                     }
 
                     if (!string.Equals(httpResponse.Content.Headers.ContentType.MediaType, "application/timestamp-response", StringComparison.OrdinalIgnoreCase))
@@ -80,7 +83,7 @@ namespace NuGet.Packaging.Signing
 
                     return timestampToken;
                 }
-            }     
+            }
         }
     }
 #endif
