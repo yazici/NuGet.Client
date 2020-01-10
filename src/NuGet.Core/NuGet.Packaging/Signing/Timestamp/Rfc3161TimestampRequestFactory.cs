@@ -41,6 +41,5 @@ namespace NuGet.Packaging.Signing
             throw new NotSupportedException();
 #endif
         }
-
     }
 }

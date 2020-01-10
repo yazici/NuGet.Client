@@ -63,9 +63,9 @@ namespace NuGet.Packaging {
         /// <summary>
         ///   Looks up a localized string similar to An absolute URI is required..
         /// </summary>
-        internal static string AnAbsoluteURIIsRequired {
+        internal static string AnAbsoluteUriIsRequired {
             get {
-                return ResourceManager.GetString("AnAbsoluteURIIsRequired", resourceCulture);
+                return ResourceManager.GetString("AnAbsoluteUriIsRequired", resourceCulture);
             }
         }
         
@@ -567,9 +567,9 @@ namespace NuGet.Packaging {
         /// <summary>
         ///   Looks up a localized string similar to HTTP or HTTPS is required..
         /// </summary>
-        internal static string HTTPOrHTTPSIsRequired {
+        internal static string HttpOrHttpsIsRequired {
             get {
-                return ResourceManager.GetString("HTTPOrHTTPSIsRequired", resourceCulture);
+                return ResourceManager.GetString("HttpOrHttpsIsRequired", resourceCulture);
             }
         }
         
@@ -1600,7 +1600,7 @@ namespace NuGet.Packaging {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The reply from the time stamp server was in a invalid format..
+        ///   Looks up a localized string similar to The reply from the timestamp server was invalid..
         /// </summary>
         internal static string TimestampServiceRespondedInvalidFormat {
             get {

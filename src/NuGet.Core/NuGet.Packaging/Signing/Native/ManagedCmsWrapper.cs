@@ -73,7 +73,6 @@ namespace NuGet.Packaging.Signing
             }
 
             _signedCms.SignerInfos[0].CounterSignerInfos[0].AddUnsignedAttribute(unsignedAttribute);
-
         }
 
         public void AddTimestamp(SignedCms timestamp)
@@ -88,7 +87,6 @@ namespace NuGet.Packaging.Signing
             }
 
             _signedCms.SignerInfos[0].AddUnsignedAttribute(unsignedAttribute);
-         
         }
 
         public byte[] Encode()

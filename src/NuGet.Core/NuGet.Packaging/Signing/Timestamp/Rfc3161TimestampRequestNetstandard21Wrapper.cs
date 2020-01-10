@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 namespace NuGet.Packaging.Signing
 {
 #if IS_SIGNING_SUPPORTED && IS_CORECLR
-    internal class Rfc3161TimestampRequestNetstandard21Wrapper : IRfc3161TimestampRequest
+    internal sealed class Rfc3161TimestampRequestNetstandard21Wrapper : IRfc3161TimestampRequest
     {
         private static readonly HttpClient HttpClient = new HttpClient();
         private readonly System.Security.Cryptography.Pkcs.Rfc3161TimestampRequest _rfc3161TimestampRequest;
@@ -43,14 +43,13 @@ namespace NuGet.Packaging.Signing
             if (!timestampUri.IsAbsoluteUri)
             {
                 throw new ArgumentException(
-                    Strings.AnAbsoluteURIIsRequired, nameof(timestampUri));
+                    Strings.AnAbsoluteUriIsRequired, nameof(timestampUri));
             }
-
 
             if (timestampUri.Scheme != Uri.UriSchemeHttp && timestampUri.Scheme != Uri.UriSchemeHttps)
             {
                 throw new ArgumentException(
-                    Strings.HTTPOrHTTPSIsRequired, nameof(timestampUri));
+                    Strings.HttpOrHttpsIsRequired, nameof(timestampUri));
             }
 
             using (var content = new ReadOnlyMemoryContent(_rfc3161TimestampRequest.Encode()))

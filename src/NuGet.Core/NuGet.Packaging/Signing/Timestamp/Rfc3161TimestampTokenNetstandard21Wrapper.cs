@@ -9,9 +9,8 @@ using System.Security.Cryptography.X509Certificates;
 namespace NuGet.Packaging.Signing
 {
 #if IS_SIGNING_SUPPORTED && IS_CORECLR
-    internal class Rfc3161TimestampTokenNetstandard21Wrapper : IRfc3161TimestampToken
+    internal sealed class Rfc3161TimestampTokenNetstandard21Wrapper : IRfc3161TimestampToken
     {
-
         private readonly System.Security.Cryptography.Pkcs.Rfc3161TimestampToken _rfc3161TimestampToken;
 
         public Rfc3161TimestampTokenNetstandard21Wrapper(

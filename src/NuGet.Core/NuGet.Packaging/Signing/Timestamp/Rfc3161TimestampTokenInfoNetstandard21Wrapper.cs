@@ -8,7 +8,7 @@ using System.Security.Cryptography;
 namespace NuGet.Packaging.Signing
 {
 #if IS_SIGNING_SUPPORTED && IS_CORECLR
-    internal class Rfc3161TimestampTokenInfoNetstandard21Wrapper : IRfc3161TimestampTokenInfo
+    internal sealed class Rfc3161TimestampTokenInfoNetstandard21Wrapper : IRfc3161TimestampTokenInfo
     {
         private System.Security.Cryptography.Pkcs.Rfc3161TimestampTokenInfo _rfc3161TimestampTokenInfo = null;
 

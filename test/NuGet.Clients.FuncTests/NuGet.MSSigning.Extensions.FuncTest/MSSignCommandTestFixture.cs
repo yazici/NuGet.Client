@@ -107,7 +107,7 @@ namespace NuGet.MSSigning.Extensions.FuncTest.Commands
                 rootCertificate,
                 StoreName.Root,
                 storeLocation);
-            
+
             var ca = intermediateCa;
 
             while (ca != null)

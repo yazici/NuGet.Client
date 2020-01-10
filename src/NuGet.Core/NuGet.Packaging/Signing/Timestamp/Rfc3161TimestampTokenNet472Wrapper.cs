@@ -7,7 +7,7 @@ using System.Security.Cryptography.X509Certificates;
 namespace NuGet.Packaging.Signing
 {
 #if IS_SIGNING_SUPPORTED && IS_DESKTOP
-    internal class Rfc3161TimestampTokenNet472Wrapper : IRfc3161TimestampToken
+    internal sealed class Rfc3161TimestampTokenNet472Wrapper : IRfc3161TimestampToken
     {
         private readonly Rfc3161TimestampToken _rfc3161TimestampToken;
 
@@ -22,7 +22,6 @@ namespace NuGet.Packaging.Signing
                 signerCertificate,
                 additionalCerts,
                 encoded);
-
         }
 
         public IRfc3161TimestampTokenInfo TokenInfo

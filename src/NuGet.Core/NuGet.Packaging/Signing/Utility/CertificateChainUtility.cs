@@ -80,7 +80,6 @@ namespace NuGet.Packaging.Signing
 
                 foreach (var chainStatus in chain.ChainStatus)
                 {
-
                     if ((chainStatus.Status & errorStatusFlags) != 0)
                     {
                         fatalStatuses.Add(chainStatus);

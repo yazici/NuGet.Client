@@ -7,7 +7,7 @@ using System.Security.Cryptography;
 namespace NuGet.Packaging.Signing
 {
 #if IS_SIGNING_SUPPORTED && IS_DESKTOP
-    internal class Rfc3161TimestampTokenInfoNet472Wrapper : IRfc3161TimestampTokenInfo
+    internal sealed class Rfc3161TimestampTokenInfoNet472Wrapper : IRfc3161TimestampTokenInfo
     {
         private Rfc3161TimestampTokenInfo _rfc3161TimestampTokenInfo;
 
@@ -20,6 +20,7 @@ namespace NuGet.Packaging.Signing
         {
             _rfc3161TimestampTokenInfo = timestampTokenInfo;
         }
+
         public string PolicyId
         {
             get
@@ -56,6 +57,7 @@ namespace NuGet.Packaging.Signing
         {
             return _rfc3161TimestampTokenInfo.HasMessageHash(hash);
         }
+
         public byte[] GetNonce()
         {
             return _rfc3161TimestampTokenInfo.GetNonce();

@@ -9,7 +9,6 @@ namespace NuGet.Packaging.Signing
     {
         public static IRfc3161TimestampTokenInfo Create(byte[] bytes)
         {
-
 #if IS_SIGNING_SUPPORTED
             IRfc3161TimestampTokenInfo iRfc3161TimestampTokenInfo = null;
 #if IS_DESKTOP
