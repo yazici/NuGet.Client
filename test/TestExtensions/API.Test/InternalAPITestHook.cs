@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft;
 using Microsoft.ServiceHub.Framework;
@@ -48,7 +49,7 @@ namespace API.Test
                     var service = await GetIVsPackageInstallerClientAsync();
                     foreach (var projectName in projectUniqueNames)
                     {
-                        await service.InstallLatestPackageAsync(null, projectName, id, prerelease);
+                        await service.InstallLatestPackageAsync(null, projectName, id, prerelease, CancellationToken.None);
                         return;
                     }
                 });
@@ -68,7 +69,7 @@ namespace API.Test
                         projectUniqueNames.Add(project.Name);
                     }
 
-                    // This is technically a big no-no in production code,
+                    // Condition thread switches is technically a big no-no in production code,
                     // but our API needs to be able to safely complete when invoke from both UI thread/background thread.
                     if (!invokeOnUIThread)
                     {
@@ -78,7 +79,7 @@ namespace API.Test
                     var service = await GetIVsPackageInstallerClientAsync();
                     foreach (var projectName in projectUniqueNames)
                     {
-                        await service.InstallPackageAsync(source, projectName, id, version);
+                        await service.InstallPackageAsync(source, projectName, id, version, CancellationToken.None);
                         return;
                     }
                 });

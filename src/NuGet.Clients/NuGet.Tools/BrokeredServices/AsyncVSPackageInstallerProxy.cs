@@ -3,6 +3,7 @@
 
 using System;
 using System.ComponentModel.Composition;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.ComponentModelHost;
 using NuGet.VisualStudio;
@@ -14,42 +15,42 @@ namespace NuGetVSExtension.BrokeredServices
     internal class AsyncVSPackageInstallerProxy : IVsAsyncPackageInstaller
     {
         [Import]
-        Lazy<IVsPackageInstaller> Installer { get; set; } // This is a trick to multiple instances of the installer service. 
+        Lazy<IVsPackageInstaller> VSPackageInstaller { get; set; } // A trick to avoid diverging implementation codepaths for our extensibility APIs.
 
         private bool _initialized = false;
+
         private async Task InitializeAsync()
         {
             if (_initialized)
             {
                 return;
             }
-            // TODO NK - Check if this call is free threaded?
             var componentModel = await ServiceLocator.GetGlobalServiceAsync<SComponentModel, IComponentModel>();
             // ensure we satisfy our imports
             componentModel?.DefaultCompositionService.SatisfyImportsOnce(this);
             _initialized = true;
         }
 
-        public async Task<bool> InstallLatestPackageAsync(string source, string project, string packageId, bool includePrerelease)
+        public async Task<bool> InstallLatestPackageAsync(string source, string projectUniqueName, string packageId, bool includePrerelease, CancellationToken cancellationToken)
         {
             if (!_initialized)
             {
                 await InitializeAsync();
             }
 
-            var vsPackageInstaller = (IVsAsyncPackageInstaller)Installer.Value;
-            return await vsPackageInstaller.InstallLatestPackageAsync(source, project, packageId, includePrerelease);
+            var vsPackageInstaller = (IVsAsyncPackageInstaller)VSPackageInstaller.Value; // This can be cast because VSPackageInstaller implements all the interfaces.
+            return await vsPackageInstaller.InstallLatestPackageAsync(source, projectUniqueName, packageId, includePrerelease, cancellationToken);
         }
 
-        public async Task<bool> InstallPackageAsync(string source, string project, string packageId, string version)
+        public async Task<bool> InstallPackageAsync(string source, string projectUniqueName, string packageId, string version, CancellationToken cancellationToken)
         {
             if (!_initialized)
             {
                 await InitializeAsync();
             }
 
-            var vsPackageInstaller = (IVsAsyncPackageInstaller)Installer.Value;
-            return await vsPackageInstaller.InstallPackageAsync(source, project, packageId, version);
+            var vsPackageInstaller = (IVsAsyncPackageInstaller)VSPackageInstaller.Value; // This can be cast because VSPackageInstaller implements all the interfaces.
+            return await vsPackageInstaller.InstallPackageAsync(source, projectUniqueName, packageId, version, cancellationToken);
         }
     }
 }

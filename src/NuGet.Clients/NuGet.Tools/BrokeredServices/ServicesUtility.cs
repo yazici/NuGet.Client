@@ -10,9 +10,10 @@ namespace NuGetVSExtension.BrokeredServices
 {
     internal class ServicesUtility
     {
-        internal const string IVsAsyncPackageInstallerServiceName = "IVsAsyncPackageInstaller"; // TODO NK - Check when the assembly gets loaded.
+        internal const string IVsAsyncPackageInstallerServiceName = "IVsAsyncPackageInstaller";
         internal const string IVsAsyncPackageInstallerServiceVersion = "1.0";
 
+        // TODO NK - Consider making this public per the instructions.
         internal static ServiceRpcDescriptor IVsAsyncPackageInstallerServiceDescriptor { get; } = new ServiceJsonRpcDescriptor(
             new ServiceMoniker(IVsAsyncPackageInstallerServiceName, new Version(IVsAsyncPackageInstallerServiceVersion)),
             ServiceJsonRpcDescriptor.Formatters.MessagePack,

@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace NuGet.VisualStudio.Contracts
@@ -12,7 +13,7 @@ namespace NuGet.VisualStudio.Contracts
     public interface IVsAsyncPackageInstaller
     {
         /// <summary>
-        /// Installs a single package from the specified package source.
+        /// Installs a single package from the specified package source. If <paramref name="source"/> is <c>null</c>, the user's configured sources are used!
         /// </summary>
         /// <param name="source">
         /// The package source to install the package from. This value can be <c>null</c>
@@ -21,17 +22,19 @@ namespace NuGet.VisualStudio.Contracts
         /// configured for a source, this value must exactly match the configured source
         /// value.
         /// </param>
-        /// <param name="project">The target project for package installation.</param>
+        /// <param name="projectUniqueName">A unique id for the project for package installation.</param>
         /// <param name="packageId">The package ID of the package to install.</param>
         /// <param name="version">
         /// The version of the package to install. <c>null</c> can be provided to
         /// install the latest version of the package.
         /// </param>
+        /// <param name="cancellationToken">CancellationToken for cancelling the operation.</param>
         Task<bool> InstallPackageAsync(
             string source,
-            string project,
+            string projectUniqueName,
             string packageId,
-            string version);
+            string version,
+            CancellationToken cancellationToken);
 
         /// <summary>
         /// Installs the latest version of a single package from the specified package source.
@@ -43,20 +46,18 @@ namespace NuGet.VisualStudio.Contracts
         /// configured for a source, this value must exactly match the configured source
         /// value.
         /// </param>
-        /// <param name="project">The target project for package installation.</param>
+        /// <param name="projectUniqueName">A unique id for the project for package installation.</param>
         /// <param name="packageId">The package ID of the package to install.</param>
         /// <param name="includePrerelease">
         /// Whether or not to consider prerelease versions when finding the latest version
         /// to install.
         /// </param>
-        /// <exception cref="InvalidOperationException">
-        /// Thrown when <see paramref="includePrerelease"/> is <c>false</c> and no stable version
-        /// of the package exists.
-        /// </exception>
+        /// <param name="cancellationToken">CancellationToken for cancelling the operation.</param>
         Task<bool> InstallLatestPackageAsync(
             string source,
-            string project,
+            string projectUniqueName,
             string packageId,
-            bool includePrerelease);
+            bool includePrerelease,
+            CancellationToken cancellationToken);
     }
 }
