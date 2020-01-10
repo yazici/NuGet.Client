@@ -129,13 +129,13 @@ namespace NuGet.Packaging.Signing
             SignedCms timestampCms,
             IReadOnlyList<X509Certificate2> chain)
         {
-            using (var timestampNativeCms = CmsFactory.Create(timestampCms.Encode()))
+            using (ICms timestampCMS = CmsFactory.Create(timestampCms.Encode()))
             {
-                timestampNativeCms.AddCertificates(
+                timestampCMS.AddCertificates(
                     chain.Where(certificate => !timestampCms.Certificates.Contains(certificate))
                          .Select(certificate => certificate.RawData));
 
-                var bytes = timestampNativeCms.Encode();
+                var bytes = timestampCMS.Encode();
                 var updatedCms = new SignedCms();
 
                 updatedCms.Decode(bytes);
