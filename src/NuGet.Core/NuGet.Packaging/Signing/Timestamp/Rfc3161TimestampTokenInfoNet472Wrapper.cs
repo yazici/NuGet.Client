@@ -21,13 +21,7 @@ namespace NuGet.Packaging.Signing
             _rfc3161TimestampTokenInfo = timestampTokenInfo;
         }
 
-        public string PolicyId
-        {
-            get
-            {
-                return _rfc3161TimestampTokenInfo.PolicyId;
-            }   
-        }
+        public string PolicyId => _rfc3161TimestampTokenInfo.PolicyId;
 
         public DateTimeOffset Timestamp
         {
