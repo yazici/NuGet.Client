@@ -7,7 +7,7 @@ namespace NuGet.Packaging.Signing
 {
     internal static class CmsFactory
     {
-        internal static ICms CreateICms(byte[] cmsBytes)
+        internal static ICms Create(byte[] cmsBytes)
         {
             ICms cms = null;
 #if IS_SIGNING_SUPPORTED && IS_DESKTOP

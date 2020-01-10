@@ -109,7 +109,7 @@ namespace NuGet.Packaging.Signing
 #if IS_SIGNING_SUPPORTED
         public override byte[] GetSignatureValue()
         {
-            using (var nativeCms = CmsFactory.CreateICms(SignedCms.Encode()))
+            using (var nativeCms = CmsFactory.Create(SignedCms.Encode()))
             {
                 return nativeCms.GetPrimarySignatureSignatureValue();
             }
