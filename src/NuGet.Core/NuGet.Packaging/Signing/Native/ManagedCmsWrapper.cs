@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Security.Cryptography.Pkcs;
 using System.Security.Cryptography.X509Certificates;
+using NuGet.Common;
 
 namespace NuGet.Packaging.Signing
 {
@@ -20,11 +21,25 @@ namespace NuGet.Packaging.Signing
 
         public byte[] GetPrimarySignatureSignatureValue()
         {
+            if (_signedCms.SignerInfos.Count == 0)
+            {
+                throw new SignatureException(NuGetLogCode.NU3009, Strings.Error_NotOnePrimarySignature);
+            }
+
             return _signedCms.SignerInfos[0].GetSignature();
         }
 
         public byte[] GetRepositoryCountersignatureSignatureValue()
         {
+            if (_signedCms.SignerInfos.Count == 0)
+            {
+                throw new SignatureException(NuGetLogCode.NU3009, Strings.Error_NotOnePrimarySignature);
+            }
+            else if (_signedCms.SignerInfos[0].CounterSignerInfos.Count == 0)
+            {
+                return null;
+            }
+
             return _signedCms.SignerInfos[0].CounterSignerInfos[0].GetSignature();
         }
 
@@ -38,6 +53,11 @@ namespace NuGet.Packaging.Signing
 
         public void AddCountersignature(CmsSigner cmsSigner, CngKey privateKey)
         {
+            if (_signedCms.SignerInfos.Count == 0)
+            {
+                throw new SignatureException(NuGetLogCode.NU3009, Strings.Error_NotOnePrimarySignature);
+            }
+
             _signedCms.SignerInfos[0].ComputeCounterSignature(cmsSigner);
         }
 
@@ -46,6 +66,11 @@ namespace NuGet.Packaging.Signing
             var bytes = timestamp.Encode();
 
             var unsignedAttribute = new AsnEncodedData(Oids.SignatureTimeStampTokenAttribute, bytes);
+
+            if (_signedCms.SignerInfos.Count == 0)
+            {
+                throw new SignatureException(NuGetLogCode.NU3009, Strings.Error_NotOnePrimarySignature);
+            }
 
             _signedCms.SignerInfos[0].CounterSignerInfos[0].AddUnsignedAttribute(unsignedAttribute);
 
@@ -56,6 +81,11 @@ namespace NuGet.Packaging.Signing
             var bytes = timestamp.Encode();
 
             var unsignedAttribute = new AsnEncodedData(Oids.SignatureTimeStampTokenAttribute, bytes);
+
+            if (_signedCms.SignerInfos.Count == 0)
+            {
+                throw new SignatureException(NuGetLogCode.NU3009, Strings.Error_NotOnePrimarySignature);
+            }
 
             _signedCms.SignerInfos[0].AddUnsignedAttribute(unsignedAttribute);
          
