@@ -98,7 +98,6 @@ namespace NuGet.Packaging.Signing
 
         public void Dispose()
         {
-           //TODO: complete the dispose method
         }
     }
 #endif

@@ -68,7 +68,7 @@ namespace NuGet.Packaging.Signing
                                     httpResponse.ReasonPhrase));
                     }
 
-                    if (httpResponse.Content.Headers.ContentType.MediaType != "application/timestamp-response")
+                    if (!string.Equals(httpResponse.Content.Headers.ContentType.MediaType, "application/timestamp-response", StringComparison.OrdinalIgnoreCase))
                     {
                         throw new CryptographicException(Strings.TimestampServiceRespondedInvalidFormat);
                     }
