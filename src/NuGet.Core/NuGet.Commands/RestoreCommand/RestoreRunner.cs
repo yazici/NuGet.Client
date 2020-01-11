@@ -262,24 +262,25 @@ namespace NuGet.Commands
             log.LogInformation(Strings.Log_Committing);
             await result.CommitAsync(log, token);
 
-            if (summaryRequest.Request.ProjectStyle == ProjectStyle.DotnetToolReference)
+            if (result.Success)
             {
                 log.LogMinimal(string.Format(
                     CultureInfo.CurrentCulture,
-                    result.Success ?
+                    summaryRequest.Request.ProjectStyle == ProjectStyle.DotnetToolReference ?
                     Strings.Log_RestoreCompleteDotnetTool :
-                    Strings.Log_RestoreFailedDotnetTool,
-                    DatetimeUtility.ToReadableTimeFormat(result.ElapsedTime),
-                    summaryRequest.InputPath));
+                    Strings.Log_RestoreComplete,
+                    summaryRequest.InputPath,
+                    DatetimeUtility.ToReadableTimeFormat(result.ElapsedTime)));
             }
             else
             {
                 log.LogMinimal(string.Format(
                     CultureInfo.CurrentCulture,
-                    result.Success ?
-                    Strings.Log_RestoreComplete :
+                    summaryRequest.Request.ProjectStyle == ProjectStyle.DotnetToolReference ?
+                    Strings.Log_RestoreFailedDotnetTool :
                     Strings.Log_RestoreFailed,
-                    summaryRequest.InputPath));
+                    summaryRequest.InputPath,
+                    DatetimeUtility.ToReadableTimeFormat(result.ElapsedTime)));
             }
 
             // Remote the summary messages from the assets file. This will be removed later.

@@ -1241,7 +1241,7 @@ namespace NuGet.Commands {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Restored {0}.
+        ///   Looks up a localized string similar to Restored {0} (in {1}).
         /// </summary>
         internal static string Log_RestoreComplete {
             get {
@@ -1259,7 +1259,7 @@ namespace NuGet.Commands {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Failed to restore {0}.
+        ///   Looks up a localized string similar to Failed to restore {0} (in {1}).
         /// </summary>
         internal static string Log_RestoreFailed {
             get {
