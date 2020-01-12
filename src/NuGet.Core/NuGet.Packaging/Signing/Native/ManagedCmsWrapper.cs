@@ -43,11 +43,11 @@ namespace NuGet.Packaging.Signing
             return _signedCms.SignerInfos[0].CounterSignerInfos[0].GetSignature();
         }
 
-        public void AddCertificates(IEnumerable<byte[]> encodedCertificates)
+        public void AddCertificates(IEnumerable<X509Certificate2> certificates)
         {
-            foreach (var encodedCertificate in encodedCertificates)
+            foreach (var cert in certificates)
             {
-                _signedCms.AddCertificate(new X509Certificate2(encodedCertificate));
+                _signedCms.AddCertificate(new X509Certificate2(cert));
             }
         }
 

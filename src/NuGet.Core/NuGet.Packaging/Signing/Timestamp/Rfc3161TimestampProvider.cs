@@ -132,8 +132,7 @@ namespace NuGet.Packaging.Signing
             using (ICms timestampCms = CmsFactory.Create(timestamp.Encode()))
             {
                 timestampCms.AddCertificates(
-                    chain.Where(certificate => !timestamp.Certificates.Contains(certificate))
-                         .Select(certificate => certificate.RawData));
+                    chain.Where(certificate => !timestamp.Certificates.Contains(certificate)));
 
                 var bytes = timestampCms.Encode();
                 var updatedCms = new SignedCms();

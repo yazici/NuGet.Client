@@ -4,6 +4,7 @@
 using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Security.Cryptography.Pkcs;
+using System.Security.Cryptography.X509Certificates;
 
 namespace NuGet.Packaging.Signing
 {
@@ -27,9 +28,9 @@ namespace NuGet.Packaging.Signing
             return _nativeCms.GetRepositoryCountersignatureSignatureValue();
         }
 
-        public void AddCertificates(IEnumerable<byte[]> encodedCertificates)
+        public void AddCertificates(IEnumerable<X509Certificate2> certificates)
         {
-            _nativeCms.AddCertificates(encodedCertificates);
+            _nativeCms.AddCertificates(certificates);
         }
 
         public void AddCountersignature(CmsSigner cmsSigner, CngKey privateKey)
