@@ -491,6 +491,7 @@ CancellationToken token)
                 // find the project
                 if (project == null)
                 {
+                    // TODO NK - This doesn't really get or create.
                     nuGetProject = await _solutionManager.GetNuGetProjectAsync(projectSafeName);
                 }
                 else
